@@ -13,6 +13,8 @@ import {
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE_URL from "../config/env";
+import { checkNetworkConnectivity } from '../service/checkNetwork';
+import { loadOfflineData } from '../service/getApi';
 
 const { width } = Dimensions.get('window');
 
@@ -150,44 +152,61 @@ const SplashScreen = ({ onConnectionSuccess }) => {
 
     // Check for network connectivity in general before trying API
     const checkNetworkAndApi = async () => {
-        try {
-            // We'll use a simple test fetch to determine network connectivity
-            try {
-                // Try a very fast test fetch to Google's DNS service
-                await Promise.race([
-                    fetch('https://8.8.8.8', { mode: 'no-cors' }),
-                    new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('Timeout')), 3000)
-                    )
-                ]);
+        const isConnected = await checkNetworkConnectivity();
 
-                // If we get here, there's some internet connectivity, so check the API
-                checkApiConnection();
-            } catch (networkErr) {
-                // If the test fetch fails, we're offline
-                setError('No internet connection detected');
-                setIsLoading(false);
-
-                // Fade out loading indicator
-                Animated.timing(loadingOpacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true
-                }).start();
-            }
-        } catch (err) {
-            // Catch any other errors
-            setError('Something went wrong');
+        if (isConnected) {
+            checkApiConnection();
+        } else {
+            setError('No internet connection detected');
             setIsLoading(false);
 
-            // Fade out loading indicator
             Animated.timing(loadingOpacity, {
                 toValue: 0,
                 duration: 300,
-                useNativeDriver: true
+                useNativeDriver: true,
             }).start();
         }
     };
+
+    // const checkNetworkAndApi = async () => {
+    //     try {
+    //         // We'll use a simple test fetch to determine network connectivity
+    //         try {
+    //             // Try a very fast test fetch to Google's DNS service
+    //             await Promise.race([
+    //                 fetch('https://8.8.8.8', { mode: 'no-cors' }),
+    //                 new Promise((_, reject) =>
+    //                     setTimeout(() => reject(new Error('Timeout')), 3000)
+    //                 )
+    //             ]);
+
+    //             // If we get here, there's some internet connectivity, so check the API
+    //             checkApiConnection();
+    //         } catch (networkErr) {
+    //             // If the test fetch fails, we're offline
+    //             setError('No internet connection detected');
+    //             setIsLoading(false);
+
+    //             // Fade out loading indicator
+    //             Animated.timing(loadingOpacity, {
+    //                 toValue: 0,
+    //                 duration: 300,
+    //                 useNativeDriver: true
+    //             }).start();
+    //         }
+    //     } catch (err) {
+    //         // Catch any other errors
+    //         setError('Something went wrong');
+    //         setIsLoading(false);
+
+    //         // Fade out loading indicator
+    //         Animated.timing(loadingOpacity, {
+    //             toValue: 0,
+    //             duration: 300,
+    //             useNativeDriver: true
+    //         }).start();
+    //     }
+    // };
 
     useEffect(() => {
         // Start entrance animations
@@ -242,7 +261,7 @@ const SplashScreen = ({ onConnectionSuccess }) => {
     const proceedOffline = async () => {
         try {
             // Check if we have cached companies data
-            const cachedCompanies = await AsyncStorage.getItem('companies');
+            const cachedCompanies = await loadOfflineData();
 
             if (cachedCompanies) {
                 // We have cached data, so we can proceed offline
