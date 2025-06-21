@@ -84,16 +84,14 @@ export default function BusinessList({ route, navigation }) {
   };
 
   // Mock data - in a real app, this would come from your API based on the category
-  useEffect(() => {
+  useEffect(async () => {
     console.log(category)
     // Simulate API loading
-    setTimeout(async () => {
-      setLoading(true);
-      const companyData = await fetchAllCompaniesOffline();
+    setLoading(true);
+    const companyData = await fetchAllCompaniesOffline();
 
-      setBusinesses(companyData)
-      setLoading(false)
-    }, 800)
+    setBusinesses(companyData)
+    setLoading(false)
   }, [category])
 
   useEffect(() => {

@@ -161,41 +161,6 @@ const HomeScreen = ({ navigation }) => {
         filterBusinesses();
     }, [searchQuery, activeCategory]);
 
-    // useEffect(() => {
-    //     const loadBusinesses = async () => {
-    //         try {
-    //             setLoading(true);
-    //             // const companyData = await fetchAllCompanies();
-    //             const companyData = await fetchAllCompaniesOffline();
-
-    //             // Initialize arrays to hold featured and regular businesses
-    //             const featuredBusinesses = [];
-    //             const regularBusinesses = [];
-
-    //             // Loop through the company data and categorize
-    //             companyData.forEach((company) => {
-    //                 if (company.subscription_type === "Gold") {
-    //                     featuredBusinesses.push(company);
-    //                 } else {
-    //                     regularBusinesses.push(company);
-    //                 }
-    //             });
-
-    //             // Set the state with the categorized businesses
-    //             setFeaturedBusinesses(featuredBusinesses);
-    //             setBusinesses(regularBusinesses);
-    //         } catch (err) {
-    //             console.log(err.message);
-    //         } finally {
-    //             setLoading(false);
-    //         }
-    //     };
-
-    //     loadBusinesses();
-    //     filterBusinesses();
-
-    // }, [searchQuery, activeCategory]);
-
     const filterBusinesses = () => {
         if (activeCategory !== "More...") {
             const filtered = businesses.filter((business) => {
