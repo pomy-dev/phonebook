@@ -21,7 +21,8 @@ import connectWhatsApp from "../components/connectWhatsApp"
 import connectEmail from "../components/connectEmail"
 import findLocation from "../components/findLocation"
 import { fetchAllCompanies, fetchAllCompaniesOffline, fetchCompaniesWithAge } from "../service/getApi"
-import AsyncStorage from "@react-native-async-storage/async-storage"
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { checkNetworkConnectivity } from "../service/checkNetwork";
 
 const { width } = Dimensions.get("window")
 
@@ -132,7 +133,6 @@ const HomeScreen = ({ navigation }) => {
                 // const companyData = await fetchAllCompanies();
                 const companyData = await fetchAllCompaniesOffline();
 
-
                 const featuredBusinesses = companyData.filter(
                     (company) => company.subscription_type === "Gold"
                 );
@@ -157,43 +157,7 @@ const HomeScreen = ({ navigation }) => {
         };
 
         loadBusinesses();
-    }, []);
-
-
-
-    useEffect(() => {
-        const loadBusinesses = async () => {
-            try {
-                setLoading(true);
-                // const companyData = await fetchAllCompanies();
-                const companyData = await fetchAllCompaniesOffline();
-
-                // Initialize arrays to hold featured and regular businesses
-                const featuredBusinesses = [];
-                const regularBusinesses = [];
-
-                // Loop through the company data and categorize
-                companyData.forEach((company) => {
-                    if (company.subscription_type === "Gold") {
-                        featuredBusinesses.push(company);
-                    } else {
-                        regularBusinesses.push(company);
-                    }
-                });
-
-                // Set the state with the categorized businesses
-                setFeaturedBusinesses(featuredBusinesses);
-                setBusinesses(regularBusinesses);
-            } catch (err) {
-                console.log(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadBusinesses();
         filterBusinesses();
-
     }, [searchQuery, activeCategory]);
 
     const filterBusinesses = () => {
@@ -307,65 +271,43 @@ const HomeScreen = ({ navigation }) => {
                 } catch (err) {
                     console.log("API Error:", err.message);
                     // Fall back to offline data silently without showing error
-                    await loadOfflineData();
+                    await getLocalData();
                     // Update last refresh time to indicate data is from cache
                     setLastRefresh("Using cached data (network unavailable)");
                 }
             } else {
                 // No network connection, use offline data silently
-                await loadOfflineData();
+                await getLocalData();
                 // Update the refresh indicator instead of showing an alert
                 setLastRefresh("Using cached data (offline mode)");
             }
         } catch (err) {
             console.log("General Error:", err.message);
             // Handle general errors silently
-            await loadOfflineData();
+            await getLocalData();
             setLastRefresh("Using cached data");
         } finally {
             setLoading(false);
         }
     };
 
-    // Helper function to check network connectivity
-    const checkNetworkConnectivity = async () => {
-        try {
-            // Use a timeout to prevent hanging
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-            try {
-                // Try a very fast test fetch to Google's DNS service
-                await fetch('https://8.8.8.8', {
-                    mode: 'no-cors',
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                return true;
-            } catch (err) {
-                clearTimeout(timeoutId);
-                return false;
-            }
-        } catch (err) {
-            return false;
-        }
-    };
-
-    // Helper function to load offline data
-    const loadOfflineData = async () => {
+    const getLocalData = async () => {
         try {
             const companyData = await fetchAllCompaniesOffline();
 
             const featuredBusinesses = companyData.filter(
                 (company) => company.subscription_type === "Gold"
             );
+            const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
             const nonGoldCompanies = companyData.filter(
                 (company) => company.subscription_type !== "Gold"
             );
+            const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
+            const regularBusinesses = shuffledNonGold.slice(0, 5);
 
-            setFeaturedBusinesses(featuredBusinesses);
-            setBusinesses(nonGoldCompanies);
+            setFeaturedBusinesses(shuffledFeatured);
+            setBusinesses(regularBusinesses);
             setFilteredBusinesses(nonGoldCompanies);
         } catch (err) {
             console.log("Offline Data Error:", err.message);
