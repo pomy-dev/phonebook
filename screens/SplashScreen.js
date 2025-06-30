@@ -319,7 +319,7 @@ const SplashScreen = ({ onConnectionSuccess }) => {
                     />
                 </View>
                 <Text style={[styles.appName, { color: theme.text }]}>
-                    Business Directory
+                    Business Link
                 </Text>
                 <Text style={[styles.tagline, { color: theme.subtext }]}>
                     Connect. Discover. Grow.

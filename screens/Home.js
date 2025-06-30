@@ -23,7 +23,6 @@ import findLocation from "../components/findLocation"
 import { fetchAllCompanies, fetchAllCompaniesOffline, fetchCompaniesWithAge } from "../service/getApi"
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
-import { loadOfflineData } from "../service/getApi";
 
 const { width } = Dimensions.get("window")
 
@@ -294,7 +293,7 @@ const HomeScreen = ({ navigation }) => {
 
     const getLocalData = async () => {
         try {
-            const companyData = await loadOfflineData();
+            const companyData = await fetchAllCompaniesOffline();
 
             const featuredBusinesses = companyData.filter(
                 (company) => company.subscription_type === "Gold"
