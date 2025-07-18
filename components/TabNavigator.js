@@ -1,4 +1,5 @@
 "use client"
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { useTheme } from "@react-navigation/native"
 import CustomTabBar from "./CustomTabBar"
@@ -16,7 +17,7 @@ export default function TabNavigator() {
             tabBar={(props) => <CustomTabBar {...props} theme={theme} />}
             screenOptions={{
                 headerShown: false,
-                tabBarHideOnKeyboard: true,
+                tabBarHideOnKeyboard: true
             }}
         >
             <Tab.Screen
