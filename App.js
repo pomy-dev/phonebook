@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme, View, Platform, Animated } from 'react-native';
+import { useRef, useEffect, useState } from 'react';
+import { StyleSheet, useColorScheme, Animated } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
@@ -70,10 +71,12 @@ export default function App() {
         <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
       ) : (
         // Show main app with navigation when ready
-        <NavigationContainer theme={theme}>
-          <TabNavigator />
-          <StatusBar style={isDark ? 'light' : 'dark'} />
-        </NavigationContainer>
+        <SafeAreaProvider>
+          <NavigationContainer theme={theme}>
+            <TabNavigator />
+            <StatusBar style={isDark ? 'light' : 'dark'} />
+          </NavigationContainer>
+        </SafeAreaProvider>
       )}
     </>
   );

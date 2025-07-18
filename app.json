@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "PhoneBook",
-    "slug": "PhoneBook",
+    "name": "Business-Link",
+    "slug": "Business-Link",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,7 +32,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "e5c2ff99-9934-4560-a9af-5053d44dfeb5"
+        "projectId": "714a1268-f123-4701-a388-7a018b514a95"
       }
     }
   }

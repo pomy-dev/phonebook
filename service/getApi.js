@@ -67,3 +67,15 @@ export const fetchCompaniesWithAge = async () => {
     return { companies: [], ageInHours: null };
   }
 };
+
+// Helper function to load offline data
+export const loadOfflineData = async () => {
+  try {
+    const data = await fetchAllCompaniesOffline();
+    const companyData = data ? JSON.parse(data) : []
+
+    return companyData;
+  } catch (err) {
+    console.log("Offline Data Error:", err.message);
+  }
+};

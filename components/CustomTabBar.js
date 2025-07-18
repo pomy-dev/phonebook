@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react"
 import { View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get("window")
 
@@ -23,6 +24,7 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
     }, [state.index, tabWidth, indicatorPosition])
 
     return (
+        <SafeAreaView edges={['bottom']}>
         <View
             style={[
                 styles.tabBar,
@@ -140,6 +142,7 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                 )
             })}
         </View>
+        </SafeAreaView>
     )
 }
 

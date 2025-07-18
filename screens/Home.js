@@ -1,31 +1,28 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  Image,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Dimensions,
-  Linking,
-  Alert,
-  Modal,
-  ActivityIndicator,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import connectWhatsApp from "../components/connectWhatsApp";
-import connectEmail from "../components/connectEmail";
-import findLocation from "../components/findLocation";
-import {
-  fetchAllCompanies,
-  fetchAllCompaniesOffline,
-  fetchCompaniesWithAge,
-} from "../service/getApi";
+    View,
+    Text,
+    Image,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Dimensions,
+    Linking,
+    Alert,
+    Modal,
+    ActivityIndicator,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import connectWhatsApp from "../components/connectWhatsApp"
+import connectEmail from "../components/connectEmail"
+import findLocation from "../components/findLocation"
+import { fetchAllCompanies, fetchAllCompaniesOffline, fetchCompaniesWithAge } from "../service/getApi"
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { checkNetworkConnectivity } from "../service/checkNetwork";
 
 const { width } = Dimensions.get("window");
 
@@ -126,12 +123,12 @@ const HomeScreen = ({ navigation }) => {
     initializeData();
   }, [handleRefresh]);
 
-  useEffect(() => {
-    const loadBusinesses = async () => {
-      try {
-        setLoading(true);
-        // const companyData = await fetchAllCompanies();
-        const companyData = await fetchAllCompaniesOffline();
+    useEffect(() => {
+        const loadBusinesses = async () => {
+            try {
+                setLoading(true);
+                // const companyData = await fetchAllCompanies();
+                const companyData = await fetchAllCompaniesOffline();
 
         const featuredBusinesses = companyData.filter(
           (company) => company.subscription_type === "Gold"
@@ -149,53 +146,20 @@ const HomeScreen = ({ navigation }) => {
         );
         const regularBusinesses = shuffledNonGold.slice(0, 5);
 
-        // Set state with the randomly ordered businesses
-        setFeaturedBusinesses(shuffledFeatured);
-        setBusinesses(regularBusinesses);
-        setFilteredBusinesses(regularBusinesses);
-      } catch (err) {
-        console.log(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+                // Set state with the randomly ordered businesses
+                setFeaturedBusinesses(shuffledFeatured);
+                setBusinesses(regularBusinesses);
+                setFilteredBusinesses(regularBusinesses);
+            } catch (err) {
+                console.log(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    loadBusinesses();
-  }, []);
-
-  useEffect(() => {
-    const loadBusinesses = async () => {
-      try {
-        setLoading(true);
-        // const companyData = await fetchAllCompanies();
-        const companyData = await fetchAllCompaniesOffline();
-
-        // Initialize arrays to hold featured and regular businesses
-        const featuredBusinesses = [];
-        const regularBusinesses = [];
-
-        // Loop through the company data and categorize
-        companyData.forEach((company) => {
-          if (company.subscription_type === "Gold") {
-            featuredBusinesses.push(company);
-          } else {
-            regularBusinesses.push(company);
-          }
-        });
-
-        // Set the state with the categorized businesses
-        setFeaturedBusinesses(featuredBusinesses);
-        setBusinesses(regularBusinesses);
-      } catch (err) {
-        console.log(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadBusinesses();
-    filterBusinesses();
-  }, [searchQuery, activeCategory]);
+        loadBusinesses();
+        filterBusinesses();
+    }, [searchQuery, activeCategory]);
 
   const filterBusinesses = () => {
     if (activeCategory !== "More...") {
@@ -328,31 +292,31 @@ const HomeScreen = ({ navigation }) => {
           setBusinesses(nonGoldCompanies);
           setFilteredBusinesses(nonGoldCompanies);
 
-          // Show a success message only on successful refresh
-          Alert.alert("Success", "Business listings refreshed successfully");
-          setLastRefresh("Last refresh was just now");
+                    // Show a success message only on successful refresh
+                    Alert.alert("Success", "Business listings refreshed successfully");
+                    setLastRefresh("Last refresh was just now");
+                } catch (err) {
+                    console.log("API Error:", err.message);
+                    // Fall back to offline data silently without showing error
+                    await getLocalData();
+                    // Update last refresh time to indicate data is from cache
+                    setLastRefresh("Using cached data (network unavailable)");
+                }
+            } else {
+                // No network connection, use offline data silently
+                await getLocalData();
+                // Update the refresh indicator instead of showing an alert
+                setLastRefresh("Using cached data (offline mode)");
+            }
         } catch (err) {
-          console.log("API Error:", err.message);
-          // Fall back to offline data silently without showing error
-          await loadOfflineData();
-          // Update last refresh time to indicate data is from cache
-          setLastRefresh("Using cached data (network unavailable)");
+            console.log("General Error:", err.message);
+            // Handle general errors silently
+            await getLocalData();
+            setLastRefresh("Using cached data");
+        } finally {
+            setLoading(false);
         }
-      } else {
-        // No network connection, use offline data silently
-        await loadOfflineData();
-        // Update the refresh indicator instead of showing an alert
-        setLastRefresh("Using cached data (offline mode)");
-      }
-    } catch (err) {
-      console.log("General Error:", err.message);
-      // Handle general errors silently
-      await loadOfflineData();
-      setLastRefresh("Using cached data");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   // Helper function to check network connectivity
   const checkNetworkConnectivity = async () => {
@@ -383,21 +347,24 @@ const HomeScreen = ({ navigation }) => {
     try {
       const companyData = await fetchAllCompaniesOffline();
 
-      const featuredBusinesses = companyData.filter(
-        (company) => company.subscription_type === "Gold"
-      );
+            const featuredBusinesses = companyData.filter(
+                (company) => company.subscription_type === "Gold"
+            );
+            const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
-      const nonGoldCompanies = companyData.filter(
-        (company) => company.subscription_type !== "Gold"
-      );
+            const nonGoldCompanies = companyData.filter(
+                (company) => company.subscription_type !== "Gold"
+            );
+            const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
+            const regularBusinesses = shuffledNonGold.slice(0, 5);
 
-      setFeaturedBusinesses(featuredBusinesses);
-      setBusinesses(nonGoldCompanies);
-      setFilteredBusinesses(nonGoldCompanies);
-    } catch (err) {
-      console.log("Offline Data Error:", err.message);
-    }
-  };
+            setFeaturedBusinesses(shuffledFeatured);
+            setBusinesses(regularBusinesses);
+            setFilteredBusinesses(nonGoldCompanies);
+        } catch (err) {
+            console.log("Offline Data Error:", err.message);
+        }
+    };
 
   return (
     <SafeAreaView style={styles.container}>
