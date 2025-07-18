@@ -86,13 +86,13 @@ export default function BusinessList({ route, navigation }) {
   // Mock data - in a real app, this would come from your API based on the category
   useEffect(() => {
     async function loadCompanies() {
-    console.log(category)
-    setLoading(true)
-    const companyData = await fetchAllCompaniesOffline()
-    setBusinesses(companyData)
-    setLoading(false)
-  }
-  loadCompanies()
+      console.log(category)
+      setLoading(true)
+      const companyData = await fetchAllCompaniesOffline()
+      setBusinesses(companyData)
+      setLoading(false)
+    }
+    loadCompanies()
   }, [category])
 
   useEffect(() => {
@@ -491,16 +491,16 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   searchContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 15,
     paddingBottom: 20,
   },
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8F8F8",
-    borderRadius: 16,
+    borderRadius: 5,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 10,
   },
   searchIcon: {
     marginRight: 10,
@@ -521,13 +521,13 @@ const styles = StyleSheet.create({
     color: "#777777",
   },
   listContent: {
-    padding: 24,
+    paddingVertical: 15,
     paddingBottom: 30,
   },
   // New card styles that match the FavoritesScreen
   favoriteCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    // borderRadius: 16,
     marginBottom: 16,
     padding: 16,
     shadowColor: '#000',
@@ -535,7 +535,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    borderWidth: 1,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     borderColor: '#F0F0F0',
   },
   favoriteHeader: {

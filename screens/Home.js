@@ -564,7 +564,7 @@ const HomeScreen = ({ navigation }) => {
 
                 {/* All Businesses */}
                 <View style={styles.businessesContainer}>
-                    <Text style={styles.businessesTitle}>Businesses</Text>
+                    {/* <Text style={styles.businessesTitle}>Businesses</Text> */}
                     <View style={styles.businessesList}>
                         {filteredBusinesses.length > 0 ? (
                             filteredBusinesses.map((item) => (
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 24,
-        paddingTop: 24,
+        paddingTop: 30,
         paddingBottom: 16,
     },
     appTitle: {
@@ -742,16 +742,16 @@ const styles = StyleSheet.create({
         color: "#003366",
     },
     searchContainer: {
-        paddingHorizontal: 24,
-        paddingBottom: 20,
+        paddingHorizontal: 15,
+        paddingBottom: 10,
     },
     searchWrapper: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#F8F8F8",
-        borderRadius: 16,
+        borderRadius: 5,
         paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingVertical: 5,
     },
     searchIcon: {
         marginRight: 10,
@@ -808,7 +808,6 @@ const styles = StyleSheet.create({
         elevation: 2,
         position: "relative",
     },
-
     featuredImage: {
         width: 50,
         height: 50,
@@ -838,7 +837,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     categoriesContainer: {
-        marginBottom: 28,
+        marginBottom: 20,
     },
     categoriesScrollContent: {
         paddingHorizontal: 24,
@@ -863,7 +862,7 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
     businessesContainer: {
-        paddingHorizontal: 24,
+        // paddingHorizontal: 5,
     },
     businessesTitle: {
         fontSize: 20,
@@ -876,7 +875,7 @@ const styles = StyleSheet.create({
     // New card styles that match the FavoritesScreen
     favoriteCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        // borderRadius: 16,
         marginBottom: 16,
         padding: 16,
         shadowColor: '#000',
@@ -884,7 +883,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
-        borderWidth: 1,
+        // borderTopWidth: 1,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
         borderColor: '#F0F0F0',
     },
     favoriteHeader: {

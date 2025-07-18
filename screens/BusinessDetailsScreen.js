@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { FontAwesome5 } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -55,6 +56,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [reviewRating, setReviewRating] = useState(5);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [hasWhatsApp, setHasWhatsApp] = useState(false);
+  const [mapError, setMapError] = useState(null);
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current
@@ -478,6 +480,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     setShowRatingDetails(!showRatingDetails)
   }
 
+  // Handle map image load errors
+  const handleMapLoadError = () => {
+    setMapError('Map unloaded. Check network connection.');
+    setLoadingMap(false);
+  };
+
   // Render functions
   const renderStars = (rating, size = 16, color = "#FFD700") => {
     const stars = []
@@ -795,9 +803,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 <View style={styles.section}>
                   <View style={styles.sectionHeaderRow}>
                     <Text style={styles.sectionTitle}>Business Hours</Text>
-                    {/* <View style={styles.openNowBadge}>
-                      <Text style={styles.openNowText}>Open Now</Text>
-                    </View> */}
                   </View>
                   <View style={styles.hoursContainer}>
                     {business.working_hours.map((hours, index) => (
@@ -832,19 +837,26 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                         <View style={styles.mapLoadingBar} />
                       </View>
                     </Animated.View>
+                  ) : mapError ? (
+                    <View style={styles.mapErrorContainer}>
+                      <FontAwesome5 name="search-location" size={44} color="#aaa9aaff" />
+                      <Text style={styles.mapErrorText}>{mapError}</Text>
+                    </View>
                   ) : (
                     <Image
                       source={{
                         uri:
-                          "https://maps.googleapis.com/maps/api/staticmap?center=" +
-                          encodeURIComponent(business.address) +
+                          `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(business.address)}` +
                           "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
                           encodeURIComponent(business.address) +
-                          "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM",
+                          "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM", // Replace with your actual API key
                       }}
                       style={styles.mapImage}
+                      onError={handleMapLoadError}
                     />
                   )}
+
+                  {/* // AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM */}
 
                   <View style={styles.addressContainer}>
                     <Ionicons name="location" size={18} color="#003366" />
@@ -1100,7 +1112,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Listed in Phonebook</Text>
-          <Text style={styles.footerCopyright}>© 2025 All Rights Reserved</Text>
+          <Text style={styles.footerCopyright}>© {new Date().getFullYear()} All Rights Reserved</Text>
         </View>
       </Animated.ScrollView>
 
@@ -1832,11 +1844,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginLeft: 8,
   },
+  mapErrorContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: 10
+  },
 
   // Social Media
   socialMediaContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   socialButton: {
     width: 50,
@@ -1845,6 +1864,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#003366",
     justifyContent: "center",
     alignItems: "center",
+    marginVertical: 5,
     marginHorizontal: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

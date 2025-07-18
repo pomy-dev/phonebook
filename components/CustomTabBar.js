@@ -25,123 +25,123 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
 
     return (
         <SafeAreaView edges={['bottom']}>
-        <View
-            style={[
-                styles.tabBar,
-                {
-                    backgroundColor: theme.colors.card,
-                    borderTopColor: theme.colors.border,
-                    paddingBottom: Platform.OS === "ios" ? 20 : 0,
-                    height: 60 + (Platform.OS === "ios" ? 20 : 0),
-                },
-            ]}
-        >
-            {/* Animated indicator */}
-            <Animated.View
+            <View
                 style={[
-                    styles.indicator,
+                    styles.tabBar,
                     {
-                        width: tabWidth,
-                        backgroundColor: theme.colors.primary,
-                        transform: [{ translateX: indicatorPosition }],
+                        backgroundColor: theme.colors.card,
+                        borderTopColor: theme.colors.border,
+                        paddingBottom: Platform.OS === "ios" ? 20 : 0,
+                        height: 60 + (Platform.OS === "ios" ? 20 : 0),
                     },
                 ]}
-            />
+            >
+                {/* Animated indicator */}
+                <Animated.View
+                    style={[
+                        styles.indicator,
+                        {
+                            width: tabWidth,
+                            backgroundColor: theme.colors.primary,
+                            transform: [{ translateX: indicatorPosition }],
+                        },
+                    ]}
+                />
 
-            {state.routes.map((route, index) => {
-                const { options } = descriptors[route.key]
-                const label = options.tabBarLabel || options.title || route.name
-                const isFocused = state.index === index
+                {state.routes.map((route, index) => {
+                    const { options } = descriptors[route.key]
+                    const label = options.tabBarLabel || options.title || route.name
+                    const isFocused = state.index === index
 
-                // Determine icon based on route name and focus state
-                let iconName
-                if (route.name === "Home") {
-                    iconName = isFocused ? "home" : "home-outline"
-                } else if (route.name === "Countries") {
-                    iconName = isFocused ? "business" : "business-outline"
-                } else if (route.name === "4IS") {
-                    iconName = isFocused ? "heart" : "heart-outline"
-                }
-
-                // Animation values for each tab
-                const scaleAnim = useRef(new Animated.Value(1)).current
-                const opacityAnim = useRef(new Animated.Value(0.7)).current
-
-                useEffect(() => {
-                    Animated.parallel([
-                        Animated.timing(scaleAnim, {
-                            toValue: isFocused ? 1.2 : 1,
-                            duration: 200,
-                            useNativeDriver: true,
-                        }),
-                        Animated.timing(opacityAnim, {
-                            toValue: isFocused ? 1 : 0.7,
-                            duration: 200,
-                            useNativeDriver: true,
-                        }),
-                    ]).start()
-                }, [isFocused, scaleAnim, opacityAnim])
-
-                const onPress = () => {
-                    const event = navigation.emit({
-                        type: "tabPress",
-                        target: route.key,
-                        canPreventDefault: true,
-                    })
-
-                    if (!isFocused && !event.defaultPrevented) {
-                        navigation.navigate(route.name)
+                    // Determine icon based on route name and focus state
+                    let iconName
+                    if (route.name === "Home") {
+                        iconName = isFocused ? "home" : "home-outline"
+                    } else if (route.name === "Countries") {
+                        iconName = isFocused ? "business" : "business-outline"
+                    } else if (route.name === "4IS") {
+                        iconName = isFocused ? "heart" : "heart-outline"
                     }
-                }
 
-                const onLongPress = () => {
-                    navigation.emit({
-                        type: "tabLongPress",
-                        target: route.key,
-                    })
-                }
+                    // Animation values for each tab
+                    const scaleAnim = useRef(new Animated.Value(1)).current
+                    const opacityAnim = useRef(new Animated.Value(0.7)).current
 
-                return (
-                    <TouchableOpacity
-                        key={index}
-                        accessibilityRole="button"
-                        accessibilityState={isFocused ? { selected: true } : {}}
-                        accessibilityLabel={options.tabBarAccessibilityLabel}
-                        testID={options.tabBarTestID}
-                        onPress={onPress}
-                        onLongPress={onLongPress}
-                        style={styles.tabItem}
-                    >
-                        <Animated.View
-                            style={{
-                                transform: [{ scale: scaleAnim }],
-                                opacity: opacityAnim,
-                            }}
+                    useEffect(() => {
+                        Animated.parallel([
+                            Animated.timing(scaleAnim, {
+                                toValue: isFocused ? 1.2 : 1,
+                                duration: 200,
+                                useNativeDriver: true,
+                            }),
+                            Animated.timing(opacityAnim, {
+                                toValue: isFocused ? 1 : 0.7,
+                                duration: 200,
+                                useNativeDriver: true,
+                            }),
+                        ]).start()
+                    }, [isFocused, scaleAnim, opacityAnim])
+
+                    const onPress = () => {
+                        const event = navigation.emit({
+                            type: "tabPress",
+                            target: route.key,
+                            canPreventDefault: true,
+                        })
+
+                        if (!isFocused && !event.defaultPrevented) {
+                            navigation.navigate(route.name)
+                        }
+                    }
+
+                    const onLongPress = () => {
+                        navigation.emit({
+                            type: "tabLongPress",
+                            target: route.key,
+                        })
+                    }
+
+                    return (
+                        <TouchableOpacity
+                            key={index}
+                            accessibilityRole="button"
+                            accessibilityState={isFocused ? { selected: true } : {}}
+                            accessibilityLabel={options.tabBarAccessibilityLabel}
+                            testID={options.tabBarTestID}
+                            onPress={onPress}
+                            onLongPress={onLongPress}
+                            style={styles.tabItem}
                         >
-                            <Ionicons name={iconName} size={24} color={isFocused ? theme.colors.primary : theme.colors.text} />
-                        </Animated.View>
-                        <Text
-                            style={[
-                                styles.tabLabel,
-                                {
-                                    color: isFocused ? theme.colors.primary : theme.colors.text,
-                                    opacity: isFocused ? 1 : 0.7,
-                                },
-                            ]}
-                        >
-                            {label}
-                        </Text>
+                            <Animated.View
+                                style={{
+                                    transform: [{ scale: scaleAnim }],
+                                    opacity: opacityAnim,
+                                }}
+                            >
+                                <Ionicons name={iconName} size={24} color={isFocused ? theme.colors.primary : theme.colors.text} />
+                            </Animated.View>
+                            <Text
+                                style={[
+                                    styles.tabLabel,
+                                    {
+                                        color: isFocused ? theme.colors.primary : theme.colors.text,
+                                        opacity: isFocused ? 1 : 0.7,
+                                    },
+                                ]}
+                            >
+                                {label}
+                            </Text>
 
-                        {/* Badge if needed */}
-                        {/* {route.name === "Countries" && (
+                            {/* Badge if needed */}
+                            {/* {route.name === "Countries" && (
                             <View style={[styles.badge, { backgroundColor: theme.colors.notification }]}>
                                 <Text style={styles.badgeText}>5</Text>
                             </View>
                         )} */}
-                    </TouchableOpacity>
-                )
-            })}
-        </View>
+                        </TouchableOpacity>
+                    )
+                })}
+            </View>
         </SafeAreaView>
     )
 }
