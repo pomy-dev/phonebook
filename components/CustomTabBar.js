@@ -29,8 +29,8 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                 {
                     backgroundColor: theme.colors.card,
                     borderTopColor: theme.colors.border,
-                    paddingBottom: Platform.OS === "ios" ? 20 : 0,
-                    height: 60 + (Platform.OS === "ios" ? 20 : 0),
+                    paddingBottom: Platform.OS === "ios" ? 30 : 30,
+                    height: 60 + (Platform.OS === "ios" ? 30 : 30),
                 },
             ]}
         >
