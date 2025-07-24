@@ -22,20 +22,22 @@ import {
   ActivityIndicator,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { FontAwesome5 } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import location2 from '../assets/images/map10.png'
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get("window")
-const HEADER_MAX_HEIGHT = 220 // Reduced header height
-const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 90 : 70
-const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
 const BOTTOM_SHEET_HEIGHT = height * 0.6
-const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
 
 const BusinessDetailScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
   const { business } = route.params;
+  const HEADER_MAX_HEIGHT = 220 + insets.top
+  const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 80 + insets.top : 60 + insets.top
+  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
+  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
 
   // State variables
   const [isFavorite, setIsFavorite] = useState(false)
@@ -715,7 +717,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "about" ? "information-circle" : "information-circle-outline"}
               size={20}
-              color={activeTab === "about" ? "#003366" : "#999999"}
+              color={activeTab === "about" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>About</Text>
           </TouchableOpacity>
@@ -728,7 +730,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "services" ? "briefcase" : "briefcase-outline"}
               size={20}
-              color={activeTab === "services" ? "#003366" : "#999999"}
+              color={activeTab === "services" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "services" && styles.activeTabText]}>Services</Text>
           </TouchableOpacity>
@@ -741,7 +743,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "gallery" ? "images" : "images-outline"}
               size={20}
-              color={activeTab === "gallery" ? "#003366" : "#999999"}
+              color={activeTab === "gallery" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "gallery" && styles.activeTabText]}>Gallery</Text>
           </TouchableOpacity>
@@ -754,7 +756,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "reviews" ? "chatbubbles" : "chatbubbles-outline"}
               size={20}
-              color={activeTab === "reviews" ? "#003366" : "#999999"}
+              color={activeTab === "reviews" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "reviews" && styles.activeTabText]}>Reviews</Text>
           </TouchableOpacity>
@@ -767,7 +769,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "contact" ? "call" : "call-outline"}
               size={20}
-              color={activeTab === "contact" ? "#003366" : "#999999"}
+              color={activeTab === "contact" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "contact" && styles.activeTabText]}>Contact</Text>
           </TouchableOpacity>
@@ -839,8 +841,10 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </Animated.View>
                   ) : mapError ? (
                     <View style={styles.mapErrorContainer}>
-                      <FontAwesome5 name="search-location" size={44} color="#aaa9aaff" />
-                      <Text style={styles.mapErrorText}>{mapError}</Text>
+                      <Image
+                        source={location2}
+                        style={styles.mapImage}
+                      />
                     </View>
                   ) : (
                     <Image
@@ -855,8 +859,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                       onError={handleMapLoadError}
                     />
                   )}
-
-                  {/* // AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM */}
 
                   <View style={styles.addressContainer}>
                     <Ionicons name="location" size={18} color="#003366" />
@@ -1180,6 +1182,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             {business.company_name}
           </Text>
         </Animated.View>
+
       </Animated.View>
 
       {/* Share Options */}
@@ -1432,6 +1435,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+    backgroundColor: '#4d4b4bff',
     overflow: "hidden",
   },
   headerBackground: {
@@ -1508,12 +1512,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#c6c6c6ff",
     textAlign: "center",
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+
   scrollContent: {
     paddingBottom: 30,
   },
@@ -1522,7 +1527,7 @@ const styles = StyleSheet.create({
   businessInfoContainer: {
     backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
-    marginTop: -40,
+    marginTop: -15,
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -1804,10 +1809,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   mapImage: {
-    width: "100%",
-    height: 180,
+    height: 150,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 5,
   },
   addressContainer: {
     flexDirection: 'row',
