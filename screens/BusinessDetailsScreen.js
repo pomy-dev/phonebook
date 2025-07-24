@@ -20,13 +20,16 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  PermissionsAndroid
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { FontAwesome5 } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
+import * as Location from 'expo-location'
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { AppleMaps, GoogleMaps } from 'expo-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps'
 
 const { width, height } = Dimensions.get("window")
 const HEADER_MAX_HEIGHT = 220 // Reduced header height
@@ -108,7 +111,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           return;
         }
 
-        let location = await Location.getCurrentPositionAsync({});
+        let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
         setUserLocation({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
@@ -979,7 +982,50 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </View>
                   ) : (
                     <View style={styles.mapImage}>
-                      {Platform.OS === 'ios' ? (
+                      <MapView
+                        ref={mapRef}
+                        style={styles.map}
+                        initialRegion={{
+                          latitude: userLocation ? (userLocation.latitude + (business.latitude || 0)) / 2 : business.latitude || 0,
+                          longitude: userLocation ? (userLocation.longitude + (business.longitude || 0)) / 2 : business.longitude || 0,
+                          latitudeDelta: 0.05,
+                          longitudeDelta: 0.05,
+                        }}
+                        provider={Platform.OS === 'android' ? MapView.PROVIDER_GOOGLE : MapView.PROVIDER_DEFAULT}
+                        onError={handleMapLoadError}
+                      >
+                        {userLocation && (
+                          <Marker
+                            coordinate={{
+                              latitude: userLocation.latitude,
+                              longitude: userLocation.longitude,
+                            }}
+                            title="Your Location"
+                            pinColor="blue"
+                          />
+                        )}
+                        {(business.latitude && business.longitude) && (
+                          <Marker
+                            coordinate={{
+                              latitude: business.latitude,
+                              longitude: business.longitude,
+                            }}
+                            title={business.company_name}
+                            description={business.address}
+                            pinColor="red"
+                          />
+                        )}
+                        {directions && (
+                          <Polyline
+                            coordinates={directions}
+                            strokeColor="#003366"
+                            strokeWidth={4}
+                          />
+                        )}
+                      </MapView>
+
+                      {/* Map view of expo-maps */}
+                      {/* {Platform.OS === 'ios' ? (
                         <AppleMaps
                           ref={mapRef}
                           style={styles.map}
@@ -1050,7 +1096,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                           googleMapsApiKey="AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM" // Replace with your Google Maps API key
                           onError={handleMapLoadError}
                         />
-                      )}
+                      )} */}
                     </View>
                   )}
 

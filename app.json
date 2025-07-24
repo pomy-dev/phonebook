@@ -27,7 +27,7 @@
       "edgeToEdgeEnabled": true,
       "config": {
         "googleMaps": {
-          apiKey: "AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM"
+          "apiKey": "AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM"
         }
       },
       "package": "com.pld.phonebook"
