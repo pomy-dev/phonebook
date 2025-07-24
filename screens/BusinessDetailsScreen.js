@@ -24,9 +24,10 @@ import {
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
-import * as Location from 'expo-location'
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import mapLocation from '../assets/images/map10.png'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const { width, height } = Dimensions.get("window")
 const BOTTOM_SHEET_HEIGHT = height * 0.6
@@ -59,8 +60,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [hasWhatsApp, setHasWhatsApp] = useState(false);
   const [mapError, setMapError] = useState(null);
-  const [userLocation, setUserLocation] = useState(null)
-  const [directions, setDirections] = useState(null)
+  // const [userLocation, setUserLocation] = useState(null)
+  // const [directions, setDirections] = useState(null)
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current
@@ -74,7 +75,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   // Refs
   const scrollViewRef = useRef(null)
   const galleryRef = useRef(null)
-  const mapRef = useRef(null)
 
   // Calculate average rating
   const averageRating = business.reviews && business.reviews.length > 0
@@ -83,102 +83,102 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
   // Check if business is in favorites and if it has WhatsApp
   useEffect(() => {
-    const requestLocationPermission = async () => {
-      try {
-        if (Platform.OS === 'android') {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: 'Location Permission',
-              message: 'This app needs access to your location to show directions.',
-              buttonPositive: 'OK',
-              buttonNegative: 'Cancel',
-            }
-          );
-          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-            setMapError('Location permission denied');
-            setLoadingMap(false);
-            return;
-          }
-        }
+    // const requestLocationPermission = async () => {
+    //   try {
+    //     if (Platform.OS === 'android') {
+    //       const granted = await PermissionsAndroid.request(
+    //         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    //         {
+    //           title: 'Location Permission',
+    //           message: 'This app needs access to your location to show directions.',
+    //           buttonPositive: 'OK',
+    //           buttonNegative: 'Cancel',
+    //         }
+    //       );
+    //       if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+    //         setMapError('Location permission denied');
+    //         setLoadingMap(false);
+    //         return;
+    //       }
+    //     }
 
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setMapError('Permission to access location was denied');
-          setLoadingMap(false);
-          return;
-        }
+    //     let { status } = await Location.requestForegroundPermissionsAsync();
+    //     if (status !== 'granted') {
+    //       setMapError('Permission to access location was denied');
+    //       setLoadingMap(false);
+    //       return;
+    //     }
 
-        let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-        setUserLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
+    //     let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+    //     setUserLocation({
+    //       latitude: location.coords.latitude,
+    //       longitude: location.coords.longitude,
+    //     });
 
-        // Fetch directions (assuming business.address is a string address)
-        fetchDirections(location.coords.latitude, location.coords.longitude);
-      } catch (err) {
-        console.warn(err);
-        setMapError('Unable to fetch location');
-        setLoadingMap(false);
-      }
-    };
+    //     // Fetch directions (assuming business.address is a string address)
+    //     fetchDirections(location.coords.latitude, location.coords.longitude);
+    //   } catch (err) {
+    //     console.warn(err);
+    //     setMapError('Unable to fetch location');
+    //     setLoadingMap(false);
+    //   }
+    // };
 
-    const fetchDirections = async (userLat, userLng) => {
-      try {
-        // Convert business address to coordinates (you'll need a geocoding service)
-        // For this example, we'll assume business has latitude and longitude
-        // If not, you'll need to use a geocoding API like Google's
-        const businessLocation = await geocodeAddress(business.address);
-        if (!businessLocation) {
-          setMapError('Unable to geocode business address');
-          setLoadingMap(false);
-          return;
-        }
+    // const fetchDirections = async (userLat, userLng) => {
+    //   try {
+    //     // Convert business address to coordinates (you'll need a geocoding service)
+    //     // For this example, we'll assume business has latitude and longitude
+    //     // If not, you'll need to use a geocoding API like Google's
+    //     const businessLocation = await geocodeAddress(business.address);
+    //     if (!businessLocation) {
+    //       setMapError('Unable to geocode business address');
+    //       setLoadingMap(false);
+    //       return;
+    //     }
 
-        const response = await fetch(
-          `https://maps.googleapis.com/maps/api/directions/json?` +
-          `origin=${userLat},${userLng}&` +
-          `destination=${businessLocation.latitude},${businessLocation.longitude}&` +
-          `mode=driving&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM` // Replace with your Google Maps API key
-        );
-        const data = await response.json();
-        if (data.status === 'OK' && data.routes.length > 0) {
-          const points = decodePolyline(data.routes[0].overview_polyline.points);
-          setDirections(points);
-        } else {
-          setMapError('Unable to fetch directions');
-        }
-      } catch (error) {
-        console.warn(error);
-        setMapError('Error fetching directions');
-      } finally {
-        setLoadingMap(false);
-        Animated.timing(mapLoadingAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }).start();
-      }
-    };
+    //     const response = await fetch(
+    //       `https://maps.googleapis.com/maps/api/directions/json?` +
+    //       `origin=${userLat},${userLng}&` +
+    //       `destination=${businessLocation.latitude},${businessLocation.longitude}&` +
+    //       `mode=driving&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM` // Replace with your Google Maps API key
+    //     );
+    //     const data = await response.json();
+    //     if (data.status === 'OK' && data.routes.length > 0) {
+    //       const points = decodePolyline(data.routes[0].overview_polyline.points);
+    //       setDirections(points);
+    //     } else {
+    //       setMapError('Unable to fetch directions');
+    //     }
+    //   } catch (error) {
+    //     console.warn(error);
+    //     setMapError('Error fetching directions');
+    //   } finally {
+    //     setLoadingMap(false);
+    //     Animated.timing(mapLoadingAnim, {
+    //       toValue: 1,
+    //       duration: 600,
+    //       useNativeDriver: true,
+    //     }).start();
+    //   }
+    // };
 
-    const geocodeAddress = async (address) => {
-      try {
-        const result = await Location.geocodeAsync(address);
-        if (result.length > 0) {
-          return {
-            latitude: result[0].latitude,
-            longitude: result[0].longitude,
-          };
-        }
-        return null;
-      } catch (error) {
-        console.warn(error);
-        return null;
-      }
-    };
+    // const geocodeAddress = async (address) => {
+    //   try {
+    //     const result = await Location.geocodeAsync(address);
+    //     if (result.length > 0) {
+    //       return {
+    //         latitude: result[0].latitude,
+    //         longitude: result[0].longitude,
+    //       };
+    //     }
+    //     return null;
+    //   } catch (error) {
+    //     console.warn(error);
+    //     return null;
+    //   }
+    // };
 
-    requestLocationPermission();
+    // requestLocationPermission();
 
     const checkFavoriteStatus = async () => {
       try {
@@ -244,40 +244,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
       pulseAnimation.stop()
     }
   }, [business._id, business.phone]);
-
-  // Function to decode Google Maps polyline
-  const decodePolyline = (encoded) => {
-    let points = [];
-    let index = 0, len = encoded.length;
-    let lat = 0, lng = 0;
-
-    while (index < len) {
-      let b, shift = 0, result = 0;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
-      lat += dlat;
-
-      shift = 0;
-      result = 0;
-      do {
-        b = encoded.charCodeAt(index++) - 63;
-        result |= (b & 0x1f) << shift;
-        shift += 5;
-      } while (b >= 0x20);
-      let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
-      lng += dlng;
-
-      points.push({
-        latitude: lat / 1e5,
-        longitude: lng / 1e5,
-      });
-    }
-    return points;
-  };
 
   // Function to get images from business data
   function getImages() {
@@ -955,7 +921,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Location</Text>
                 <View style={styles.mapContainer}>
-                  {loadingMap ? (
+                  {/* {loadingMap ? (
                     <Animated.View
                       style={[
                         styles.mapPlaceholder,
@@ -973,28 +939,26 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                         <View style={styles.mapLoadingBar} />
                       </View>
                     </Animated.View>
-                  ) : mapError ? (
-                    <View style={styles.mapErrorContainer}>
-                      <Image
-                        source={location2}
-                        style={styles.mapImage}
-                      />
-                    </View>
-                  ) : (
+                  ) : mapError ? ( */}
+                  <View style={styles.mapErrorContainer}>
                     <Image
-                      source={{
-                        uri:
-                          `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(business.address)}` +
-                          "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
-                          encodeURIComponent(business.address) +
-                          "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM", // Replace with your actual API key
-                      }}
+                      source={mapLocation}
                       style={styles.mapImage}
-                      onError={handleMapLoadError}
                     />
-                  )}
-
-                  {/* // AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM */}
+                  </View>
+                  {/* // ) : (
+                  //   <Image
+                  //     source={{
+                  //       uri:
+                  //         `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(business.address)}` +
+                  //         "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
+                  //         encodeURIComponent(business.address) +
+                  //         "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM", // Replace with your actual API key
+                  //     }}
+                  //     style={styles.mapImage}
+                  //     onError={handleMapLoadError}
+                  //   />
+                  // )} */}
 
                   <View style={styles.addressContainer}>
                     <Ionicons name="location" size={18} color="#003366" />
