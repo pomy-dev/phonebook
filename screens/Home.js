@@ -1176,4 +1176,7 @@ const styles = StyleSheet.create({
     },
 })
 
+// Dalubuhle's api key
+// {/* // AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM */}
+
 export default HomeScreen

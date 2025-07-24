@@ -25,6 +25,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
+      "config": {
+        "googleMaps": {
+          apiKey: "AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM"
+        }
+      },
       "package": "com.pld.phonebook"
     },
     "web": {
@@ -34,6 +39,15 @@
       "eas": {
         "projectId": "714a1268-f123-4701-a388-7a018b514a95"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-maps",
+        {
+          "requestLocationPermission": true,
+          "locationPermission": "Allow Business Link to use maps"
+        }
+      ]
+    ]
   }
 }
