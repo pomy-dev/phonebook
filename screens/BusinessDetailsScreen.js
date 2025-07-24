@@ -23,23 +23,21 @@ import {
   PermissionsAndroid
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { FontAwesome5 } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
 import * as Location from 'expo-location'
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { AppleMaps, GoogleMaps } from 'expo-maps';
-import MapView, { Marker, Polyline } from 'react-native-maps'
 
 const { width, height } = Dimensions.get("window")
-const HEADER_MAX_HEIGHT = 220 // Reduced header height
-const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 90 : 70
-const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
 const BOTTOM_SHEET_HEIGHT = height * 0.6
-const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
 
 const BusinessDetailScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
   const { business } = route.params;
+  const HEADER_MAX_HEIGHT = 220 + insets.top
+  const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 80 + insets.top : 60 + insets.top
+  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
+  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
 
   // State variables
   const [isFavorite, setIsFavorite] = useState(false)
@@ -853,7 +851,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "about" ? "information-circle" : "information-circle-outline"}
               size={20}
-              color={activeTab === "about" ? "#003366" : "#999999"}
+              color={activeTab === "about" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>About</Text>
           </TouchableOpacity>
@@ -866,7 +864,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "services" ? "briefcase" : "briefcase-outline"}
               size={20}
-              color={activeTab === "services" ? "#003366" : "#999999"}
+              color={activeTab === "services" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "services" && styles.activeTabText]}>Services</Text>
           </TouchableOpacity>
@@ -879,7 +877,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "gallery" ? "images" : "images-outline"}
               size={20}
-              color={activeTab === "gallery" ? "#003366" : "#999999"}
+              color={activeTab === "gallery" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "gallery" && styles.activeTabText]}>Gallery</Text>
           </TouchableOpacity>
@@ -892,7 +890,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "reviews" ? "chatbubbles" : "chatbubbles-outline"}
               size={20}
-              color={activeTab === "reviews" ? "#003366" : "#999999"}
+              color={activeTab === "reviews" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "reviews" && styles.activeTabText]}>Reviews</Text>
           </TouchableOpacity>
@@ -905,7 +903,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "contact" ? "call" : "call-outline"}
               size={20}
-              color={activeTab === "contact" ? "#003366" : "#999999"}
+              color={activeTab === "contact" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "contact" && styles.activeTabText]}>Contact</Text>
           </TouchableOpacity>
@@ -977,128 +975,26 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </Animated.View>
                   ) : mapError ? (
                     <View style={styles.mapErrorContainer}>
-                      <FontAwesome5 name="search-location" size={44} color="#aaa9aaff" />
-                      <Text style={styles.mapErrorText}>{mapError}</Text>
+                      <Image
+                        source={location2}
+                        style={styles.mapImage}
+                      />
                     </View>
                   ) : (
-                    <View style={styles.mapImage}>
-                      <MapView
-                        ref={mapRef}
-                        style={styles.map}
-                        initialRegion={{
-                          latitude: userLocation ? (userLocation.latitude + (business.latitude || 0)) / 2 : business.latitude || 0,
-                          longitude: userLocation ? (userLocation.longitude + (business.longitude || 0)) / 2 : business.longitude || 0,
-                          latitudeDelta: 0.05,
-                          longitudeDelta: 0.05,
-                        }}
-                        provider={Platform.OS === 'android' ? MapView.PROVIDER_GOOGLE : MapView.PROVIDER_DEFAULT}
-                        onError={handleMapLoadError}
-                      >
-                        {userLocation && (
-                          <Marker
-                            coordinate={{
-                              latitude: userLocation.latitude,
-                              longitude: userLocation.longitude,
-                            }}
-                            title="Your Location"
-                            pinColor="blue"
-                          />
-                        )}
-                        {(business.latitude && business.longitude) && (
-                          <Marker
-                            coordinate={{
-                              latitude: business.latitude,
-                              longitude: business.longitude,
-                            }}
-                            title={business.company_name}
-                            description={business.address}
-                            pinColor="red"
-                          />
-                        )}
-                        {directions && (
-                          <Polyline
-                            coordinates={directions}
-                            strokeColor="#003366"
-                            strokeWidth={4}
-                          />
-                        )}
-                      </MapView>
-
-                      {/* Map view of expo-maps */}
-                      {/* {Platform.OS === 'ios' ? (
-                        <AppleMaps
-                          ref={mapRef}
-                          style={styles.map}
-                          provider="apple"
-                          initialRegion={{
-                            latitude: userLocation ? (userLocation.latitude + business.latitude) / 2 : business.latitude || 0,
-                            longitude: userLocation ? (userLocation.longitude + business.longitude) / 2 : business.longitude || 0,
-                            latitudeDelta: 0.05,
-                            longitudeDelta: 0.05,
-                          }}
-                          annotations={[
-                            ...(userLocation ? [{
-                              id: 'user-location',
-                              latitude: userLocation.latitude,
-                              longitude: userLocation.longitude,
-                              title: 'Your Location',
-                              pinColor: 'blue',
-                            }] : []),
-                            {
-                              id: 'business-location',
-                              latitude: business.latitude || 0,
-                              longitude: business.longitude || 0,
-                              title: business.company_name,
-                              subtitle: business.address,
-                              pinColor: 'red',
-                            },
-                          ]}
-                          polylines={directions ? [{
-                            coordinates: directions,
-                            strokeColor: '#003366',
-                            strokeWidth: 4,
-                          }] : []}
-                          onError={handleMapLoadError}
-                        />
-                      ) : (
-                        <GoogleMaps
-                          ref={mapRef}
-                          style={styles.map}
-                          provider="google"
-                          initialRegion={{
-                            latitude: userLocation ? (userLocation.latitude + business.latitude) / 2 : business.latitude || 0,
-                            longitude: userLocation ? (userLocation.longitude + business.longitude) / 2 : business.longitude || 0,
-                            latitudeDelta: 0.05,
-                            longitudeDelta: 0.05,
-                          }}
-                          annotations={[
-                            ...(userLocation ? [{
-                              id: 'user-location',
-                              latitude: userLocation.latitude,
-                              longitude: userLocation.longitude,
-                              title: 'Your Location',
-                              pinColor: 'blue',
-                            }] : []),
-                            {
-                              id: 'business-location',
-                              latitude: business.latitude || 0,
-                              longitude: business.longitude || 0,
-                              title: business.company_name,
-                              subtitle: business.address,
-                              pinColor: 'red',
-                            },
-                          ]}
-                          polylines={directions ? [{
-                            coordinates: directions,
-                            strokeColor: '#003366',
-                            strokeWidth: 4,
-                          }] : []}
-                          googleMapsApiKey="AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM" // Replace with your Google Maps API key
-                          onError={handleMapLoadError}
-                        />
-                      )} */}
-                    </View>
+                    <Image
+                      source={{
+                        uri:
+                          `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(business.address)}` +
+                          "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
+                          encodeURIComponent(business.address) +
+                          "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM", // Replace with your actual API key
+                      }}
+                      style={styles.mapImage}
+                      onError={handleMapLoadError}
+                    />
                   )}
+
+                  {/* // AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM */}
 
                   <View style={styles.addressContainer}>
                     <Ionicons name="location" size={18} color="#003366" />
@@ -1422,6 +1318,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             {business.company_name}
           </Text>
         </Animated.View>
+
       </Animated.View>
 
       {/* Share Options */}
@@ -1674,6 +1571,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+    backgroundColor: '#4d4b4bff',
     overflow: "hidden",
   },
   headerBackground: {
@@ -1750,12 +1648,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#c6c6c6ff",
     textAlign: "center",
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+
   scrollContent: {
     paddingBottom: 30,
   },
@@ -1764,7 +1663,7 @@ const styles = StyleSheet.create({
   businessInfoContainer: {
     backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
-    marginTop: -40,
+    marginTop: -15,
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -2046,10 +1945,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   mapImage: {
-    width: "100%",
-    height: 180,
+    height: 150,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 5,
   },
   addressContainer: {
     flexDirection: 'row',
