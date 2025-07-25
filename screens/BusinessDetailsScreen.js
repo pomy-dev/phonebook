@@ -846,7 +846,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Text style={[styles.tabText, activeTab === "gallery" && styles.activeTabText]}>Gallery</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[styles.tabButton, activeTab === "reviews" && styles.activeTabButton]}
             onPress={() => handleTabPress("reviews")}
             activeOpacity={0.7}
@@ -857,7 +857,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               color={activeTab === "reviews" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "reviews" && styles.activeTabText]}>Reviews</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "contact" && styles.activeTabButton]}
@@ -1047,7 +1047,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           )}
 
           {/* Reviews Tab */}
-          {activeTab === "reviews" && (
+          {/* {activeTab === "reviews" && (
             <View style={styles.section}>
               <View style={styles.reviewsHeader}>
                 <Text style={styles.sectionTitle}>Customer Reviews</Text>
@@ -1086,7 +1086,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 <Text style={styles.writeReviewText}>Write a Review</Text>
               </TouchableOpacity>
             </View>
-          )}
+          )} */}
 
           {/* Contact Tab */}
           {activeTab === "contact" && (
