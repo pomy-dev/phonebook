@@ -1,54 +1,60 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import API_BASE_URL from "../config/env"
+import API_BASE_URL from "../config/env";
 
 export const fetchAllCompanies = async () => {
   try {
+    await AsyncStorage.removeItem("companiesList");
+
     const response = await fetch(`${API_BASE_URL}/api/companies`, {
-      method: 'GET', // HTTP method
+      method: "GET", // HTTP method
       headers: {
-        'Content-Type': 'application/json', // Set content type to JSON
+        "Content-Type": "application/json", // Set content type to JSON
       },
     });
 
     // Check if the response is okay (status code 200-299)
     if (!response.ok) {
-      throw new Error('Network response was not ok ' + response.statusText);
+      throw new Error("Network response was not ok " + response.statusText);
     }
 
     const data = await response.json(); // Parse JSON response
 
     // Filter to only include companies where paid is true
-    const paidCompanies = data.companies.filter(company => company.paid === true);
+    const paidCompanies = data.companies.filter(
+      (company) => company.paid === true
+    );
 
-    // Store only paid companies in AsyncStorage
-    await AsyncStorage.setItem('companies', JSON.stringify(paidCompanies));
+  
+    await AsyncStorage.setItem("companiesList", JSON.stringify(paidCompanies));
 
     const timestamp = new Date().toISOString();
-    await AsyncStorage.setItem('companies_timestamp', timestamp);
+    await AsyncStorage.setItem("companies_timestamp", timestamp);
 
     // Return only the paid companies
     return paidCompanies;
   } catch (error) {
-    console.error('Error fetching companies:', error);
+    console.error("Error fetching companies:", error);
     throw error; // Propagate the error for further handling
   }
 };
 
 export const fetchAllCompaniesOffline = async () => {
   try {
-    const storedCompanies = await AsyncStorage.getItem('companies');
+    const storedCompanies = await AsyncStorage.getItem("companiesList");
     const companyData = storedCompanies ? JSON.parse(storedCompanies) : [];
+
+
     return companyData;
   } catch (error) {
-    console.error('Error retrieving companies from AsyncStorage:', error);
+    console.error("Error retrieving companies from AsyncStorage:", error);
     return [];
   }
 };
 
 export const fetchCompaniesWithAge = async () => {
   try {
-    const storedCompanies = await AsyncStorage.getItem('companies');
-    const storedTimestamp = await AsyncStorage.getItem('companies_timestamp');
+    const storedCompanies = await AsyncStorage.getItem("companies");
+    const storedTimestamp = await AsyncStorage.getItem("companies_timestamp");
 
     if (storedCompanies && storedTimestamp) {
       const companies = JSON.parse(storedCompanies);
@@ -72,7 +78,7 @@ export const fetchCompaniesWithAge = async () => {
 export const loadOfflineData = async () => {
   try {
     const data = await fetchAllCompaniesOffline();
-    const companyData = data ? JSON.parse(data) : []
+    const companyData = data ? JSON.parse(data) : [];
 
     return companyData;
   } catch (err) {
