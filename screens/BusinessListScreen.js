@@ -90,7 +90,6 @@ export default function BusinessList({ route, navigation }) {
       console.log(category);
       setLoading(true);
       const companyData = await fetchAllCompaniesOffline();
-  
 
       setBusinesses(companyData);
       setLoading(false);
@@ -583,6 +582,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+    
   },
   titleContainer: {
     flexDirection: "row",
