@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,35 +15,36 @@ import {
   Alert,
   Modal,
   Dimensions,
-} from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import { fetchAllCompaniesOffline } from "../service/getApi"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import connectWhatsApp from "../components/connectWhatsApp"
-import connectEmail from "../components/connectEmail"
-import findLocation from "../components/findLocation"
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { fetchAllCompaniesOffline } from "../service/getApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import connectWhatsApp from "../components/connectWhatsApp";
+import connectEmail from "../components/connectEmail";
+import findLocation from "../components/findLocation";
 
-const { width } = Dimensions.get("window")
+const { width } = Dimensions.get("window");
 export default function BusinessList({ route, navigation }) {
-  const { category } = route.params
-  const [businesses, setBusinesses] = useState([])
-  const [filteredBusinesses, setFilteredBusinesses] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false)
-  const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null)
-  const [favorites, setFavorites] = useState([])
+  const { category } = route.params;
+  const [businesses, setBusinesses] = useState([]);
+  const [filteredBusinesses, setFilteredBusinesses] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
+  const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
+  const [favorites, setFavorites] = useState([]);
 
   // Load favorites from AsyncStorage
   useEffect(() => {
     const loadFavorites = async () => {
       try {
-        const storedFavorites = await AsyncStorage.getItem('favorites');
+        const storedFavorites = await AsyncStorage.getItem("favorites");
+
         if (storedFavorites) {
           setFavorites(JSON.parse(storedFavorites));
         }
       } catch (error) {
-        console.log('Error loading favorites:', error);
+        console.log("Error loading favorites:", error);
       }
     };
 
@@ -52,7 +53,7 @@ export default function BusinessList({ route, navigation }) {
 
   // Check if a business is in favorites
   const isInFavorites = (businessId) => {
-    return favorites.some(fav => fav._id === businessId);
+    return favorites.some((fav) => fav._id === businessId);
   };
 
   // Toggle favorite status
@@ -66,7 +67,7 @@ export default function BusinessList({ route, navigation }) {
 
       if (isInFavorites(business._id)) {
         // Remove from favorites
-        newFavorites = newFavorites.filter(fav => fav._id !== business._id);
+        newFavorites = newFavorites.filter((fav) => fav._id !== business._id);
       } else {
         // Add to favorites
         newFavorites.push(business);
@@ -76,24 +77,26 @@ export default function BusinessList({ route, navigation }) {
       setFavorites(newFavorites);
 
       // Save to AsyncStorage
-      await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
+      await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
     } catch (error) {
-      console.log('Error updating favorites:', error);
-      Alert.alert('Error', 'Could not update favorites. Please try again.');
+      console.log("Error updating favorites:", error);
+      Alert.alert("Error", "Could not update favorites. Please try again.");
     }
   };
 
   // Mock data - in a real app, this would come from your API based on the category
   useEffect(() => {
     async function loadCompanies() {
-      console.log(category)
-      setLoading(true)
-      const companyData = await fetchAllCompaniesOffline()
-      setBusinesses(companyData)
-      setLoading(false)
+      console.log(category);
+      setLoading(true);
+      const companyData = await fetchAllCompaniesOffline();
+  
+
+      setBusinesses(companyData);
+      setLoading(false);
     }
-    loadCompanies()
-  }, [category])
+    loadCompanies();
+  }, [category]);
 
   useEffect(() => {
     if (businesses.length > 0) {
@@ -107,14 +110,26 @@ export default function BusinessList({ route, navigation }) {
       });
       const filtered = filteredArray.filter(
         (business) =>
-          business.company_name.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-          business.address.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
-          (business.description && business.description.toLowerCase().includes(searchQuery.toLowerCase().trim())) ||
-          (business.company_tags && Array.isArray(business.company_tags) && business.company_tags.join(", ").toLowerCase().includes(searchQuery.toLowerCase().trim()))
-      )
-      setFilteredBusinesses(filtered)
+          business.company_name
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase().trim()) ||
+          business.address
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase().trim()) ||
+          (business.description &&
+            business.description
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase().trim())) ||
+          (business.company_tags &&
+            Array.isArray(business.company_tags) &&
+            business.company_tags
+              .join(", ")
+              .toLowerCase()
+              .includes(searchQuery.toLowerCase().trim()))
+      );
+      setFilteredBusinesses(filtered);
     }
-  }, [searchQuery, businesses])
+  }, [searchQuery, businesses]);
 
   const handleCall = (phoneNumbers, e) => {
     if (e) {
@@ -122,29 +137,41 @@ export default function BusinessList({ route, navigation }) {
     }
 
     if (!phoneNumbers || phoneNumbers.length === 0) {
-      Alert.alert('No Phone Number', 'This business has no phone number listed.');
+      Alert.alert(
+        "No Phone Number",
+        "This business has no phone number listed."
+      );
       return;
     }
 
     if (phoneNumbers.length === 1) {
       // If there's only one phone number, ask for confirmation
-      Alert.alert("Call Business", `Would you like to call ${phoneNumbers[0].number}?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Call", onPress: () => Linking.openURL(`tel:${phoneNumbers[0].number}`) },
-      ])
+      Alert.alert(
+        "Call Business",
+        `Would you like to call ${phoneNumbers[0].number}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Call",
+            onPress: () => Linking.openURL(`tel:${phoneNumbers[0].number}`),
+          },
+        ]
+      );
     } else if (phoneNumbers.length > 1) {
       // If there are multiple phone numbers, show a selection dialog with cancel option
       const options = phoneNumbers.map((phone) => ({
-        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}: ${phone.number}`,
+        text: `${
+          phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
+        }: ${phone.number}`,
         onPress: () => Linking.openURL(`tel:${phone.number}`),
-      }))
+      }));
 
       // Add cancel option
-      options.push({ text: "Cancel", style: "cancel" })
+      options.push({ text: "Cancel", style: "cancel" });
 
-      Alert.alert("Select Phone Number", "Choose a number to call", options)
+      Alert.alert("Select Phone Number", "Choose a number to call", options);
     }
-  }
+  };
 
   const handleWhatsapp = (phones, e) => {
     if (e) {
@@ -152,45 +179,53 @@ export default function BusinessList({ route, navigation }) {
     }
 
     if (!phones || phones.length === 0) {
-      Alert.alert('No WhatsApp', 'This business has no WhatsApp number listed.');
+      Alert.alert(
+        "No WhatsApp",
+        "This business has no WhatsApp number listed."
+      );
       return;
     }
-
 
     for (let i = 0; i < phones.length; i++) {
       if (phones[i].phone_type == "whatsapp") {
         connectWhatsApp(phones[i].number);
         return;
       } else {
-        Alert.alert('No WhatsApp', 'This business has no WhatsApp number listed.');
+        Alert.alert(
+          "No WhatsApp",
+          "This business has no WhatsApp number listed."
+        );
       }
     }
-  }
+  };
 
   const handleEmail = (email, e) => {
     if (e) {
       e.stopPropagation();
     }
     connectEmail(email);
-  }
+  };
 
   const handleLocation = (address, e) => {
     if (e) {
       e.stopPropagation();
     }
     findLocation(address);
-  }
+  };
 
   const handleBusinessPress = (business) => {
-    if (business.subscription_type && business.subscription_type.toLowerCase() === "bronze") {
+    if (
+      business.subscription_type &&
+      business.subscription_type.toLowerCase() === "bronze"
+    ) {
       // For Bronze businesses, show upgrade modal instead of navigating
-      setSelectedBronzeBusiness(business)
-      setUpgradeModalVisible(true)
+      setSelectedBronzeBusiness(business);
+      setUpgradeModalVisible(true);
     } else {
       // For Silver and Gold, navigate to business detail
-      navigation.navigate("BusinessDetail", { business })
+      navigation.navigate("BusinessDetail", { business });
     }
-  }
+  };
 
   const renderBusinessItem = ({ item }) => (
     <TouchableOpacity
@@ -202,18 +237,42 @@ export default function BusinessList({ route, navigation }) {
       <View style={styles.favoriteHeader}>
         <View style={styles.businessImageContainer}>
           {item.logo ? (
-            <Image source={{ uri: item.logo }} style={styles.businessImage} resizeMode="cover" />
+            <Image
+              source={{ uri: item.logo }}
+              style={styles.businessImage}
+              resizeMode="cover"
+            />
           ) : (
             <View style={styles.businessInitialContainer}>
-              <Text style={styles.businessInitial}>{item.company_name.charAt(0)}</Text>
+              <Text style={styles.businessInitial}>
+                {item.company_name.charAt(0)}
+              </Text>
             </View>
           )}
         </View>
 
         <View style={styles.businessInfo}>
-          <Text style={styles.businessName} numberOfLines={1} ellipsizeMode="tail">{item.company_name}</Text>
-          <Text style={styles.businessCategory} numberOfLines={1} ellipsizeMode="tail">{item.company_type}</Text>
-          <Text style={styles.businessAddress} numberOfLines={1} ellipsizeMode="tail">{item.address}</Text>
+          <Text
+            style={styles.businessName}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.company_name}
+          </Text>
+          <Text
+            style={styles.businessCategory}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.company_type}
+          </Text>
+          <Text
+            style={styles.businessAddress}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.address}
+          </Text>
         </View>
 
         {/* Favorite heart icon */}
@@ -241,7 +300,7 @@ export default function BusinessList({ route, navigation }) {
           <Text style={styles.actionButtonText}>Call</Text>
         </TouchableOpacity>
 
-        {item.phone && item.phone.some(p => p.phone_type == 'whatsapp') && (
+        {item.phone && item.phone.some((p) => p.phone_type == "whatsapp") && (
           <TouchableOpacity
             style={styles.actionButton}
             onPress={(e) => {
@@ -271,17 +330,20 @@ export default function BusinessList({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {(!item.subscription_type || item.subscription_type.toLowerCase() !== "bronze") && (
+      {(!item.subscription_type ||
+        item.subscription_type.toLowerCase() !== "bronze") && (
         <TouchableOpacity
           style={styles.viewDetailsButton}
-          onPress={() => navigation.navigate("BusinessDetail", { business: item })}
+          onPress={() =>
+            navigation.navigate("BusinessDetail", { business: item })
+          }
         >
           <Text style={styles.viewDetailsText}>View Details</Text>
           <Ionicons name="chevron-forward" size={16} color="#003366" />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -325,31 +387,51 @@ export default function BusinessList({ route, navigation }) {
                       </View>
                     )}
                   </View>
-                  <Text style={styles.upgradeBusinessName}>{selectedBronzeBusiness.company_name}</Text>
-                  <Text style={styles.businessType}>{selectedBronzeBusiness.company_type}</Text>
+                  <Text style={styles.upgradeBusinessName}>
+                    {selectedBronzeBusiness.company_name}
+                  </Text>
+                  <Text style={styles.businessType}>
+                    {selectedBronzeBusiness.company_type}
+                  </Text>
                 </View>
 
                 <View style={styles.basicInfoContainer}>
-                  {selectedBronzeBusiness.phone && selectedBronzeBusiness.phone.length > 0 && (
-                    <TouchableOpacity
-                      style={styles.basicInfoItem}
-                      onPress={() => handleCall(selectedBronzeBusiness.phone)}
-                    >
-                      <Ionicons name="call-outline" size={20} color="#003366" />
-                      <Text style={styles.basicInfoText}>{selectedBronzeBusiness.phone[0].number}</Text>
-                    </TouchableOpacity>
-                  )}
-
                   {selectedBronzeBusiness.phone &&
-                    selectedBronzeBusiness.phone.some(p => p.phone_type === 'whatsApp') && (
+                    selectedBronzeBusiness.phone.length > 0 && (
                       <TouchableOpacity
                         style={styles.basicInfoItem}
-                        onPress={() => handleWhatsapp(selectedBronzeBusiness.phone)}
+                        onPress={() => handleCall(selectedBronzeBusiness.phone)}
                       >
-                        <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+                        <Ionicons
+                          name="call-outline"
+                          size={20}
+                          color="#003366"
+                        />
                         <Text style={styles.basicInfoText}>
-                          {selectedBronzeBusiness.phone.find(p => p.phone_type === 'whatsApp')?.number ||
-                            selectedBronzeBusiness.phone[0].number}
+                          {selectedBronzeBusiness.phone[0].number}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                  {selectedBronzeBusiness.phone &&
+                    selectedBronzeBusiness.phone.some(
+                      (p) => p.phone_type === "whatsApp"
+                    ) && (
+                      <TouchableOpacity
+                        style={styles.basicInfoItem}
+                        onPress={() =>
+                          handleWhatsapp(selectedBronzeBusiness.phone)
+                        }
+                      >
+                        <Ionicons
+                          name="logo-whatsapp"
+                          size={20}
+                          color="#25D366"
+                        />
+                        <Text style={styles.basicInfoText}>
+                          {selectedBronzeBusiness.phone.find(
+                            (p) => p.phone_type === "whatsApp"
+                          )?.number || selectedBronzeBusiness.phone[0].number}
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -358,8 +440,14 @@ export default function BusinessList({ route, navigation }) {
                     style={styles.basicInfoItem}
                     onPress={() => findLocation(selectedBronzeBusiness.address)}
                   >
-                    <Ionicons name="location-outline" size={20} color="#5856D6" />
-                    <Text style={styles.basicInfoText}>{selectedBronzeBusiness.address}</Text>
+                    <Ionicons
+                      name="location-outline"
+                      size={20}
+                      color="#5856D6"
+                    />
+                    <Text style={styles.basicInfoText}>
+                      {selectedBronzeBusiness.address}
+                    </Text>
                   </TouchableOpacity>
 
                   {selectedBronzeBusiness.email && (
@@ -368,7 +456,9 @@ export default function BusinessList({ route, navigation }) {
                       onPress={() => connectEmail(selectedBronzeBusiness.email)}
                     >
                       <Ionicons name="mail-outline" size={20} color="#FF9500" />
-                      <Text style={styles.basicInfoText}>{selectedBronzeBusiness.email}</Text>
+                      <Text style={styles.basicInfoText}>
+                        {selectedBronzeBusiness.email}
+                      </Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -377,9 +467,12 @@ export default function BusinessList({ route, navigation }) {
                   <TouchableOpacity
                     style={styles.primaryActionButton}
                     onPress={() => {
-                      setUpgradeModalVisible(false)
-                      if (selectedBronzeBusiness.phone && selectedBronzeBusiness.phone.length > 0) {
-                        handleCall(selectedBronzeBusiness.phone)
+                      setUpgradeModalVisible(false);
+                      if (
+                        selectedBronzeBusiness.phone &&
+                        selectedBronzeBusiness.phone.length > 0
+                      ) {
+                        handleCall(selectedBronzeBusiness.phone);
                       }
                     }}
                   >
@@ -391,17 +484,21 @@ export default function BusinessList({ route, navigation }) {
                     <TouchableOpacity
                       style={styles.secondaryActionButton}
                       onPress={() => {
-                        handleWhatsapp(selectedBronzeBusiness.phone)
+                        handleWhatsapp(selectedBronzeBusiness.phone);
                       }}
                     >
-                      <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+                      <Ionicons
+                        name="logo-whatsapp"
+                        size={20}
+                        color="#25D366"
+                      />
                       <Text style={styles.secondaryActionText}>Chat</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                       style={styles.secondaryActionButton}
                       onPress={() => {
-                        connectEmail(selectedBronzeBusiness.email)
+                        connectEmail(selectedBronzeBusiness.email);
                       }}
                     >
                       <Ionicons name="mail-outline" size={20} color="#FF9500" />
@@ -411,10 +508,14 @@ export default function BusinessList({ route, navigation }) {
                     <TouchableOpacity
                       style={styles.secondaryActionButton}
                       onPress={() => {
-                        findLocation(selectedBronzeBusiness.address)
+                        findLocation(selectedBronzeBusiness.address);
                       }}
                     >
-                      <Ionicons name="location-outline" size={20} color="#5856D6" />
+                      <Ionicons
+                        name="location-outline"
+                        size={20}
+                        color="#5856D6"
+                      />
                       <Text style={styles.secondaryActionText}>Map</Text>
                     </TouchableOpacity>
                   </View>
@@ -436,7 +537,12 @@ export default function BusinessList({ route, navigation }) {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchWrapper}>
-          <Ionicons name="search-outline" size={20} color="#AAAAAA" style={styles.searchIcon} />
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color="#AAAAAA"
+            style={styles.searchIcon}
+          />
           <TextInput
             placeholder="Search businesses"
             style={styles.searchInput}
@@ -462,13 +568,15 @@ export default function BusinessList({ route, navigation }) {
             <View style={styles.noResultsContainer}>
               <Ionicons name="business-outline" size={48} color="#DDDDDD" />
               <Text style={styles.noResultsText}>No businesses found</Text>
-              <Text style={styles.noResultsSubtext}>Try a different search term</Text>
+              <Text style={styles.noResultsSubtext}>
+                Try a different search term
+              </Text>
             </View>
           }
         />
       )}
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -530,7 +638,7 @@ const styles = StyleSheet.create({
     // borderRadius: 16,
     marginBottom: 16,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -540,9 +648,9 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
   },
   favoriteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
   },
   businessImageContainer: {
     marginRight: 16,
@@ -556,14 +664,14 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 12,
-    backgroundColor: '#003366',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#003366",
+    justifyContent: "center",
+    alignItems: "center",
   },
   businessInitial: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   businessInfo: {
     flex: 1,
@@ -571,21 +679,21 @@ const styles = StyleSheet.create({
   },
   businessName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: "600",
+    color: "#333333",
     marginBottom: 4,
   },
   businessCategory: {
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     marginBottom: 2,
   },
   businessAddress: {
     fontSize: 13,
-    color: '#999999',
+    color: "#999999",
   },
   favoriteButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     padding: 4,
@@ -593,19 +701,19 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
     marginVertical: 16,
   },
   actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 16,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F8F8',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F8F8",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 12,
@@ -613,22 +721,22 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     fontSize: 13,
-    color: '#333333',
+    color: "#333333",
     marginLeft: 6,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   viewDetailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: "#F0F4FF",
     borderRadius: 12,
   },
   viewDetailsText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#003366',
+    fontWeight: "600",
+    color: "#003366",
     marginRight: 4,
   },
   noResultsContainer: {
@@ -754,7 +862,7 @@ const styles = StyleSheet.create({
     color: "#333333",
     marginLeft: 12,
     flex: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   actionButtonsContainer: {
     gap: 16,
@@ -793,4 +901,4 @@ const styles = StyleSheet.create({
     color: "#333333",
     marginTop: 4,
   },
-})
+});
