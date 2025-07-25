@@ -16,6 +16,7 @@ export default function HomeStackNavigator() {
       <HomeStack.Screen name="HomeDetails" component={HomeScreenDetails} options={{ headerShown: false }} />
       <HomeStack.Screen name="BusinessDetail" component={BusinessDetailsScreen} options={{ headerShown: false }} />
       <HomeStack.Screen name="Featured" component={FeaturedScreen} options={{ headerShown: false }} />
+      {/* <HomeStack.Screen name="Favorites" component={FeaturedScreen} options={{ headerShown: false }} /> */}
       <HomeStack.Screen name="Search" component={BusinessSearchScreen} options={{ headerShown: false }} />
     </HomeStack.Navigator>
   );

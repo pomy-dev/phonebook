@@ -4,7 +4,6 @@ import {
   View,
   Text,
   Image,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
@@ -222,9 +221,8 @@ const HomeScreen = ({ navigation }) => {
     } else if (phoneNumbers.length > 1) {
       // If there are multiple phone numbers, show a selection dialog with cancel option
       const options = phoneNumbers.map((phone) => ({
-        text: `${
-          phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-        }: ${phone.number}`,
+        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
+          }: ${phone.number}`,
         onPress: () => Linking.openURL(`tel:${phone.number}`),
       }));
 
@@ -561,12 +559,7 @@ const HomeScreen = ({ navigation }) => {
               color="#AAAAAA"
               style={styles.searchIcon}
             />
-            {/* <TextInput
-              placeholder="Search businesses"
-              style={styles.searchInput}
-              placeholderTextColor="#AAAAAA"
-              
-            /> */}
+            <Text style={styles.searchInput}>Search businesses</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -855,7 +848,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingTop: 30,
     paddingBottom: 16,
   },
   appTitle: {
@@ -883,24 +876,23 @@ const styles = StyleSheet.create({
     color: "#003366",
   },
   searchContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 15,
     paddingBottom: 20,
   },
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8F8F8",
-    borderRadius: 16,
+    borderRadius: 5,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   searchIcon: {
     marginRight: 10,
   },
   searchInput: {
-    flex: 1,
     fontSize: 16,
-    color: "#333333",
+    color: "#AAAAAA",
     fontWeight: "400",
   },
   sectionContainer: {
