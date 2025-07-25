@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingHorizontal: 24,
-        paddingTop: 24,
+        paddingTop: 30,
         paddingBottom: 16,
     },
     appTitle: {
@@ -332,16 +332,16 @@ const styles = StyleSheet.create({
         color: "#003366",
     },
     searchContainer: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 15,
         paddingBottom: 20,
     },
     searchWrapper: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#F8F8F8",
-        borderRadius: 16,
+        borderRadius: 5,
         paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingVertical: 5,
     },
     searchIcon: {
         marginRight: 10,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        paddingHorizontal: 24,
+        paddingHorizontal: 10,
         marginBottom: 16,
     },
     sectionTitle: {
@@ -413,10 +413,10 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     allCategoriesContainer: {
-        paddingBottom: 20,
+        paddingBottom: 15,
     },
     categoriesList: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 10,
     },
     categoryButton: {
         flexDirection: "row",

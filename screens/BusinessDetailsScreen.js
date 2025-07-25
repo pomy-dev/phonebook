@@ -20,21 +20,25 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  PermissionsAndroid
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import mapLocation from '../assets/images/map10.png'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const { width, height } = Dimensions.get("window")
-const HEADER_MAX_HEIGHT = 220 // Reduced header height
-const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 90 : 70
-const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
 const BOTTOM_SHEET_HEIGHT = height * 0.6
-const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
 
 const BusinessDetailScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
   const { business } = route.params;
+  const HEADER_MAX_HEIGHT = 220 + insets.top
+  const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 80 + insets.top : 60 + insets.top
+  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
+  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
 
   // State variables
   const [isFavorite, setIsFavorite] = useState(false)
@@ -55,6 +59,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [reviewRating, setReviewRating] = useState(5);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [hasWhatsApp, setHasWhatsApp] = useState(false);
+  const [mapError, setMapError] = useState(null);
+  // const [userLocation, setUserLocation] = useState(null)
+  // const [directions, setDirections] = useState(null)
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current
@@ -76,6 +83,103 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
   // Check if business is in favorites and if it has WhatsApp
   useEffect(() => {
+    // const requestLocationPermission = async () => {
+    //   try {
+    //     if (Platform.OS === 'android') {
+    //       const granted = await PermissionsAndroid.request(
+    //         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    //         {
+    //           title: 'Location Permission',
+    //           message: 'This app needs access to your location to show directions.',
+    //           buttonPositive: 'OK',
+    //           buttonNegative: 'Cancel',
+    //         }
+    //       );
+    //       if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+    //         setMapError('Location permission denied');
+    //         setLoadingMap(false);
+    //         return;
+    //       }
+    //     }
+
+    //     let { status } = await Location.requestForegroundPermissionsAsync();
+    //     if (status !== 'granted') {
+    //       setMapError('Permission to access location was denied');
+    //       setLoadingMap(false);
+    //       return;
+    //     }
+
+    //     let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+    //     setUserLocation({
+    //       latitude: location.coords.latitude,
+    //       longitude: location.coords.longitude,
+    //     });
+
+    //     // Fetch directions (assuming business.address is a string address)
+    //     fetchDirections(location.coords.latitude, location.coords.longitude);
+    //   } catch (err) {
+    //     console.warn(err);
+    //     setMapError('Unable to fetch location');
+    //     setLoadingMap(false);
+    //   }
+    // };
+
+    // const fetchDirections = async (userLat, userLng) => {
+    //   try {
+    //     // Convert business address to coordinates (you'll need a geocoding service)
+    //     // For this example, we'll assume business has latitude and longitude
+    //     // If not, you'll need to use a geocoding API like Google's
+    //     const businessLocation = await geocodeAddress(business.address);
+    //     if (!businessLocation) {
+    //       setMapError('Unable to geocode business address');
+    //       setLoadingMap(false);
+    //       return;
+    //     }
+
+    //     const response = await fetch(
+    //       `https://maps.googleapis.com/maps/api/directions/json?` +
+    //       `origin=${userLat},${userLng}&` +
+    //       `destination=${businessLocation.latitude},${businessLocation.longitude}&` +
+    //       `mode=driving&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM` // Replace with your Google Maps API key
+    //     );
+    //     const data = await response.json();
+    //     if (data.status === 'OK' && data.routes.length > 0) {
+    //       const points = decodePolyline(data.routes[0].overview_polyline.points);
+    //       setDirections(points);
+    //     } else {
+    //       setMapError('Unable to fetch directions');
+    //     }
+    //   } catch (error) {
+    //     console.warn(error);
+    //     setMapError('Error fetching directions');
+    //   } finally {
+    //     setLoadingMap(false);
+    //     Animated.timing(mapLoadingAnim, {
+    //       toValue: 1,
+    //       duration: 600,
+    //       useNativeDriver: true,
+    //     }).start();
+    //   }
+    // };
+
+    // const geocodeAddress = async (address) => {
+    //   try {
+    //     const result = await Location.geocodeAsync(address);
+    //     if (result.length > 0) {
+    //       return {
+    //         latitude: result[0].latitude,
+    //         longitude: result[0].longitude,
+    //       };
+    //     }
+    //     return null;
+    //   } catch (error) {
+    //     console.warn(error);
+    //     return null;
+    //   }
+    // };
+
+    // requestLocationPermission();
+
     const checkFavoriteStatus = async () => {
       try {
         const storedFavorites = await AsyncStorage.getItem('favorites');
@@ -478,6 +582,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     setShowRatingDetails(!showRatingDetails)
   }
 
+  // Handle map image load errors
+  const handleMapLoadError = () => {
+    setMapError('Map unloaded. Check network connection.');
+    setLoadingMap(false);
+  };
+
   // Render functions
   const renderStars = (rating, size = 16, color = "#FFD700") => {
     const stars = []
@@ -707,7 +817,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "about" ? "information-circle" : "information-circle-outline"}
               size={20}
-              color={activeTab === "about" ? "#003366" : "#999999"}
+              color={activeTab === "about" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>About</Text>
           </TouchableOpacity>
@@ -720,7 +830,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "services" ? "briefcase" : "briefcase-outline"}
               size={20}
-              color={activeTab === "services" ? "#003366" : "#999999"}
+              color={activeTab === "services" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "services" && styles.activeTabText]}>Services</Text>
           </TouchableOpacity>
@@ -733,7 +843,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "gallery" ? "images" : "images-outline"}
               size={20}
-              color={activeTab === "gallery" ? "#003366" : "#999999"}
+              color={activeTab === "gallery" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "gallery" && styles.activeTabText]}>Gallery</Text>
           </TouchableOpacity>
@@ -746,7 +856,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "reviews" ? "chatbubbles" : "chatbubbles-outline"}
               size={20}
-              color={activeTab === "reviews" ? "#003366" : "#999999"}
+              color={activeTab === "reviews" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "reviews" && styles.activeTabText]}>Reviews</Text>
           </TouchableOpacity>
@@ -759,7 +869,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Ionicons
               name={activeTab === "contact" ? "call" : "call-outline"}
               size={20}
-              color={activeTab === "contact" ? "#003366" : "#999999"}
+              color={activeTab === "contact" ? "#FFFFFF" : "#999999"}
             />
             <Text style={[styles.tabText, activeTab === "contact" && styles.activeTabText]}>Contact</Text>
           </TouchableOpacity>
@@ -795,9 +905,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 <View style={styles.section}>
                   <View style={styles.sectionHeaderRow}>
                     <Text style={styles.sectionTitle}>Business Hours</Text>
-                    {/* <View style={styles.openNowBadge}>
-                      <Text style={styles.openNowText}>Open Now</Text>
-                    </View> */}
                   </View>
                   <View style={styles.hoursContainer}>
                     {business.working_hours.map((hours, index) => (
@@ -814,7 +921,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Location</Text>
                 <View style={styles.mapContainer}>
-                  {loadingMap ? (
+                  {/* {loadingMap ? (
                     <Animated.View
                       style={[
                         styles.mapPlaceholder,
@@ -832,19 +939,26 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                         <View style={styles.mapLoadingBar} />
                       </View>
                     </Animated.View>
-                  ) : (
+                  ) : mapError ? ( */}
+                  <View style={styles.mapErrorContainer}>
                     <Image
-                      source={{
-                        uri:
-                          "https://maps.googleapis.com/maps/api/staticmap?center=" +
-                          encodeURIComponent(business.address) +
-                          "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
-                          encodeURIComponent(business.address) +
-                          "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM",
-                      }}
+                      source={mapLocation}
                       style={styles.mapImage}
                     />
-                  )}
+                  </View>
+                  {/* // ) : (
+                  //   <Image
+                  //     source={{
+                  //       uri:
+                  //         `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(business.address)}` +
+                  //         "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
+                  //         encodeURIComponent(business.address) +
+                  //         "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM", // Replace with your actual API key
+                  //     }}
+                  //     style={styles.mapImage}
+                  //     onError={handleMapLoadError}
+                  //   />
+                  // )} */}
 
                   <View style={styles.addressContainer}>
                     <Ionicons name="location" size={18} color="#003366" />
@@ -1100,7 +1214,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Listed in Phonebook</Text>
-          <Text style={styles.footerCopyright}>© 2025 All Rights Reserved</Text>
+          <Text style={styles.footerCopyright}>© {new Date().getFullYear()} All Rights Reserved</Text>
         </View>
       </Animated.ScrollView>
 
@@ -1168,6 +1282,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             {business.company_name}
           </Text>
         </Animated.View>
+
       </Animated.View>
 
       {/* Share Options */}
@@ -1420,6 +1535,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+    backgroundColor: '#4d4b4bff',
     overflow: "hidden",
   },
   headerBackground: {
@@ -1496,12 +1612,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF",
+    color: "#c6c6c6ff",
     textAlign: "center",
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
+
   scrollContent: {
     paddingBottom: 30,
   },
@@ -1510,7 +1627,7 @@ const styles = StyleSheet.create({
   businessInfoContainer: {
     backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
-    marginTop: -40,
+    marginTop: -15,
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -1792,10 +1909,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   mapImage: {
-    width: "100%",
-    height: 180,
+    height: 150,
     borderRadius: 12,
-    marginBottom: 16,
+    marginBottom: 5,
   },
   addressContainer: {
     flexDirection: 'row',
@@ -1832,11 +1948,18 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginLeft: 8,
   },
+  mapErrorContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: 10
+  },
 
   // Social Media
   socialMediaContainer: {
     flexDirection: "row",
-    justifyContent: "center",
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   socialButton: {
     width: 50,
@@ -1845,6 +1968,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#003366",
     justifyContent: "center",
     alignItems: "center",
+    marginVertical: 5,
     marginHorizontal: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
     StyleSheet,
     Text,
@@ -334,12 +334,12 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     listContainer: {
-        padding: 16,
+        paddingTop: 16,
         paddingBottom: 40,
     },
     favoriteCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        // borderRadius: 16,
         marginBottom: 16,
         padding: 16,
         shadowColor: '#000',
@@ -347,7 +347,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 4,
         elevation: 2,
-        borderWidth: 1,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
         borderColor: '#F0F0F0',
     },
     favoriteHeader: {
