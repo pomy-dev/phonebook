@@ -630,12 +630,13 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingVertical: 15,
+    paddingHorizontal: 10,
     paddingBottom: 30,
   },
   // New card styles that match the FavoritesScreen
   favoriteCard: {
     backgroundColor: '#FFFFFF',
-    // borderRadius: 16,
+    borderRadius: 8,
     marginBottom: 16,
     padding: 16,
     shadowColor: "#000",

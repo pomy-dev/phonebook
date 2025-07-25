@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   businessesContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 10,
   },
   businessesTitle: {
     fontSize: 20,
@@ -1009,7 +1009,7 @@ const styles = StyleSheet.create({
   // New card styles that match the FavoritesScreen
   favoriteCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 8,
     marginBottom: 16,
     padding: 16,
     shadowColor: "#000",
