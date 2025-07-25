@@ -6,7 +6,6 @@ import CustomTabBar from "./CustomTabBar"
 import HomeStackNavigator from "../navigator/HomeStack"
 import BusinessesStackNavigator from "../navigator/BusinessesStack"
 import FavoritesStackNavigator from "../navigator/FavoritesStack"
-// import FavoritesScreen from "../screens/FavoritesScreen"
 
 const Tab = createBottomTabNavigator()
 

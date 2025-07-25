@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   Dimensions,
   TextInput,
+  Modal,
   Image,
   ActivityIndicator,
   Alert,
@@ -25,149 +26,8 @@ export default function BusinessScreen({ navigation }) {
   const [businesses, setBusinesses] = useState([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
   const [favorites, setFavorites] = useState([]);
-
-  const categories = [
-    {
-      name: "Logistics",
-      icon: "cube-outline",
-      color: "#4C6EF5",
-    },
-    {
-      name: "Government",
-      icon: "business-outline",
-      color: "#12B886",
-    },
-    {
-      name: "Healthcare",
-      icon: "medical-outline",
-      color: "#FA5252",
-    },
-    {
-      name: "Financial",
-      icon: "cash-outline",
-      color: "#228BE6",
-    },
-    {
-      name: "Education",
-      icon: "school-outline",
-      color: "#FD7E14",
-    },
-    {
-      name: "Retail",
-      icon: "cart-outline",
-      color: "#7950F2",
-    },
-    {
-      name: "Insurance",
-      icon: "shield-checkmark-outline",
-      color: "#20C997",
-    },
-    {
-      name: "Tourism",
-      icon: "airplane-outline",
-      color: "#E64980",
-    },
-    {
-      name: "Energy & Water",
-      icon: "flash-outline",
-      color: "#15AABF",
-    },
-    {
-      name: "Manufacturing",
-      icon: "construct-outline",
-      color: "#FAB005",
-    },
-    {
-      name: "Motoring",
-      icon: "car-outline",
-      color: "#BE4BDB",
-    },
-    {
-      name: "NGO",
-      icon: "people-outline",
-      color: "#40C057",
-    },
-    {
-      name: "Oil Industry",
-      icon: "water-outline",
-      color: "#FD7E14",
-    },
-    {
-      name: "Professional Services",
-      icon: "briefcase-outline",
-      color: "#4C6EF5",
-    },
-    {
-      name: "Estate",
-      icon: "home-outline",
-      color: "#FA5252",
-    },
-    {
-      name: "Transport",
-      icon: "bus-outline",
-      color: "#15AABF",
-    },
-    {
-      name: "Construction",
-      icon: "hammer-outline",
-      color: "#FAB005",
-    },
-    {
-      name: "Telecommunication",
-      icon: "call-outline",
-      color: "#4C6EF5",
-    },
-    {
-      name: "Agriculture",
-      icon: "paw-outline",
-      color: "#40C057",
-    },
-    {
-      name: "Information Technology",
-      icon: "laptop-outline",
-      color: "#15AABF",
-    },
-  ];
-
-  // Featured categories for the top section
-  const featuredCategories = [
-    {
-      name: "Emergency",
-      icon: "bandage-outline",
-      image:
-        "https://images.unsplash.com/photo-1565514020179-026b62f2c4a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    },
-    {
-      name: "Healthcare",
-      icon: "medical-outline",
-      image:
-        "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    },
-    {
-      name: "Government",
-      icon: "business-outline",
-      image:
-        "https://images.unsplash.com/photo-1523292562811-8fa7962a78c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    },
-    {
-      name: "Education",
-      icon: "school-outline",
-      image:
-        "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    },
-  ];
-
-  const handleCategoryPress = (categoryObj) => {
-    const category = categoryObj.name;
-    navigation.navigate("Countries", {
-      screen: "BusinessList",
-      params: { category },
-    });
-  };
-
-  const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-  );
+  const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
+  const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
 
   const handleRefresh = async () => {
     try {
@@ -201,8 +61,7 @@ export default function BusinessScreen({ navigation }) {
     setFilteredBusinesses(filtered);
   };
 
-
-    // Check if a business is in favorites
+  // Check if a business is in favorites
   const isInFavorites = (businessId) => {
     return favorites.some((fav) => fav._id === businessId);
   };
@@ -252,7 +111,7 @@ export default function BusinessScreen({ navigation }) {
           (company) =>
             company.company_type &&
             company.company_type.toLowerCase() ===
-              featuredCategory.toLowerCase()
+            featuredCategory.toLowerCase()
         );
 
         const filtered = filteredArray.filter((business) =>
@@ -281,12 +140,202 @@ export default function BusinessScreen({ navigation }) {
   }, [searchQuery]);
 
   const hide = searchQuery.length > 0;
+  const handleBusinessPress = (business) => {
+    if (business.subscription_type.toLowerCase() === "bronze") {
+      // For Bronze businesses, show upgrade modal instead of navigating
+      setSelectedBronzeBusiness(business);
+      setUpgradeModalVisible(true);
+    } else {
+      // For Silver and Gold, navigate to business detail
+      navigation.navigate("BusinessDetail", { business });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
+      {/* Upgrade Modal for Bronze Businesses */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={upgradeModalVisible}
+        onRequestClose={() => setUpgradeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.upgradeModalContent}>
+            <View style={styles.upgradeModalHeader}>
+              <Text style={styles.upgradeModalTitle}>Business Information</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setUpgradeModalVisible(false)}
+                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+              >
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedBronzeBusiness && (
+              <View style={styles.upgradeModalBody}>
+                <View style={styles.businessBranding}>
+                  <View style={styles.businessLogoContainer}>
+                    {selectedBronzeBusiness.logo ? (
+                      <Image
+                        source={{ uri: selectedBronzeBusiness.logo }}
+                        style={styles.businessLogo}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <View style={styles.businessInitialContainer}>
+                        <Text style={styles.businessInitial}>
+                          {selectedBronzeBusiness.company_name.charAt(0)}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.upgradeBusinessName}>
+                    {selectedBronzeBusiness.company_name}
+                  </Text>
+                  <Text style={styles.businessType}>
+                    {selectedBronzeBusiness.company_type}
+                  </Text>
+                </View>
+
+                <View style={styles.basicInfoContainer}>
+                  {selectedBronzeBusiness.phone &&
+                    selectedBronzeBusiness.phone.length > 0 && (
+                      <TouchableOpacity
+                        style={styles.basicInfoItem}
+                        onPress={() => handleCall(selectedBronzeBusiness.phone)}
+                      >
+                        <Ionicons
+                          name="call-outline"
+                          size={20}
+                          color="#003366"
+                        />
+                        <Text style={styles.basicInfoText}>
+                          {selectedBronzeBusiness.phone[0].number}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                  {selectedBronzeBusiness.phone &&
+                    selectedBronzeBusiness.phone.some(
+                      (p) => p.phone_type === "whatsApp"
+                    ) && (
+                      <TouchableOpacity
+                        style={styles.basicInfoItem}
+                        onPress={() =>
+                          handleWhatsapp(selectedBronzeBusiness.phone)
+                        }
+                      >
+                        <Ionicons
+                          name="logo-whatsapp"
+                          size={20}
+                          color="#25D366"
+                        />
+                        <Text style={styles.basicInfoText}>
+                          {selectedBronzeBusiness.phone.find(
+                            (p) => p.phone_type === "whatsApp"
+                          )?.number || selectedBronzeBusiness.phone[0].number}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                  <TouchableOpacity
+                    style={styles.basicInfoItem}
+                    onPress={() => findLocation(selectedBronzeBusiness.address)}
+                  >
+                    <Ionicons
+                      name="location-outline"
+                      size={20}
+                      color="#5856D6"
+                    />
+                    <Text style={styles.basicInfoText}>
+                      {selectedBronzeBusiness.address}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {selectedBronzeBusiness.email && (
+                    <TouchableOpacity
+                      style={styles.basicInfoItem}
+                      onPress={() => connectEmail(selectedBronzeBusiness.email)}
+                    >
+                      <Ionicons name="mail-outline" size={20} color="#FF9500" />
+                      <Text style={styles.basicInfoText}>
+                        {selectedBronzeBusiness.email}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <View style={styles.actionButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.primaryActionButton}
+                    onPress={() => {
+                      setUpgradeModalVisible(false);
+                      if (
+                        selectedBronzeBusiness.phone &&
+                        selectedBronzeBusiness.phone.length > 0
+                      ) {
+                        handleCall(selectedBronzeBusiness.phone);
+                      }
+                    }}
+                  >
+                    <Ionicons name="call-outline" size={18} color="#FFFFFF" />
+                    <Text style={styles.primaryActionText}>Call Business</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.secondaryActionsRow}>
+                    <TouchableOpacity
+                      style={styles.secondaryActionButton}
+                      onPress={() => {
+                        handleWhatsapp(selectedBronzeBusiness.phone);
+                      }}
+                    >
+                      <Ionicons
+                        name="logo-whatsapp"
+                        size={20}
+                        color="#25D366"
+                      />
+                      <Text style={styles.secondaryActionText}>Chat</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.secondaryActionButton}
+                      onPress={() => {
+                        connectEmail(selectedBronzeBusiness.email);
+                      }}
+                    >
+                      <Ionicons name="mail-outline" size={20} color="#FF9500" />
+                      <Text style={styles.secondaryActionText}>Email</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.secondaryActionButton}
+                      onPress={() => {
+                        findLocation(selectedBronzeBusiness.address);
+                      }}
+                    >
+                      <Ionicons
+                        name="location-outline"
+                        size={20}
+                        color="#5856D6"
+                      />
+                      <Text style={styles.secondaryActionText}>Map</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.titleContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#333333" />
+        </TouchableOpacity>
         <Text style={styles.appTitle}>Directory</Text>
         <TouchableOpacity
           style={styles.alphabetButton}
@@ -310,7 +359,7 @@ export default function BusinessScreen({ navigation }) {
             style={styles.searchIcon}
           />
           <TextInput
-            placeholder="Search categories"
+            placeholder="Search business..."
             style={styles.searchInput}
             placeholderTextColor="#AAAAAA"
             value={searchQuery}
@@ -323,166 +372,166 @@ export default function BusinessScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-          <View style={styles.businessesContainer}>
-                     <Text style={styles.businessesTitle}>Businesses</Text>
-                     <View style={styles.businessesList}>
-                       {filteredBusinesses.length > 0 ? (
-                         filteredBusinesses.map((item) => (
-                           <TouchableOpacity
-                             key={item._id}
-                             style={styles.favoriteCard}
-                             activeOpacity={0.8}
-                             onPress={() => handleBusinessPress(item)}
-                           >
-                             <View style={styles.favoriteHeader}>
-                               <View style={styles.businessImageContainer}>
-                                 {item.logo ? (
-                                   <Image
-                                     source={{ uri: item.logo }}
-                                     style={styles.businessImage}
-                                     resizeMode="cover"
-                                   />
-                                 ) : (
-                                   <View style={styles.businessInitialContainer}>
-                                     <Text style={styles.businessInitial}>
-                                       {item.company_name.charAt(0)}
-                                     </Text>
-                                   </View>
-                                 )}
-                               </View>
-           
-                               <View style={styles.businessInfo}>
-                                 <Text
-                                   style={styles.businessName}
-                                   numberOfLines={1}
-                                   ellipsizeMode="tail"
-                                 >
-                                   {item.company_name}
-                                 </Text>
-                                 <Text
-                                   style={styles.businessCategory}
-                                   numberOfLines={1}
-                                   ellipsizeMode="tail"
-                                 >
-                                   {item.company_type}
-                                 </Text>
-                                 <Text
-                                   style={styles.businessAddress}
-                                   numberOfLines={1}
-                                   ellipsizeMode="tail"
-                                 >
-                                   {item.address}
-                                 </Text>
-                               </View>
-           
-                               {/* Favorite heart icon */}
-                               <TouchableOpacity
-                                 style={styles.favoriteButton}
-                                 onPress={(e) => {
-                                   e.stopPropagation();
-                                   toggleFavorite(item);
-                                 }}
-                                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                               >
-                                 <Ionicons
-                                   name={
-                                     isInFavorites(item._id) ? "heart" : "heart-outline"
-                                   }
-                                   size={22}
-                                   color={isInFavorites(item._id) ? "#003366" : "#AAAAAA"}
-                                 />
-                               </TouchableOpacity>
-                             </View>
-           
-                             <View style={styles.divider} />
-           
-                             <View style={styles.actionButtons}>
-                               <TouchableOpacity
-                                 style={styles.actionButton}
-                                 onPress={(e) => {
-                                   e.stopPropagation();
-                                   handleCall(item.phone);
-                                 }}
-                               >
-                                 <Ionicons name="call-outline" size={18} color="#003366" />
-                                 <Text style={styles.actionButtonText}>Call</Text>
-                               </TouchableOpacity>
-           
-                               {item.phone &&
-                                 item.phone.some((p) => p.phone_type == "whatsapp") && (
-                                   <TouchableOpacity
-                                     style={styles.actionButton}
-                                     onPress={(e) => {
-                                       e.stopPropagation();
-                                       handleWhatsapp(item.phone);
-                                     }}
-                                   >
-                                     <Ionicons
-                                       name="logo-whatsapp"
-                                       size={18}
-                                       color="#25D366"
-                                     />
-                                     <Text style={styles.actionButtonText}>WhatsApp</Text>
-                                   </TouchableOpacity>
-                                 )}
-           
-                               <TouchableOpacity
-                                 style={styles.actionButton}
-                                 onPress={(e) => {
-                                   e.stopPropagation();
-                                   connectEmail(item.email);
-                                 }}
-                               >
-                                 <Ionicons name="mail-outline" size={18} color="#FF9500" />
-                                 <Text style={styles.actionButtonText}>Email</Text>
-                               </TouchableOpacity>
-           
-                               <TouchableOpacity
-                                 style={styles.actionButton}
-                                 onPress={(e) => {
-                                   e.stopPropagation();
-                                   findLocation(item.address);
-                                 }}
-                               >
-                                 <Ionicons
-                                   name="location-outline"
-                                   size={18}
-                                   color="#5856D6"
-                                 />
-                                 <Text style={styles.actionButtonText}>Map</Text>
-                               </TouchableOpacity>
-                             </View>
-           
-                             {item.subscription_type.toLowerCase() !== "bronze" && (
-                               <TouchableOpacity
-                                 style={styles.viewDetailsButton}
-                                 onPress={() =>
-                                   navigation.navigate("BusinessDetail", {
-                                     business: item,
-                                   })
-                                 }
-                               >
-                                 <Text style={styles.viewDetailsText}>View Details</Text>
-                                 <Ionicons
-                                   name="chevron-forward"
-                                   size={16}
-                                   color="#003366"
-                                 />
-                               </TouchableOpacity>
-                             )}
-                           </TouchableOpacity>
-                         ))
-                       ) : (
-                         <View style={styles.noResultsContainer}>
-                           <Ionicons name="search" size={48} color="#DDDDDD" />
-                           <Text style={styles.noResultsText}>No businesses found</Text>
-                           <Text style={styles.noResultsSubtext}>
-                             Try a different search or category
-                           </Text>
-                         </View>
-                       )}
-                     </View>
-                   </View>
+        <View style={styles.businessesContainer}>
+          <Text style={styles.businessesTitle}>Businesses</Text>
+          <View style={styles.businessesList}>
+            {filteredBusinesses.length > 0 ? (
+              filteredBusinesses.map((item) => (
+                <TouchableOpacity
+                  key={item._id}
+                  style={styles.favoriteCard}
+                  activeOpacity={0.8}
+                  onPress={() => handleBusinessPress(item)}
+                >
+                  <View style={styles.favoriteHeader}>
+                    <View style={styles.businessImageContainer}>
+                      {item.logo ? (
+                        <Image
+                          source={{ uri: item.logo }}
+                          style={styles.businessImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.businessInitialContainer}>
+                          <Text style={styles.businessInitial}>
+                            {item.company_name.charAt(0)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={styles.businessInfo}>
+                      <Text
+                        style={styles.businessName}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {item.company_name}
+                      </Text>
+                      <Text
+                        style={styles.businessCategory}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {item.company_type}
+                      </Text>
+                      <Text
+                        style={styles.businessAddress}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {item.address}
+                      </Text>
+                    </View>
+
+                    {/* Favorite heart icon */}
+                    <TouchableOpacity
+                      style={styles.favoriteButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(item);
+                      }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons
+                        name={
+                          isInFavorites(item._id) ? "heart" : "heart-outline"
+                        }
+                        size={22}
+                        color={isInFavorites(item._id) ? "#003366" : "#AAAAAA"}
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleCall(item.phone);
+                      }}
+                    >
+                      <Ionicons name="call-outline" size={18} color="#003366" />
+                      <Text style={styles.actionButtonText}>Call</Text>
+                    </TouchableOpacity>
+
+                    {item.phone &&
+                      item.phone.some((p) => p.phone_type == "whatsapp") && (
+                        <TouchableOpacity
+                          style={styles.actionButton}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleWhatsapp(item.phone);
+                          }}
+                        >
+                          <Ionicons
+                            name="logo-whatsapp"
+                            size={18}
+                            color="#25D366"
+                          />
+                          <Text style={styles.actionButtonText}>WhatsApp</Text>
+                        </TouchableOpacity>
+                      )}
+
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        connectEmail(item.email);
+                      }}
+                    >
+                      <Ionicons name="mail-outline" size={18} color="#FF9500" />
+                      <Text style={styles.actionButtonText}>Email</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.actionButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        findLocation(item.address);
+                      }}
+                    >
+                      <Ionicons
+                        name="location-outline"
+                        size={18}
+                        color="#5856D6"
+                      />
+                      <Text style={styles.actionButtonText}>Map</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {item.subscription_type.toLowerCase() !== "bronze" && (
+                    <TouchableOpacity
+                      style={styles.viewDetailsButton}
+                      onPress={() =>
+                        navigation.navigate("BusinessDetail", {
+                          business: item,
+                        })
+                      }
+                    >
+                      <Text style={styles.viewDetailsText}>View Details</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color="#003366"
+                      />
+                    </TouchableOpacity>
+                  )}
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="search" size={48} color="#DDDDDD" />
+                <Text style={styles.noResultsText}>No businesses found</Text>
+                <Text style={styles.noResultsSubtext}>
+                  Try a different search or category
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -671,8 +720,8 @@ const styles = StyleSheet.create({
     color: "#999999",
     marginTop: 4,
   },
- businessesContainer: {
-    paddingHorizontal: 24,
+  businessesContainer: {
+    paddingHorizontal: 10,
   },
   businessesTitle: {
     fontSize: 20,
@@ -685,7 +734,7 @@ const styles = StyleSheet.create({
   // New card styles that match the FavoritesScreen
   favoriteCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderRadius: 8,
     marginBottom: 16,
     padding: 16,
     shadowColor: "#000",
