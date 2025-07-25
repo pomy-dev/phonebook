@@ -60,8 +60,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [hasWhatsApp, setHasWhatsApp] = useState(false);
   const [mapError, setMapError] = useState(null);
-  // const [userLocation, setUserLocation] = useState(null)
-  // const [directions, setDirections] = useState(null)
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current
@@ -921,44 +919,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Location</Text>
                 <View style={styles.mapContainer}>
-                  {/* {loadingMap ? (
-                    <Animated.View
-                      style={[
-                        styles.mapPlaceholder,
-                        {
-                          opacity: mapLoadingAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [1, 0],
-                          }),
-                        },
-                      ]}
-                    >
-                      <Ionicons name="map-outline" size={32} color="#AAAAAA" />
-                      <Text style={styles.mapPlaceholderText}>Loading map...</Text>
-                      <View style={styles.mapLoadingIndicator}>
-                        <View style={styles.mapLoadingBar} />
-                      </View>
-                    </Animated.View>
-                  ) : mapError ? ( */}
                   <View style={styles.mapErrorContainer}>
                     <Image
                       source={mapLocation}
                       style={styles.mapImage}
                     />
                   </View>
-                  {/* // ) : (
-                  //   <Image
-                  //     source={{
-                  //       uri:
-                  //         `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(business.address)}` +
-                  //         "&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C" +
-                  //         encodeURIComponent(business.address) +
-                  //         "&key=AIzaSyCZMnxJGheTAfhfbATA3qrhEO_WDpbnfKM", // Replace with your actual API key
-                  //     }}
-                  //     style={styles.mapImage}
-                  //     onError={handleMapLoadError}
-                  //   />
-                  // )} */}
 
                   <View style={styles.addressContainer}>
                     <Ionicons name="location" size={18} color="#003366" />

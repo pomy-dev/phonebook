@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     header: {
         paddingHorizontal: 24,
         paddingTop: 24,
-        paddingBottom: 16,
+        paddingBottom: 10,
         borderBottomWidth: 1,
         borderBottomColor: '#F0F0F0',
     },
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     favoriteCount: {
         fontSize: 14,
         color: '#777777',
-        marginTop: 4,
+        marginTop: 2,
     },
     listContainer: {
         paddingTop: 16,

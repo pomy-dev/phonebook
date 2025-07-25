@@ -5,7 +5,8 @@ import { useTheme } from "@react-navigation/native"
 import CustomTabBar from "./CustomTabBar"
 import HomeStackNavigator from "../navigator/HomeStack"
 import BusinessesStackNavigator from "../navigator/BusinessesStack"
-import FavoritesScreen from "../screens/FavoritesScreen"
+import FavoritesStackNavigator from "../navigator/FavoritesStack"
+// import FavoritesScreen from "../screens/FavoritesScreen"
 
 const Tab = createBottomTabNavigator()
 
@@ -36,7 +37,7 @@ export default function TabNavigator() {
             />
             <Tab.Screen
                 name="4IS"
-                component={FavoritesScreen}
+                component={FavoritesStackNavigator}
                 options={{
                     tabBarLabel: "Favorites",
                 }}
