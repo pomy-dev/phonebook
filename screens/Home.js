@@ -42,7 +42,6 @@ const HomeScreen = ({ navigation }) => {
   const [featuredBusinesses, setFeaturedBusinesses] = useState([]);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
-  const [isSearch, setIsSearch] = useState(false);
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
