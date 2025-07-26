@@ -1046,7 +1046,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </View>
           )}
 
-          {/* Reviews Tab */}
           {/* {activeTab === "reviews" && (
             <View style={styles.section}>
               <View style={styles.reviewsHeader}>
