@@ -1,11 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme, Animated } from 'react-native';
+import { StyleSheet, useColorScheme, Animated, View, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import TabNavigator from './components/TabNavigator';
+import Toast from 'react-native-toast-message';
 import SplashScreen from './screens/SplashScreen'; // Import the SplashScreen component
 
 // Bottom Tab Navigator
@@ -63,22 +64,48 @@ export default function App() {
   const isDark = scheme === 'dark';
   const theme = isDark ? CustomDarkTheme : CustomLightTheme;
   const [isAppReady, setIsAppReady] = useState(false);
+  const toastConfig = {
+    success: ({ text1, text2 }) => (
+      <View
+        style={{
+          height: 60,
+          width: '90%',
+          backgroundColor: isDark ? '#FFFFFF' : 'rgba(247, 245, 245, 0.99)',
+          borderRadius: 10,
+          padding: 10,
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderLeftColor: '#003366',
+          borderTopColor: '#CCCCCC',
+          borderRightColor: '#CCCCCC',
+          borderBottomColor: '#CCCCCC',
+          borderLeftWidth: 4,
+          zIndex: 9999,
+          elevation: 9999,
+        }}
+      >
+        <Text style={{ color: theme.colors.text, fontWeight: 'bold' }}>{text1}</Text>
+        <Text style={{ color: theme.colors.text }}>{text2}</Text>
+      </View>
+    ),
+  };
 
   return (
-    <>
+    <SafeAreaProvider>
       {!isAppReady ? (
         // Show splash screen before the app is ready
         <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
       ) : (
         // Show main app with navigation when ready
-        <SafeAreaProvider>
+        <>
           <NavigationContainer theme={theme}>
             <TabNavigator />
             <StatusBar style={isDark ? 'light' : 'dark'} />
           </NavigationContainer>
-        </SafeAreaProvider>
+          <Toast config={toastConfig} />
+        </>
       )}
-    </>
+    </SafeAreaProvider>
   );
 }
 

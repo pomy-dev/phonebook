@@ -364,7 +364,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   }
 
   const handleShareVia = async (method) => {
-    // setShowShareOptions(false)
     const deepLink = business.website || `https://yourwebsite.com/business/${business._id}` // Fallback URL
     const shareMessage = `Check out ${business.company_name} on our directory! ${deepLink}`
 
@@ -408,11 +407,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           // Ensure alert is shown
           Toast.show({
             type: 'success',
-            text1: 'Success',
+            text1: 'Copied',
             text2: 'Link copied to clipboard!',
             position: 'bottom',
-            visibilityTime: 2000,
+            visibilityTime: 10000,
             autoHide: true,
+            bottomOffset: 60,
           })
           break
 
@@ -431,6 +431,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     } catch (error) {
       console.error('Error in handleShareVia:', error.message)
       Alert.alert('Error', `Failed to share via ${method}: ${error.message}`)
+    } finally {
+      setShowShareOptions(false)
     }
   }
 
@@ -1111,11 +1113,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
         </BlurView>
 
-        {/* <TouchableOpacity
-          style={styles.shareOptionsOverlay}
-          activeOpacity={1}
-          onPress={() => setShowShareOptions(false)}
-        /> */}
       </Animated.View>
 
       {selectedImage !== null && (
