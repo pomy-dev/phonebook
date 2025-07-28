@@ -2041,13 +2041,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  shareOptionsOverlay: {
-    position: "absolute",
-    top: -100,
-    left: -100,
-    right: -100,
-    bottom: -100,
-  },
+  // shareOptionsOverlay: {
+  //   position: "absolute",
+  //   top: -100,
+  //   left: -100,
+  //   right: -100,
+  //   bottom: -100,
+  // },
   shareOption: {
     alignItems: "center",
     marginHorizontal: 8,
