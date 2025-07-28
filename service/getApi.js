@@ -42,8 +42,6 @@ export const fetchAllCompaniesOffline = async () => {
   try {
     const storedCompanies = await AsyncStorage.getItem("companiesList");
     const companyData = storedCompanies ? JSON.parse(storedCompanies) : [];
-
-
     return companyData;
   } catch (error) {
     console.error("Error retrieving companies from AsyncStorage:", error);

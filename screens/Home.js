@@ -122,19 +122,17 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    filterBusinesses(allBusinesses, activeCategory, searchQuery);
-  }, [searchQuery, activeCategory, allBusinesses]);
+    filterBusinesses(allBusinesses, activeCategory);
+  }, [activeCategory, allBusinesses]);
 
-  const filterBusinesses = (
-    data = allBusinesses,
-    category = activeCategory,
-    query = searchQuery
-  ) => {
+
+   useEffect(() => {
+    filterALLBs(searchQuery)
+  }, [searchQuery]);
+
+ const filterALLBs = async (query = searchQuery) => {
+    data = await fetchAllCompaniesOffline();
     const filtered = data.filter((business) => {
-      const matchesCategory =
-        category === "All" ||
-        business.company_type?.toLowerCase() === category.toLowerCase();
-
       const matchesSearch =
         business.company_name
           .toLowerCase()
@@ -144,10 +142,32 @@ const HomeScreen = ({ navigation }) => {
           .includes(query.toLowerCase().trim()) ||
         business.address.toLowerCase().includes(query.toLowerCase().trim());
 
-      return matchesCategory && matchesSearch;
+      return matchesSearch;
     });
 
     setFilteredBusinesses(filtered);
+  };
+
+
+
+  const filterBusinesses = (
+    data = allBusinesses,
+    category = activeCategory,
+    // query = searchQuery
+  ) => {
+    if (activeCategory !== "More...") {
+      const filtered = data.filter((business) => {
+        const matchesCategory =
+          category === "All" ||
+          business.company_type?.toLowerCase() === category.toLowerCase();
+        return matchesCategory;
+      });
+
+      setFilteredBusinesses(filtered);
+    } else {
+      setActiveCategory("All")
+      navigation.navigate("Countries", { screen: "BusinessesMain" });
+    }
   };
 
   const loadBusinesses = async () => {
@@ -205,8 +225,9 @@ const HomeScreen = ({ navigation }) => {
       );
     } else if (phoneNumbers.length > 1) {
       const options = phoneNumbers.map((phone) => ({
-        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-          }: ${phone.number}`,
+        text: `${
+          phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
+        }: ${phone.number}`,
         onPress: () => Linking.openURL(`tel:${phone.number}`),
       }));
 
@@ -501,7 +522,7 @@ const HomeScreen = ({ navigation }) => {
             placeholderTextColor="#AAAAAA"
             value={searchQuery}
             onChangeText={setSearchQuery}
-          // onFocus={search}
+            // onFocus={search}
           />
         </View>
       </View>
@@ -666,7 +687,9 @@ const HomeScreen = ({ navigation }) => {
                             isInFavorites(item._id) ? "heart" : "heart-outline"
                           }
                           size={22}
-                          color={isInFavorites(item._id) ? "#003366" : "#AAAAAA"}
+                          color={
+                            isInFavorites(item._id) ? "#003366" : "#AAAAAA"
+                          }
                         />
                       </TouchableOpacity>
                     </View>
@@ -681,7 +704,11 @@ const HomeScreen = ({ navigation }) => {
                           handleCall(item.phone);
                         }}
                       >
-                        <Ionicons name="call-outline" size={18} color="#003366" />
+                        <Ionicons
+                          name="call-outline"
+                          size={18}
+                          color="#003366"
+                        />
                         <Text style={styles.actionButtonText}>Call</Text>
                       </TouchableOpacity>
 
@@ -699,7 +726,9 @@ const HomeScreen = ({ navigation }) => {
                               size={18}
                               color="#25D366"
                             />
-                            <Text style={styles.actionButtonText}>WhatsApp</Text>
+                            <Text style={styles.actionButtonText}>
+                              WhatsApp
+                            </Text>
                           </TouchableOpacity>
                         )}
 
@@ -710,7 +739,11 @@ const HomeScreen = ({ navigation }) => {
                           connectEmail(item.email);
                         }}
                       >
-                        <Ionicons name="mail-outline" size={18} color="#FF9500" />
+                        <Ionicons
+                          name="mail-outline"
+                          size={18}
+                          color="#FF9500"
+                        />
                         <Text style={styles.actionButtonText}>Email</Text>
                       </TouchableOpacity>
 
@@ -830,7 +863,9 @@ const HomeScreen = ({ navigation }) => {
                             isInFavorites(item._id) ? "heart" : "heart-outline"
                           }
                           size={22}
-                          color={isInFavorites(item._id) ? "#003366" : "#AAAAAA"}
+                          color={
+                            isInFavorites(item._id) ? "#003366" : "#AAAAAA"
+                          }
                         />
                       </TouchableOpacity>
                     </View>
@@ -845,7 +880,11 @@ const HomeScreen = ({ navigation }) => {
                           handleCall(item.phone);
                         }}
                       >
-                        <Ionicons name="call-outline" size={18} color="#003366" />
+                        <Ionicons
+                          name="call-outline"
+                          size={18}
+                          color="#003366"
+                        />
                         <Text style={styles.actionButtonText}>Call</Text>
                       </TouchableOpacity>
 
@@ -863,7 +902,9 @@ const HomeScreen = ({ navigation }) => {
                               size={18}
                               color="#25D366"
                             />
-                            <Text style={styles.actionButtonText}>WhatsApp</Text>
+                            <Text style={styles.actionButtonText}>
+                              WhatsApp
+                            </Text>
                           </TouchableOpacity>
                         )}
 
@@ -874,7 +915,11 @@ const HomeScreen = ({ navigation }) => {
                           connectEmail(item.email);
                         }}
                       >
-                        <Ionicons name="mail-outline" size={18} color="#FF9500" />
+                        <Ionicons
+                          name="mail-outline"
+                          size={18}
+                          color="#FF9500"
+                        />
                         <Text style={styles.actionButtonText}>Email</Text>
                       </TouchableOpacity>
 
@@ -925,7 +970,6 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </View>
         </ScrollView>
-
       )}
     </SafeAreaView>
   );
