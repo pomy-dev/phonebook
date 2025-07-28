@@ -19,9 +19,9 @@ import {
   Alert,
   ScrollView,
   TextInput,
-  ActivityIndicator,
-  Clipboard // Added Clipboard for copy functionality
+  ActivityIndicator// Added Clipboard for copy functionality
 } from "react-native"
+import Clipboard from '@react-native-clipboard/clipboard';
 import { Ionicons } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
 import connectWhatsApp from "../components/connectWhatsApp"
