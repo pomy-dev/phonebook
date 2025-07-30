@@ -219,9 +219,6 @@ export default function BusinessScreen({ navigation }) {
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Popular Categories</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Featured')}>
-                            <Text style={styles.viewAllText}>View all</Text>
-                        </TouchableOpacity>
                     </View>
 
                     <ScrollView
@@ -252,9 +249,6 @@ export default function BusinessScreen({ navigation }) {
                 <View style={styles.allCategoriesContainer}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>All Categories</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('BusinessDetails')}>
-                            <Text style={styles.viewAllText}>Filter</Text>
-                        </TouchableOpacity>
                     </View>
 
                     <View style={styles.categoriesList}>
