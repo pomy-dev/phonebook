@@ -147,8 +147,6 @@ const HomeScreen = ({ navigation }) => {
     setFilteredBusinesses(filtered);
   };
 
-
-
   const filterBusinesses = (
     data = allBusinesses,
     category = activeCategory,

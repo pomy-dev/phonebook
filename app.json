@@ -16,7 +16,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.pomy.phonebook",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "This app needs your location to show directions to the business."
+      },
+      "config": {
+        "googleMapsApiKey": "AIzaSyCk4R94IPXuKkXvSm7RIr5fWlmIRzr6UA0"
       }
     },
     "android": {
@@ -24,8 +28,17 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
       "edgeToEdgeEnabled": true,
-      "package": "com.pld.phonebook"
+      "package": "com.pld.phonebook",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCk4R94IPXuKkXvSm7RIr5fWlmIRzr6UA0"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -24,6 +24,7 @@ import connectEmail from "../components/connectEmail";
 import findLocation from "../components/findLocation";
 
 const { width } = Dimensions.get("window");
+
 export default function BusinessList({ route, navigation }) {
   const { category } = route.params;
   const [businesses, setBusinesses] = useState([]);

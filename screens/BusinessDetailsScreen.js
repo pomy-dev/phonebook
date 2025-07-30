@@ -23,15 +23,53 @@ import {
 } from "react-native"
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Ionicons } from "@expo/vector-icons"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { BlurView } from "expo-blur"
 import connectWhatsApp from "../components/connectWhatsApp"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import mapLocation from '../assets/images/map10.png'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Toast from "react-native-toast-message"
+import * as Location from 'expo-location';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 
 const { width, height } = Dimensions.get("window")
 const BOTTOM_SHEET_HEIGHT = height * 0.6
+
+
+// Function to decode Google Maps polyline
+const decodePolyline = (encoded) => {
+  let points = [];
+  let index = 0,
+    len = encoded.length;
+  let lat = 0,
+    lng = 0;
+
+  while (index < len) {
+    let b,
+      shift = 0,
+      result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = (result & 1) ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = (result & 1) ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+  return points;
+};
 
 const BusinessDetailScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
@@ -61,6 +99,11 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
   const [hasWhatsApp, setHasWhatsApp] = useState(false)
   const [mapError, setMapError] = useState(null)
+  const [userLocation, setUserLocation] = useState(null);
+  const [businessLocation, setBusinessLocation] = useState(null);
+  const [directions, setDirections] = useState(null);
+  const [locationError, setLocationError] = useState(null);
+  const [mapRegion, setMapRegion] = useState(null);
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current
@@ -74,6 +117,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   // Refs
   const scrollViewRef = useRef(null)
   const galleryRef = useRef(null)
+
+  // Google Maps API KEY
+  const GOOGLE_MAPS_API_KEY = 'AIzaSyCk4R94IPXuKkXvSm7RIr5fWlmIRzr6UA0';
 
   // Calculate average rating
   const averageRating = business.reviews && business.reviews.length > 0
@@ -244,6 +290,88 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   })
 
   useEffect(() => {
+    const getLocationsAndDirections = async () => {
+      try {
+        // Request location permissions
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permission to access location was denied.');
+          console.log('Location permission denied');
+          return;
+        }
+
+        // Get user's current location
+        const userLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        console.log('User Location:', userLoc.coords);
+        setUserLocation({
+          latitude: userLoc.coords.latitude,
+          longitude: userLoc.coords.longitude,
+        });
+
+        // Set initial map region
+        setMapRegion({
+          latitude: userLoc.coords.latitude,
+          longitude: userLoc.coords.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
+
+        // Geocode business address
+        if (business.address) {
+          try {
+            const geocoded = await Location.geocodeAsync(business.address);
+            if (geocoded.length > 0) {
+              const { latitude, longitude } = geocoded[0];
+              console.log('Business Location:', { latitude, longitude });
+              setBusinessLocation({ latitude, longitude });
+
+              // Fetch directions
+              const origin = `${userLoc.coords.latitude},${userLoc.coords.longitude}`;
+              const destination = `${latitude},${longitude}`;
+              const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
+              const response = await fetch(url);
+              const data = await response.json();
+              console.log('Directions API Response:', data);
+
+              if (data.status === 'OK') {
+                const points = decodePolyline(data.routes[0].overview_polyline.points);
+                setDirections(points);
+
+                // Adjust map region to fit both locations
+                setMapRegion({
+                  latitude: (userLoc.coords.latitude + latitude) / 2,
+                  longitude: (userLoc.coords.longitude + longitude) / 2,
+                  latitudeDelta: Math.abs(userLoc.coords.latitude - latitude) * 1.5,
+                  longitudeDelta: Math.abs(userLoc.coords.longitude - longitude) * 1.5,
+                });
+              } else {
+                setLocationError(`Directions API error: ${data.status}`);
+                console.log('Directions API error:', data.status);
+              }
+            } else {
+              setLocationError('Business location could not be found.');
+              console.log('Geocoding failed: No results for business address');
+            }
+          } catch (error) {
+            setLocationError('Failed to geocode business address.');
+            console.error('Geocoding error:', error);
+          }
+        } else {
+          setLocationError('Business address is not available.');
+          console.log('No business address provided');
+        }
+      } catch (error) {
+        setLocationError('Failed to load location data.');
+        console.error('Location error:', error);
+      } finally {
+        setLoadingMap(false);
+      }
+    };
+
+    getLocationsAndDirections();
+  }, [business.address]);
+
+  useEffect(() => {
     if (showBottomSheet) {
       Animated.spring(bottomSheetAnim, {
         toValue: 0,
@@ -364,10 +492,25 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   }
 
   const handleShareVia = async (method) => {
-    const deepLink = business.website || `https://yourwebsite.com/business/${business._id}` // Fallback URL
-    const shareMessage = `Check out ${business.company_name} on our directory! ${deepLink}`
+    const deepLink = `https://industrylines.netlify.app/views/business-detail.html?id=${business._id}`; // Fallback URL
+    const phoneNumbers = business?.phone && business?.phone?.length > 0
+      ? business?.phone.map(phone => `${phone?.phone_type.charAt(0).toUpperCase() + phone?.phone_type.slice(1)}: ${phone?.number}`).join('\n')
+      : 'No phone numbers available';
+    const whatsAppNumbers = business?.phone && business?.phone.length > 0
+      ? business.phone
+        .filter(phone => phone?.phone_type.toLowerCase() === 'whatsapp' || phone?.phone_type.toLowerCase() === 'whatsApp')
+        .map(phone => phone?.number)
+        .join(', ')
+      : 'No WhatsApp numbers available';
+    const email = business?.email || 'No email available';
+    const address = business?.address || 'No address available';
 
-    console.log(deepLink)
+    const shareMessage = `Check out ${business?.company_name}!\n\n` +
+      `Address: ${address}\n` +
+      `Phone: ${phoneNumbers}\n` +
+      `WhatsApp: ${whatsAppNumbers}\n` +
+      `Email: ${email}\n` +
+      `Learn more: ${deepLink}`;
 
     try {
       switch (method) {
@@ -375,74 +518,90 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           // Platform-specific SMS URL
           const smsUrl = Platform.OS === "ios"
             ? `sms:;body=${encodeURIComponent(shareMessage)}` // iOS uses semicolon
-            : `smsto:?body=${encodeURIComponent(shareMessage)}` // Android uses smsto
-          console.log('SMS URL:', smsUrl) // Debug log
-          const canOpenSMS = await Linking.canOpenURL(smsUrl)
+            : `smsto:?body=${encodeURIComponent(shareMessage)}`; // Android uses smsto
+          console.log('SMS URL:', smsUrl); // Debug log
+          const canOpenSMS = await Linking.canOpenURL(smsUrl);
           if (!canOpenSMS) {
-            throw new Error('SMS client not available')
+            throw new Error('SMS client not available');
           }
-          await Linking.openURL(smsUrl)
-          break
+          await Linking.openURL(smsUrl);
+          break;
 
         case "email":
           // Robust email URL with encoded parameters
-          const emailSubject = encodeURIComponent(`${business.company_name} - Business Directory`)
-          const emailBody = encodeURIComponent(shareMessage)
-          const emailUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`
-          console.log('Email URL:', emailUrl) // Debug log
-          const canOpenEmail = await Linking.canOpenURL('mailto:')
+          const emailSubject = encodeURIComponent(`${business?.company_name} - Business Directory`);
+          const emailBody = encodeURIComponent(shareMessage);
+          const emailUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+          console.log('Email URL:', emailUrl); // Debug log
+          const canOpenEmail = await Linking.canOpenURL('mailto:');
           if (!canOpenEmail) {
-            throw new Error('Email client not available')
+            throw new Error('Email client not available');
           }
-          await Linking.openURL(emailUrl)
-          break
+          await Linking.openURL(emailUrl);
+          break;
 
         case "copy":
           if (!deepLink) {
-            throw new Error('Invalid deep link')
+            throw new Error('Invalid deep link');
           }
-          console.log('Copying to clipboard:', deepLink) // Debug log
-          // Use Clipboard.setString for react-native compatibility
-          Clipboard.setString(deepLink)
-          // Ensure alert is shown
+          console.log('Copying to clipboard:', shareMessage); // Debug log
+          Clipboard.setString(shareMessage);
           Toast.show({
             type: 'success',
             text1: 'Copied',
-            text2: 'Link copied to clipboard!',
+            text2: 'Business details copied to clipboard!',
             position: 'bottom',
             visibilityTime: 10000,
             autoHide: true,
             bottomOffset: 60,
-          })
-          break
+          });
+          break;
 
         case "more":
-          console.log('Sharing via system share sheet:', shareMessage) // Debug log
+          console.log('Sharing via system share sheet:', shareMessage); // Debug log
           await Share.share({
             message: shareMessage,
-            title: `${business.company_name} - Business Directory`,
+            title: `${business?.company_name} - Business Directory`,
             url: deepLink,
-          })
-          break
+          });
+          break;
 
         default:
-          break
+          break;
       }
     } catch (error) {
-      console.error('Error in handleShareVia:', error.message)
-      Alert.alert('Error', `Failed to share via ${method}: ${error.message}`)
+      console.error('Error in handleShareVia:', error.message);
+      Alert.alert('Error', `Failed to share via ${method}: ${error.message}`);
     } finally {
-      setShowShareOptions(false)
+      setShowShareOptions(false);
     }
-  }
+  };
+
+  // const handleGetDirections = () => {
+  //   const url = Platform.select({
+  //     ios: `maps:0,0?q=${business.address}`,
+  //     android: `geo:0,0?q=${business.address}`,
+  //   })
+  //   Linking.openURL(url)
+  // }
 
   const handleGetDirections = () => {
-    const url = Platform.select({
-      ios: `maps:0,0?q=${business.address}`,
-      android: `geo:0,0?q=${business.address}`,
-    })
-    Linking.openURL(url)
-  }
+    if (businessLocation) {
+      const url = Platform.select({
+        ios: `maps://app?saddr=${userLocation?.latitude},${userLocation?.longitude}&daddr=${businessLocation.latitude},${businessLocation.longitude}`,
+        android: `google.navigation:q=${businessLocation.latitude},${businessLocation.longitude}`,
+      });
+      Linking.openURL(url);
+    } else if (business.address) {
+      const url = Platform.select({
+        ios: `maps:0,0?q=${encodeURIComponent(business.address)}`,
+        android: `geo:0,0?q=${encodeURIComponent(business.address)}`,
+      });
+      Linking.openURL(url);
+    } else {
+      Alert.alert('Error', 'Business location is not available.');
+    }
+  };
 
   const handleImagePress = (image) => {
     setSelectedImage(image)
@@ -524,8 +683,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   }
 
   const handleMapLoadError = () => {
-    setMapError('Map unloaded. Check network connection.')
-    setLoadingMap(false)
+    setLocationError('Failed to load map. Check your network connection.');
+    setLoadingMap(false);
   }
 
   const renderStars = (rating, size = 16, color = "#FFD700") => {
@@ -797,7 +956,73 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   </View>
                 </View>
               )}
-              <View style={styles.section}>
+
+              <View style={styles.mapSection}>
+                <Text style={[styles.sectionTitle, { margin: 20 }]}>Location</Text>
+                <View style={styles.mapContainer}>
+                  {locationError && (
+                    <View style={{ paddingHorizontal: 20 }}>
+                      <View style={styles.mapErrorContainer}>
+                        <Text style={styles.mapErrorText}>{locationError}</Text>
+                      </View>
+                    </View>
+                  )}
+                  {mapRegion ? (
+                    <MapView
+                      style={styles.map}
+                      initialRegion={mapRegion}
+                      provider="google" // Use Google Maps provider
+                      showsUserLocation={true} // Show user's location (blue dot)
+                      onError={handleMapLoadError}
+                    >
+                      {businessLocation && (
+                        <Marker
+                          coordinate={businessLocation}
+                          title={business.company_name}
+                          description={business.address}
+                        >
+                          <Ionicons name="location" size={30} color="#FF0000" />
+                        </Marker>
+                      )}
+
+                      {directions && (
+                        <Polyline
+                          coordinates={directions}
+                          strokeColor="#003366"
+                          strokeWidth={4}
+                        />
+                      )}
+                    </MapView>
+                  ) : (
+                    <View style={styles.mapLoadingContainer}>
+                      <MaterialCommunityIcons name="access-point-network-off" style={{ height: 10, width: 8, padding: 10, color: '#ccccccb6' }} />
+                      <ActivityIndicator size="large" color="#003366" />
+                      <Text style={styles.mapLoadingText}>Loading map...</Text>
+                    </View>
+                  )}
+
+                  {business.address && (
+                    <View style={{ paddingHorizontal: 20 }}>
+                      <View style={styles.addressContainer}>
+                        <Ionicons name="location" size={18} color="#003366" />
+                        <Text style={styles.addressText} numberOfLines={2} ellipsizeMode="tail">
+                          {business.address}
+                        </Text>
+                      </View>
+                    </View>
+
+                  )}
+
+                  <View style={{ paddingBottom: 20 }}>
+                    <TouchableOpacity style={styles.getDirectionsButton} onPress={handleGetDirections} activeOpacity={0.7}>
+                      <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+                      <Text style={styles.getDirectionsText}>Google Maps</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              {/* <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Location</Text>
                 <View style={styles.mapContainer}>
                   <View style={styles.mapErrorContainer}>
@@ -817,7 +1042,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.getDirectionsText}>Get Directions</Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </View> */}
+
               {business.social_media && business.social_media.length > 0 && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Connect With Us</Text>
@@ -998,7 +1224,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           <Text style={styles.footerText}>Listed in Phonebook</Text>
           <Text style={styles.footerCopyright}>© {new Date().getFullYear()} All Rights Reserved</Text>
         </View>
-      </Animated.ScrollView>
+      </Animated.ScrollView >
 
       <Animated.View style={[styles.header, { height: headerHeight }]}>
         <Animated.View
@@ -1115,175 +1341,181 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
       </Animated.View>
 
-      {selectedImage !== null && (
-        <Animated.View
-          style={[
-            styles.imageViewerContainer,
-            {
-              opacity: imageViewerAnim,
-            },
-          ]}
-        >
-          <TouchableOpacity style={styles.imageViewerOverlay} activeOpacity={1} onPress={closeImageViewer} />
+      {
+        selectedImage !== null && (
           <Animated.View
             style={[
-              styles.imageViewerContent,
+              styles.imageViewerContainer,
               {
-                transform: [
-                  {
-                    scale: imageViewerAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.8, 1],
-                    }),
-                  },
-                ],
+                opacity: imageViewerAnim,
               },
             ]}
           >
-            <Image source={{ uri: selectedImage.image }} style={styles.imageViewerImage} resizeMode="contain" />
-            <View style={styles.imageViewerControls}>
-              <TouchableOpacity style={styles.imageViewerCloseButton} onPress={closeImageViewer}>
-                <Ionicons name="close" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.imageViewerOverlay} activeOpacity={1} onPress={closeImageViewer} />
+            <Animated.View
+              style={[
+                styles.imageViewerContent,
+                {
+                  transform: [
+                    {
+                      scale: imageViewerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 1],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <Image source={{ uri: selectedImage.image }} style={styles.imageViewerImage} resizeMode="contain" />
+              <View style={styles.imageViewerControls}>
+                <TouchableOpacity style={styles.imageViewerCloseButton} onPress={closeImageViewer}>
+                  <Ionicons name="close" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
           </Animated.View>
-        </Animated.View>
-      )}
-      {showBottomSheet && (
-        <View style={styles.bottomSheetContainer}>
-          <TouchableOpacity style={styles.bottomSheetOverlay} activeOpacity={1} onPress={closeBottomSheet} />
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              {
-                transform: [{ translateY: bottomSheetAnim }],
-              },
-            ]}
-            {...panResponder.panHandlers}
-          >
-            <View style={styles.bottomSheetHandleContainer}>
-              <View style={styles.bottomSheetHandle} />
-            </View>
-            {bottomSheetContent === "phone" && (
-              <>
-                <Text style={styles.bottomSheetTitle}>Select Phone Number</Text>
-                {business.phone &&
-                  business.phone.map((phone, index) => (
+        )
+      }
+      {
+        showBottomSheet && (
+          <View style={styles.bottomSheetContainer}>
+            <TouchableOpacity style={styles.bottomSheetOverlay} activeOpacity={1} onPress={closeBottomSheet} />
+            <Animated.View
+              style={[
+                styles.bottomSheet,
+                {
+                  transform: [{ translateY: bottomSheetAnim }],
+                },
+              ]}
+              {...panResponder.panHandlers}
+            >
+              <View style={styles.bottomSheetHandleContainer}>
+                <View style={styles.bottomSheetHandle} />
+              </View>
+              {bottomSheetContent === "phone" && (
+                <>
+                  <Text style={styles.bottomSheetTitle}>Select Phone Number</Text>
+                  {business.phone &&
+                    business.phone.map((phone, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.bottomSheetItem}
+                        onPress={() => handleCallNumber(phone.number)}
+                        activeOpacity={0.6}
+                      >
+                        <View style={[styles.bottomSheetItemIcon, { backgroundColor: "#F0F4FF" }]}>
+                          <Ionicons name="call-outline" size={20} color="#003366" />
+                        </View>
+                        <View style={styles.bottomSheetItemContent}>
+                          <Text style={styles.bottomSheetItemTitle}>
+                            {phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}
+                          </Text>
+                          <Text style={styles.bottomSheetItemSubtitle}>{phone.number}</Text>
+                        </View>
+                        <View style={styles.callButtonContainer}>
+                          <Text style={styles.callButtonText}>Call</Text>
+                          <Ionicons name="call" size={16} color="#003366" style={{ marginLeft: 4 }} />
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                </>
+              )}
+              <TouchableOpacity
+                style={styles.bottomSheetCancelButton}
+                onPress={closeBottomSheet}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.bottomSheetCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        )
+      }
+      {
+        showReviewModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.reviewModalContainer}>
+              <View style={styles.reviewModalHeader}>
+                <Text style={styles.reviewModalTitle}>Write a Review</Text>
+                <TouchableOpacity
+                  style={styles.reviewModalCloseButton}
+                  onPress={() => setShowReviewModal(false)}
+                >
+                  <Ionicons name="close" size={24} color="#333333" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={styles.reviewModalContent}>
+                <Text style={styles.reviewModalLabel}>Your Name</Text>
+                <View style={styles.reviewModalInputContainer}>
+                  <Ionicons name="person-outline" size={20} color="#999999" style={styles.reviewModalInputIcon} />
+                  <TextInput
+                    style={styles.reviewModalInput}
+                    placeholder="Enter your name"
+                    value={reviewName}
+                    onChangeText={setReviewName}
+                    maxLength={50}
+                  />
+                </View>
+                <Text style={styles.reviewModalLabel}>Rating</Text>
+                <View style={styles.ratingSelectContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
                     <TouchableOpacity
-                      key={index}
-                      style={styles.bottomSheetItem}
-                      onPress={() => handleCallNumber(phone.number)}
-                      activeOpacity={0.6}
+                      key={star}
+                      onPress={() => setReviewRating(star)}
+                      style={styles.ratingStarButton}
                     >
-                      <View style={[styles.bottomSheetItemIcon, { backgroundColor: "#F0F4FF" }]}>
-                        <Ionicons name="call-outline" size={20} color="#003366" />
-                      </View>
-                      <View style={styles.bottomSheetItemContent}>
-                        <Text style={styles.bottomSheetItemTitle}>
-                          {phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}
-                        </Text>
-                        <Text style={styles.bottomSheetItemSubtitle}>{phone.number}</Text>
-                      </View>
-                      <View style={styles.callButtonContainer}>
-                        <Text style={styles.callButtonText}>Call</Text>
-                        <Ionicons name="call" size={16} color="#003366" style={{ marginLeft: 4 }} />
-                      </View>
+                      <Ionicons
+                        name={reviewRating >= star ? "star" : "star-outline"}
+                        size={32}
+                        color="#FFD700"
+                      />
                     </TouchableOpacity>
                   ))}
-              </>
-            )}
-            <TouchableOpacity
-              style={styles.bottomSheetCancelButton}
-              onPress={closeBottomSheet}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.bottomSheetCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      )}
-      {showReviewModal && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.reviewModalContainer}>
-            <View style={styles.reviewModalHeader}>
-              <Text style={styles.reviewModalTitle}>Write a Review</Text>
-              <TouchableOpacity
-                style={styles.reviewModalCloseButton}
-                onPress={() => setShowReviewModal(false)}
-              >
-                <Ionicons name="close" size={24} color="#333333" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.reviewModalContent}>
-              <Text style={styles.reviewModalLabel}>Your Name</Text>
-              <View style={styles.reviewModalInputContainer}>
-                <Ionicons name="person-outline" size={20} color="#999999" style={styles.reviewModalInputIcon} />
-                <TextInput
-                  style={styles.reviewModalInput}
-                  placeholder="Enter your name"
-                  value={reviewName}
-                  onChangeText={setReviewName}
-                  maxLength={50}
-                />
+                </View>
+                <Text style={styles.reviewModalLabel}>Your Review</Text>
+                <View style={styles.reviewTextInputContainer}>
+                  <TextInput
+                    style={styles.reviewTextInput}
+                    placeholder="Share your experience with this business..."
+                    value={reviewText}
+                    onChangeText={setReviewText}
+                    multiline
+                    numberOfLines={5}
+                    textAlignVertical="top"
+                    maxLength={500}
+                  />
+                </View>
+                <Text style={styles.charCount}>{reviewText.length}/500</Text>
+              </ScrollView>
+              <View style={styles.reviewModalFooter}>
+                <TouchableOpacity
+                  style={styles.cancelReviewButton}
+                  onPress={() => setShowReviewModal(false)}
+                  disabled={isSubmittingReview}
+                >
+                  <Text style={styles.cancelReviewButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.submitReviewButton,
+                    (!reviewName.trim() || !reviewText.trim()) && styles.submitReviewButtonDisabled
+                  ]}
+                  onPress={handleSubmitReview}
+                  disabled={!reviewName.trim() || !reviewText.trim() || isSubmittingReview}
+                >
+                  {isSubmittingReview ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.submitReviewButtonText}>Submit Review</Text>
+                  )}
+                </TouchableOpacity>
               </View>
-              <Text style={styles.reviewModalLabel}>Rating</Text>
-              <View style={styles.ratingSelectContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => setReviewRating(star)}
-                    style={styles.ratingStarButton}
-                  >
-                    <Ionicons
-                      name={reviewRating >= star ? "star" : "star-outline"}
-                      size={32}
-                      color="#FFD700"
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <Text style={styles.reviewModalLabel}>Your Review</Text>
-              <View style={styles.reviewTextInputContainer}>
-                <TextInput
-                  style={styles.reviewTextInput}
-                  placeholder="Share your experience with this business..."
-                  value={reviewText}
-                  onChangeText={setReviewText}
-                  multiline
-                  numberOfLines={5}
-                  textAlignVertical="top"
-                  maxLength={500}
-                />
-              </View>
-              <Text style={styles.charCount}>{reviewText.length}/500</Text>
-            </ScrollView>
-            <View style={styles.reviewModalFooter}>
-              <TouchableOpacity
-                style={styles.cancelReviewButton}
-                onPress={() => setShowReviewModal(false)}
-                disabled={isSubmittingReview}
-              >
-                <Text style={styles.cancelReviewButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.submitReviewButton,
-                  (!reviewName.trim() || !reviewText.trim()) && styles.submitReviewButtonDisabled
-                ]}
-                onPress={handleSubmitReview}
-                disabled={!reviewName.trim() || !reviewText.trim() || isSubmittingReview}
-              >
-                {isSubmittingReview ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.submitReviewButtonText}>Submit Review</Text>
-                )}
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
+        )
+      }
+    </SafeAreaView >
   )
 }
 
@@ -1566,6 +1798,17 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
+  mapSection: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    // padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1617,12 +1860,41 @@ const styles = StyleSheet.create({
     color: "#333333",
   },
   mapContainer: {
-    alignItems: "center",
+    alignItems: 'center',
+    width: '100%',
   },
-  mapImage: {
-    height: 150,
+  map: {
+    width: '100%',
+    height: 200,
     borderRadius: 12,
-    marginBottom: 5,
+    marginBottom: 16,
+  },
+  mapErrorContainer: {
+    backgroundColor: '#FFF8E0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    width: '100%',
+    alignItems: 'center',
+  },
+  mapErrorText: {
+    fontSize: 14,
+    color: '#B8860B',
+    textAlign: 'center',
+  },
+  mapLoadingContainer: {
+    width: '100%',
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  mapLoadingText: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
   },
   addressContainer: {
     flexDirection: 'row',
@@ -1641,13 +1913,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   getDirectionsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#003366",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#003366',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1655,14 +1927,9 @@ const styles = StyleSheet.create({
   },
   getDirectionsText: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#FFFFFF",
+    fontWeight: '500',
+    color: '#FFFFFF',
     marginLeft: 8,
-  },
-  mapErrorContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    marginBottom: 10
   },
   socialMediaContainer: {
     flexDirection: "row",
