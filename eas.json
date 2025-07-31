@@ -12,10 +12,16 @@
       "distribution": "internal"
     },
     "production": {
+      "developmentClient": false,
+      "distribution": "store",
       "autoIncrement": true
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "production"
+      }
+    }
   }
 }
