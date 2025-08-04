@@ -30,7 +30,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Toast from "react-native-toast-message"
 import * as Location from 'expo-location';
-import GOOGLE_MAPS_API_KEY from "../config/env";
+import { GOOGLE_MAPS_API_KEY } from "../config/env";
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 const { width, height } = Dimensions.get("window")

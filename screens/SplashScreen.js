@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import API_BASE_URL from "../config/env";
+import { API_BASE_URL } from "../config/env";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
 import { fetchAllCompaniesOffline } from "../service/getApi";
 
