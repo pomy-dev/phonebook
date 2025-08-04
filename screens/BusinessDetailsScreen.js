@@ -577,14 +577,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  // const handleGetDirections = () => {
-  //   const url = Platform.select({
-  //     ios: `maps:0,0?q=${business.address}`,
-  //     android: `geo:0,0?q=${business.address}`,
-  //   })
-  //   Linking.openURL(url)
-  // }
-
   const handleGetDirections = () => {
     if (businessLocation) {
       const url = Platform.select({
@@ -1262,7 +1254,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={24}
-                color={isFavorite ? "#FF3B30" : "#FFFFFF"}
+                color={isFavorite ? "#003366" : "#FFFFFF"}
               />
             </Animated.View>
           </TouchableOpacity>
