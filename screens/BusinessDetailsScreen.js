@@ -30,6 +30,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Toast from "react-native-toast-message"
 import * as Location from 'expo-location';
+import GOOGLE_MAPS_API_KEY from "../config/env";
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 const { width, height } = Dimensions.get("window")
@@ -117,9 +118,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   // Refs
   const scrollViewRef = useRef(null)
   const galleryRef = useRef(null)
-
-  // Google Maps API KEY
-  const GOOGLE_MAPS_API_KEY = 'AIzaSyCk4R94IPXuKkXvSm7RIr5fWlmIRzr6UA0';
 
   // Calculate average rating
   const averageRating = business.reviews && business.reviews.length > 0
