@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   Linking,
+  RefreshControl,
   Alert
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -16,11 +17,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import connectWhatsApp from "../components/connectWhatsApp"
 import connectEmail from "../components/connectEmail"
 import findLocation from "../components/findLocation"
+import Toast from "react-native-toast-message"
 
 const { width } = Dimensions.get("window")
 
 const FeaturedScreen = ({ route, navigation }) => {
   const [favorites, setFavorites] = useState([])
+  const [refreshing, setRefreshing] = useState(false);
 
   const { featuredBusinesses } = route.params || [
     {
@@ -40,7 +43,6 @@ const FeaturedScreen = ({ route, navigation }) => {
       logo: "https://www.iasp.ws/media/imagegenerator/290x290/upscale(false)/canvascolor(0xffffffff)/RSTP_Logo-01_8.png",
       website: "https://rstp.org.sz",
     },
-    // Other businesses...
   ]
 
   // Load favorites from AsyncStorage
@@ -84,9 +86,27 @@ const FeaturedScreen = ({ route, navigation }) => {
       if (isInFavorites(business._id)) {
         // Remove from favorites
         newFavorites = newFavorites.filter(fav => fav._id !== business._id);
+        Toast.show({
+          type: 'success',
+          text1: 'Removed from Favorites',
+          text2: `${business.company_name} has been removed from your favorites.`,
+          position: 'bottom',
+          visibilityTime: 5000,
+          autoHide: true,
+          bottomOffset: 60
+        });
       } else {
         // Add to favorites
         newFavorites.push(business);
+        Toast.show({
+          type: 'success',
+          text1: 'Added to Favorites',
+          text2: `${business.company_name} has been added to your favorites.`,
+          position: 'bottom',
+          visibilityTime: 5000,
+          autoHide: true,
+          bottomOffset: 60
+        });
       }
 
       // Update state
@@ -164,6 +184,14 @@ const FeaturedScreen = ({ route, navigation }) => {
     findLocation(address);
   }
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -175,7 +203,18 @@ const FeaturedScreen = ({ route, navigation }) => {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#003366']} // Spinner color (Android only)
+            tintColor="#003366"  // Spinner color (iOS only)
+            progressBackgroundColor="#ffff" // Background of the spinner (Android)
+          />
+        }
+      >
         {featuredBusinesses.map((business) => (
           <TouchableOpacity
             key={business._id}
@@ -293,12 +332,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 24,
+    paddingHorizontal: 10,
     paddingBottom: 30,
   },
   // New card styles that match the FavoritesScreen
   favoriteCard: {
     backgroundColor: '#FFFFFF',
-    // borderRadius: 16,
+    borderRadius: 8,
     marginBottom: 16,
     padding: 16,
     shadowColor: '#000',

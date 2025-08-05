@@ -11,6 +11,7 @@ import {
     Modal,
     ActivityIndicator,
     StatusBar,
+    RefreshControl,
     Linking
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,7 +25,6 @@ export default function FavoritesScreen({ navigation }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
-
     const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
     const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
 
@@ -163,7 +163,7 @@ export default function FavoritesScreen({ navigation }) {
     // Render each favorite business item
     const renderFavoriteItem = ({ item }) => (
 
-        item.subscription_type.toLowerCase() !== "bronze" ? (
+        <TouchableOpacity onPress={() => handleBusinessPress(item)}>
             <View style={styles.favoriteCard}>
                 <View style={styles.favoriteHeader}>
                     <View style={styles.businessImageContainer}>
@@ -247,88 +247,8 @@ export default function FavoritesScreen({ navigation }) {
                     <Text style={styles.viewDetailsText}>View Details</Text>
                     <Ionicons name="chevron-forward" size={16} color="#003366" />
                 </TouchableOpacity>
-
             </View>
-        ) : (
-            <TouchableOpacity onPress={() => handleBusinessPress(item)}>
-                <View style={styles.favoriteCard}>
-                    <View style={styles.favoriteHeader}>
-                        <View style={styles.businessImageContainer}>
-                            {item.logo ? (
-                                <Image source={{ uri: item.logo }} style={styles.businessImage} resizeMode="cover" />
-                            ) : (
-                                <View style={styles.businessInitialContainer}>
-                                    <Text style={styles.businessInitial}>{item.company_name.charAt(0)}</Text>
-                                </View>
-                            )}
-                        </View>
-
-                        <View style={styles.businessInfo}>
-                            <Text style={styles.businessName} numberOfLines={1} ellipsizeMode="tail">{item.company_name}</Text>
-                            <Text style={styles.businessCategory} numberOfLines={1} ellipsizeMode="tail">{item.company_type}</Text>
-                            <Text style={styles.businessAddress} numberOfLines={1} ellipsizeMode="tail">{item.address}</Text>
-                        </View>
-
-                        <TouchableOpacity
-                            style={styles.removeButton}
-                            onPress={() => {
-                                Alert.alert(
-                                    "Remove Favorite",
-                                    `Are you sure you want to remove ${item.company_name} from favorites?`,
-                                    [
-                                        { text: "Cancel", style: "cancel" },
-                                        { text: "Remove", onPress: () => removeFavorite(item._id) }
-                                    ]
-                                );
-                            }}
-                        >
-                            <Ionicons name="heart" size={22} color="#003366" />
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.actionButtons}>
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={(e) => handleCall(item.phone, e)}
-                        >
-                            <Ionicons name="call-outline" size={18} color="#003366" />
-                            <Text style={styles.actionButtonText}>Call</Text>
-                        </TouchableOpacity>
-
-                        {item.phone && item.phone.some(p => p.phone_type === 'whatsApp') && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    handleWhatsapp(item.phone);
-                                }}
-                            >
-                                <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                                <Text style={styles.actionButtonText}>WhatsApp</Text>
-                            </TouchableOpacity>
-                        )}
-
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={(e) => handleEmail(item.email, e)}
-                        >
-                            <Ionicons name="mail-outline" size={18} color="#FF9500" />
-                            <Text style={styles.actionButtonText}>Email</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={(e) => handleLocation(item.address, e)}
-                        >
-                            <Ionicons name="location-outline" size={18} color="#5856D6" />
-                            <Text style={styles.actionButtonText}>Map</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </TouchableOpacity>
-        )
+        </TouchableOpacity>
     );
 
     const handleBusinessPress = (business) => {

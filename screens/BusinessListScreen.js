@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   TextInput,
   Alert,
   Modal,
+  RefreshControl,
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import connectWhatsApp from "../components/connectWhatsApp";
 import connectEmail from "../components/connectEmail";
 import findLocation from "../components/findLocation";
+import Toast from "react-native-toast-message"
 
 const { width } = Dimensions.get("window");
 
@@ -32,6 +34,7 @@ export default function BusinessList({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
   const [favorites, setFavorites] = useState([]);
 
@@ -69,9 +72,27 @@ export default function BusinessList({ route, navigation }) {
       if (isInFavorites(business._id)) {
         // Remove from favorites
         newFavorites = newFavorites.filter((fav) => fav._id !== business._id);
+        Toast.show({
+          type: 'success',
+          text1: 'Removed from Favorites',
+          text2: `${business.company_name} has been removed from your favorites.`,
+          position: 'bottom',
+          visibilityTime: 5000,
+          autoHide: true,
+          bottomOffset: 60
+        });
       } else {
         // Add to favorites
         newFavorites.push(business);
+        Toast.show({
+          type: 'success',
+          text1: 'Added to Favorites',
+          text2: `${business.company_name} has been added to your favorites.`,
+          position: 'bottom',
+          visibilityTime: 5000,
+          autoHide: true,
+          bottomOffset: 60
+        });
       }
 
       // Update state
@@ -160,9 +181,8 @@ export default function BusinessList({ route, navigation }) {
     } else if (phoneNumbers.length > 1) {
       // If there are multiple phone numbers, show a selection dialog with cancel option
       const options = phoneNumbers.map((phone) => ({
-        text: `${
-          phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-        }: ${phone.number}`,
+        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
+          }: ${phone.number}`,
         onPress: () => Linking.openURL(`tel:${phone.number}`),
       }));
 
@@ -330,20 +350,25 @@ export default function BusinessList({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      {(!item.subscription_type ||
-        item.subscription_type.toLowerCase() !== "bronze") && (
-        <TouchableOpacity
-          style={styles.viewDetailsButton}
-          onPress={() =>
-            navigation.navigate("BusinessDetail", { business: item })
-          }
-        >
-          <Text style={styles.viewDetailsText}>View Details</Text>
-          <Ionicons name="chevron-forward" size={16} color="#003366" />
-        </TouchableOpacity>
-      )}
+      {/* {(!item.subscription_type ||
+        item.subscription_type.toLowerCase() !== "bronze") && ( */}
+      <TouchableOpacity
+        style={styles.viewDetailsButton}
+        onPress={() => handleBusinessPress(item)}
+      >
+        <Text style={styles.viewDetailsText}>View Details</Text>
+        <Ionicons name="chevron-forward" size={16} color="#003366" />
+      </TouchableOpacity>
+      {/* )} */}
     </TouchableOpacity>
   );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -549,6 +574,7 @@ export default function BusinessList({ route, navigation }) {
             placeholderTextColor="#AAAAAA"
             value={searchQuery}
             onChangeText={setSearchQuery}
+            numberOfLines={1}
           />
         </View>
       </View>
@@ -573,6 +599,16 @@ export default function BusinessList({ route, navigation }) {
               </Text>
             </View>
           }
+          refreshing={refreshing}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#003366']} // Spinner color (Android only)
+              tintColor="#003366"  // Spinner color (iOS only)
+              progressBackgroundColor="#ffff" // Background of the spinner (Android)
+            />
+          }
         />
       )}
     </SafeAreaView>
@@ -583,7 +619,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-    
+
   },
   titleContainer: {
     flexDirection: "row",
@@ -607,9 +643,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8F8F8",
-    borderRadius: 5,
+    borderRadius: 50,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 5,
   },
   searchIcon: {
     marginRight: 10,

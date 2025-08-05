@@ -549,7 +549,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             text1: 'Copied',
             text2: 'Business details copied to clipboard!',
             position: 'bottom',
-            visibilityTime: 10000,
+            visibilityTime: 5000,
             autoHide: true,
             bottomOffset: 60,
           });
@@ -733,7 +733,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         scrollEventThrottle={16}
       >
         <View style={{ height: HEADER_MAX_HEIGHT }} />
+
         <View style={styles.businessInfoContainer}>
+
           <View style={styles.businessInfoHeader}>
             <View style={styles.logoContainer}>
               {business.logo ? (
@@ -744,10 +746,11 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </View>
               )}
             </View>
+
             <View style={styles.businessInfoContent}>
               <Text style={styles.businessName} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
               <Text style={styles.businessCategory} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.ratingContainer}
                 onPress={toggleRatingDetails}
                 activeOpacity={0.7}
@@ -765,8 +768,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   size={16}
                   color="#666666"
                 />
-              </TouchableOpacity>
-              {showRatingDetails && (
+              </TouchableOpacity> */}
+              {/* {showRatingDetails && (
                 <Animated.View
                   style={[
                     styles.ratingDetailsContainer,
@@ -814,10 +817,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </View>
                   </View>
                 </Animated.View>
-              )}
+              )} */}
             </View>
           </View>
+
           <View style={styles.quickActionsContainer}>
+
             <TouchableOpacity
               style={styles.primaryActionButton}
               onPress={handleCall}
@@ -826,36 +831,43 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <Ionicons name="call" size={18} color="#FFFFFF" />
               <Text style={styles.primaryActionText}>Call Now</Text>
             </TouchableOpacity>
+
             <View style={styles.secondaryActionsRow}>
+
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleGetDirections} activeOpacity={0.7}>
                 <Ionicons name="navigate" size={20} color="#003366" />
                 <Text style={styles.secondaryActionText}>Directions</Text>
               </TouchableOpacity>
+
               {hasWhatsApp && (
                 <TouchableOpacity style={styles.secondaryActionButton} onPress={handleWhatsApp} activeOpacity={0.7}>
                   <Ionicons name="logo-whatsapp" size={20} color="#003366" />
                   <Text style={styles.secondaryActionText}>WhatsApp</Text>
                 </TouchableOpacity>
               )}
+
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleShare} activeOpacity={0.7}>
                 <Ionicons name="share-social" size={20} color="#003366" />
                 <Text style={styles.secondaryActionText}>Share</Text>
               </TouchableOpacity>
+
               <TouchableOpacity style={styles.secondaryActionButton} onPress={toggleFavorite} activeOpacity={0.7}>
                 <Animated.View style={{ transform: [{ scale: isFavorite ? callButtonScale : 1 }] }}>
                   <Ionicons
                     name={isFavorite ? "heart" : "heart-outline"}
                     size={20}
-                    color={isFavorite ? "#FF3B30" : "#003366"}
+                    color={isFavorite ? "#003366" : "#003366"}
                   />
                 </Animated.View>
                 <Text style={styles.secondaryActionText}>
                   {isFavorite ? "Saved" : "Save"}
                 </Text>
               </TouchableOpacity>
+
             </View>
           </View>
         </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -910,6 +922,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <Text style={[styles.tabText, activeTab === "contact" && styles.activeTabText]}>Contact</Text>
           </TouchableOpacity>
         </ScrollView>
+
         <View style={styles.tabContent}>
           {activeTab === "about" && (
             <>
@@ -1210,10 +1223,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </View>
           )}
         </View>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>Listed in Phonebook</Text>
           <Text style={styles.footerCopyright}>© {new Date().getFullYear()} All Rights Reserved</Text>
         </View>
+
       </Animated.ScrollView >
 
       <Animated.View style={[styles.header, { height: headerHeight }]}>
@@ -1252,7 +1267,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={24}
-                color={isFavorite ? "#003366" : "#FFFFFF"}
+                color={isFavorite ? "#035eb9ff" : "#FFFFFF"}
               />
             </Animated.View>
           </TouchableOpacity>
@@ -1608,9 +1623,9 @@ const styles = StyleSheet.create({
   },
   businessInfoContainer: {
     backgroundColor: "#FFFFFF",
-    marginHorizontal: 16,
+    // marginHorizontal: 5,
     marginTop: -15,
-    borderRadius: 16,
+    borderRadius: 15,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -2282,6 +2297,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Platform.OS === "ios" ? 100 : 90,
     right: 16,
+    borderRadius: 16,
     zIndex: 100,
   },
   shareOptionsBlur: {
