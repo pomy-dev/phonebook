@@ -1,5 +1,4 @@
 import { Button, StyleSheet, Text, View } from 'react-native'
-import React from 'react'
 
 export default function HomeDetailsScreen({ navigation }) {
     return (

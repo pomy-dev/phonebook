@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Business-Link",
+    "name": "Business Link",
     "slug": "Business-Link",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -43,11 +43,11 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [],
     "extra": {
       "eas": {
-        "projectId": "714a1268-f123-4701-a388-7a018b514a95"
+        "projectId": "03dcce6c-eb8e-4ede-8abe-12c1b2fcd575"
       }
-    },
-    "plugins": []
+    }
   }
 }

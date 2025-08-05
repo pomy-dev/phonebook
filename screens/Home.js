@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,9 +14,11 @@ import {
   Linking,
   Alert,
   Modal,
+  RefreshControl,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import connectWhatsApp from "../components/connectWhatsApp";
 import connectEmail from "../components/connectEmail";
 import findLocation from "../components/findLocation";
@@ -27,6 +29,7 @@ import {
 } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
+import Toast from "react-native-toast-message"
 
 const { width } = Dimensions.get("window");
 
@@ -42,6 +45,7 @@ const HomeScreen = ({ navigation }) => {
   const [featuredBusinesses, setFeaturedBusinesses] = useState([]);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
@@ -59,7 +63,14 @@ const HomeScreen = ({ navigation }) => {
     };
 
     loadFavorites();
-  }, []);
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadFavorites();
+    });
+
+    // Clean up the listener
+    return unsubscribe;
+  }, [navigation]);
 
   // Check if a business is in favorites
   const isInFavorites = (businessId) => {
@@ -80,15 +91,16 @@ const HomeScreen = ({ navigation }) => {
       setFavorites(newFavorites);
       await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
 
-      Alert.alert(
-        isInFavorites(business._id)
-          ? "Removed from Favorites"
-          : "Added to Favorites",
-        isInFavorites(business._id)
-          ? `${business.company_name} has been removed from your favorites.`
-          : `${business.company_name} has been added to your favorites.`,
-        [{ text: "OK" }]
-      );
+      Toast.show({
+        type: 'success',
+        text1: isInFavorites(business._id) ? "Removed from Favorites" : "Added to Favorites",
+        text2: isInFavorites(business._id) ? `${business.company_name} has been removed from your favorites.` : `${business.company_name} has been added to your favorites.`,
+        position: 'bottom',
+        visibilityTime: 5000,
+        autoHide: true,
+        bottomOffset: 60,
+      });
+
     } catch (error) {
       console.log("Error updating favorites:", error);
       Alert.alert("Error", "Could not update favorites. Please try again.");
@@ -124,12 +136,11 @@ const HomeScreen = ({ navigation }) => {
     filterBusinesses(allBusinesses, activeCategory);
   }, [activeCategory, allBusinesses]);
 
-
-   useEffect(() => {
+  useEffect(() => {
     filterALLBs(searchQuery)
   }, [searchQuery]);
 
- const filterALLBs = async (query = searchQuery) => {
+  const filterALLBs = async (query = searchQuery) => {
     data = await fetchAllCompaniesOffline();
     const filtered = data.filter((business) => {
       const matchesSearch =
@@ -222,9 +233,8 @@ const HomeScreen = ({ navigation }) => {
       );
     } else if (phoneNumbers.length > 1) {
       const options = phoneNumbers.map((phone) => ({
-        text: `${
-          phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-        }: ${phone.number}`,
+        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
+          }: ${phone.number}`,
         onPress: () => Linking.openURL(`tel:${phone.number}`),
       }));
 
@@ -283,8 +293,16 @@ const HomeScreen = ({ navigation }) => {
           setFeaturedBusinesses(featuredBusinesses);
           setBusinesses(nonGoldCompanies);
           setFilteredBusinesses(nonGoldCompanies);
+          Toast.show({
+            type: 'success',
+            text1: 'Refreshed 👍',
+            text2: 'Businesses refreshed successfully',
+            position: 'middle',
+            visibilityTime: 5000,
+            autoHide: true
+          });
 
-          Alert.alert("Success", "Business listings refreshed successfully");
+          // Alert.alert("Success", "Business listings refreshed successfully");
           loadBusinesses();
           setLastRefresh("Last refresh was just now");
         } catch (err) {
@@ -304,6 +322,14 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   const hide = searchQuery.length > 0;
 
@@ -499,7 +525,7 @@ const HomeScreen = ({ navigation }) => {
           {loading ? (
             <ActivityIndicator size="small" color="#003366" />
           ) : (
-            <Ionicons name="refresh-outline" size={20} color="#003366" />
+            <AntDesign name="download" size={20} color="#003366" />
           )}
         </TouchableOpacity>
       </View>
@@ -519,7 +545,7 @@ const HomeScreen = ({ navigation }) => {
             placeholderTextColor="#AAAAAA"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            // onFocus={search}
+            numberOfLines={1}
           />
         </View>
       </View>
@@ -535,11 +561,20 @@ const HomeScreen = ({ navigation }) => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#003366']} // Spinner color (Android only)
+              tintColor="#003366"  // Spinner color (iOS only)
+              progressBackgroundColor="#ffff" // Background of the spinner (Android)
+            />
+          }
         >
           {/* Featured Businesses */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Featured</Text>
+              <Text style={styles.sectionTitle}>Exclusive</Text>
               <TouchableOpacity
                 onPress={() =>
                   navigation.navigate("Featured", { featuredBusinesses })
@@ -620,7 +655,7 @@ const HomeScreen = ({ navigation }) => {
 
           {/* All Businesses */}
           <View style={styles.businessesContainer}>
-            <Text style={styles.businessesTitle}>Businesses</Text>
+            <Text style={styles.businessesTitle}>Featured</Text>
             <View>
               {filteredBusinesses.length > 0 ? (
                 filteredBusinesses.map((item) => (
@@ -760,23 +795,19 @@ const HomeScreen = ({ navigation }) => {
                       </TouchableOpacity>
                     </View>
 
-                    {item.subscription_type.toLowerCase() !== "bronze" && (
-                      <TouchableOpacity
-                        style={styles.viewDetailsButton}
-                        onPress={() =>
-                          navigation.navigate("BusinessDetail", {
-                            business: item,
-                          })
-                        }
-                      >
-                        <Text style={styles.viewDetailsText}>View Details</Text>
-                        <Ionicons
-                          name="chevron-forward"
-                          size={16}
-                          color="#003366"
-                        />
-                      </TouchableOpacity>
-                    )}
+                    {/* {item.subscription_type.toLowerCase() !== "bronze" && ( */}
+                    <TouchableOpacity
+                      style={styles.viewDetailsButton}
+                      onPress={() => handleBusinessPress(item)}
+                    >
+                      <Text style={styles.viewDetailsText}>View Details</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color="#003366"
+                      />
+                    </TouchableOpacity>
+                    {/* )} */}
                   </TouchableOpacity>
                 ))
               ) : (
@@ -1027,9 +1058,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8F8F8",
-    borderRadius: 5,
+    borderRadius: 50,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 5,
   },
   searchIcon: {
     marginRight: 10,
@@ -1047,7 +1078,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 10,
     marginBottom: 16,
   },
   sectionTitle: {
@@ -1071,9 +1102,9 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   featuredImageContainer: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 80,
+    height: 80,
+    borderRadius: 10,
     backgroundColor: "#F8F8F8",
     justifyContent: "center",
     alignItems: "center",
@@ -1086,8 +1117,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   featuredImage: {
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 60,
+    objectFit: 'cover'
   },
   placeholderContent: {
     width: "100%",

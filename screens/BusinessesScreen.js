@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import {
     View,
     Text,
@@ -10,9 +10,18 @@ import {
     Dimensions,
     TextInput,
     Image,
+    Alert,
+    RefreshControl,
     ActivityIndicator
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { AntDesign } from '@expo/vector-icons'
+import { loadOfflineData } from '../service/getApi'
+import Toast from "react-native-toast-message"
+import Healthcare from "../assets/pics/health.jpg"
+import Emergency from "../assets/pics/emergency.png"
+import Government from "../assets/pics/government.jpg"
+import Education from "../assets/pics/education.jpg"
 
 const { width } = Dimensions.get('window')
 
@@ -20,6 +29,8 @@ export default function BusinessScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState("")
     const [featuredCategory, setFeaturedCategory] = useState("Emergency")
     const [loading, setLoading] = useState(false)
+    const [businesses, setBusinesses] = useState([]);
+    const [refreshing, setRefreshing] = useState(false)
 
     // Business categories with appropriate icons
     const categories = [
@@ -130,22 +141,22 @@ export default function BusinessScreen({ navigation }) {
         {
             name: "Emergency",
             icon: "bandage-outline",
-            image: "https://images.unsplash.com/photo-1565514020179-026b62f2c4a0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+            image: Emergency
         },
         {
             name: "Healthcare",
             icon: "medical-outline",
-            image: "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+            image: Healthcare
         },
         {
             name: "Government",
             icon: "business-outline",
-            image: "https://images.unsplash.com/photo-1523292562811-8fa7962a78c8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+            image: Government
         },
         {
             name: "Education",
             icon: "school-outline",
-            image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"
+            image: Education
         }
     ]
 
@@ -161,13 +172,20 @@ export default function BusinessScreen({ navigation }) {
     const handleRefresh = async () => {
         try {
             setLoading(true);
-            const companyData = await fetchAllCompanies();
+            const companyData = await loadOfflineData();
 
             // Set state with the refreshed data
             setBusinesses(companyData);
 
             // Show a success message
-            Alert.alert("Success", "Business listings refreshed successfully");
+            Toast.show({
+                type: 'success',
+                text1: 'Refreshed 👍',
+                text2: 'Categories refreshed successfully',
+                position: 'middle',
+                visibilityTime: 5000,
+                autoHide: true
+            });
         } catch (err) {
             console.log(err.message);
             Alert.alert("Error", "Failed to refresh business listings");
@@ -175,6 +193,12 @@ export default function BusinessScreen({ navigation }) {
             setLoading(false);
         }
     };
+
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        handleRefresh()
+        setRefreshing(false);
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -191,8 +215,8 @@ export default function BusinessScreen({ navigation }) {
                     {loading ? (
                         <ActivityIndicator size="small" color="#003366" />
                     ) : (
-                        <Ionicons
-                            name="refresh-outline"
+                        <AntDesign
+                            name="download"
                             size={20}
                             color="#003366"
                         />
@@ -210,11 +234,23 @@ export default function BusinessScreen({ navigation }) {
                         placeholderTextColor="#AAAAAA"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
+                        numberOfLines={1}
                     />
                 </View>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#003366']} // Spinner color (Android only)
+                        tintColor="#003366"  // Spinner color (iOS only)
+                        progressBackgroundColor="#ffff" // Background of the spinner (Android)
+                    />
+                }
+            >
                 {/* Featured Categories */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
@@ -234,7 +270,10 @@ export default function BusinessScreen({ navigation }) {
                                 activeOpacity={0.7}
                             >
                                 <View style={styles.featuredImageContainer}>
-                                    <Image source={{ uri: category.image }} style={styles.featuredImage} />
+                                    <Image source={category.image}
+                                        style={[styles.featuredImage, { objectFit: 'cover' }]}
+
+                                    />
                                     <View style={styles.featuredOverlay}>
                                         <Ionicons name={category.icon} size={28} color="#FFFFFF" />
                                     </View>
@@ -333,7 +372,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#F8F8F8",
-        borderRadius: 5,
+        borderRadius: 50,
         paddingHorizontal: 16,
         paddingVertical: 5,
     },

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import API_BASE_URL from "../config/env";
+import { API_BASE_URL } from "../config/env";
 
 export const fetchAllCompanies = async () => {
   try {
@@ -24,7 +24,7 @@ export const fetchAllCompanies = async () => {
       (company) => company.paid === true
     );
 
-  
+
     await AsyncStorage.setItem("companiesList", JSON.stringify(paidCompanies));
 
     const timestamp = new Date().toISOString();
