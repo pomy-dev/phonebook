@@ -3,8 +3,6 @@ import { API_BASE_URL } from "../config/env";
 
 export const fetchAllCompanies = async () => {
   try {
-    await AsyncStorage.removeItem("companiesList");
-
     const response = await fetch(`${API_BASE_URL}/api/companies`, {
       method: "GET", // HTTP method
       headers: {
@@ -17,6 +15,7 @@ export const fetchAllCompanies = async () => {
       throw new Error("Network response was not ok " + response.statusText);
     }
 
+    await AsyncStorage.removeItem("companiesList");
     const data = await response.json(); // Parse JSON response
 
     // Filter to only include companies where paid is true
