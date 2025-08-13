@@ -30,6 +30,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
 import Toast from "react-native-toast-message"
+import CustomLoader from "../components/customLoader";
 
 const { width } = Dimensions.get("window");
 
@@ -336,6 +337,8 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {loading && <CustomLoader />}
 
       {/* Upgrade Modal for Bronze Businesses */}
       <Modal

@@ -1,5 +1,6 @@
 import Animated, { useSharedValue, withTiming, useAnimatedStyle, Easing } from 'react-native-reanimated';
 import { View, StyleSheet } from 'react-native';
+import { Icons } from '../utils/Icons';
 
 export default function CustomLoader() {
   const rotation = useSharedValue(0);
@@ -16,10 +17,9 @@ export default function CustomLoader() {
 
   return (
     <View style={styles.container}>
-      <Animated.Image
-        source={require('./your-loader-icon.png')} // Replace with your icon
-        style={[styles.loaderIcon, animatedStyle]}
-      />
+      <Animated.View style={[styles.loaderIcon, animatedStyle]}>
+        <Icons.EvilIcons name="spinner-3" size={50} color="slate" />
+      </Animated.View>
     </View>
   );
 }
@@ -27,6 +27,9 @@ export default function CustomLoader() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    position: 'absolute',
+    top: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
