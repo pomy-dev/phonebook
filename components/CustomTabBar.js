@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react"
 import { View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Platform } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { Icons } from "../utils/Icons"
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get("window")
@@ -118,7 +118,7 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                                     opacity: opacityAnim,
                                 }}
                             >
-                                <Ionicons name={iconName} size={24} color={isFocused ? theme.colors.primary : theme.colors.text} />
+                                <Icons.Ionicons name={iconName} size={24} color={isFocused ? theme.colors.primary : theme.colors.text} />
                             </Animated.View>
                             <Text
                                 style={[
@@ -132,12 +132,6 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                                 {label}
                             </Text>
 
-                            {/* Badge if needed */}
-                            {/* {route.name === "Countries" && (
-                            <View style={[styles.badge, { backgroundColor: theme.colors.notification }]}>
-                                <Text style={styles.badgeText}>5</Text>
-                            </View>
-                        )} */}
                         </TouchableOpacity>
                     )
                 })}

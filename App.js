@@ -7,10 +7,11 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import TabNavigator from './components/TabNavigator';
 import Toast from 'react-native-toast-message';
+import { createDrawerNavigator } from "@react-navigation/drawer";
 import SplashScreen from './screens/SplashScreen'; // Import the SplashScreen component
+import CustomDrawerContent from './components/Drawer';
 
-// Bottom Tab Navigator
-const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
 
 // Define a custom light theme
 const CustomLightTheme = {
@@ -39,25 +40,6 @@ const CustomDarkTheme = {
     notification: '#FF4500',
   },
 };
-
-// Custom Tab Bar Icon with Animation using React Native's Animated API
-function TabBarIcon({ name, color, size, focused }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.timing(scaleAnim, {
-      toValue: focused ? 1.2 : 1,
-      duration: 200,
-      useNativeDriver: true
-    }).start();
-  }, [focused]);
-
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <Ionicons name={name} size={size} color={color} />
-    </Animated.View>
-  );
-}
 
 export default function App() {
   const scheme = useColorScheme();
@@ -99,7 +81,22 @@ export default function App() {
         // Show main app with navigation when ready
         <>
           <NavigationContainer theme={theme}>
-            <TabNavigator />
+            <Drawer.Navigator
+              drawerContent={(props) => (
+                <CustomDrawerContent
+                  {...props}
+                  states={[
+                    { id: "eswatini", name: "eSwatini", coatOfArmsIcon: "shield-outline", flagIcon: "flag-outline" },
+                    { id: "south_africa", name: "South Africa", coatOfArmsIcon: "shield-outline", flagIcon: "flag-outline" },
+                    { id: "mozambique", name: "Mozambique", coatOfArmsIcon: "shield-outline", flagIcon: "flag-outline" },
+                  ]}
+                // Pass other props as needed
+                />
+              )}
+            >
+              <Drawer.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
+              {/* Add other screens here */}
+            </Drawer.Navigator>
             <StatusBar style={isDark ? 'light' : 'dark'} />
           </NavigationContainer>
           <Toast config={toastConfig} />
