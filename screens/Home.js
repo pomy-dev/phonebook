@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect, useCallback } from "react";
 import {
   View,
@@ -10,15 +11,13 @@ import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  Dimensions,
   Linking,
   Alert,
   Modal,
   RefreshControl,
-  ActivityIndicator,
+  Switch,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
+import { Icons } from "../utils/Icons";
 import connectWhatsApp from "../components/connectWhatsApp";
 import connectEmail from "../components/connectEmail";
 import findLocation from "../components/findLocation";
@@ -30,8 +29,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
 import Toast from "react-native-toast-message"
-
-const { width } = Dimensions.get("window");
+import CustomLoader from "../components/customLoader";
+import eswatini from '../assets/pics/eswatini-state.jpg';
 
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +45,11 @@ const HomeScreen = ({ navigation }) => {
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedState, setSelectedState] = useState("All");
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isOnline, setIsOnline] = useState(true);
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
@@ -53,7 +57,11 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     const loadFavorites = async () => {
       try {
+        const theme = await AsyncStorage.getItem("theme");
+        const notifications = await AsyncStorage.getItem("notifications");
         const storedFavorites = await AsyncStorage.getItem("favorites");
+        if (theme) setIsDarkMode(JSON.parse(theme));
+        if (notifications) setNotificationsEnabled(JSON.parse(notifications));
         if (storedFavorites) {
           setFavorites(JSON.parse(storedFavorites));
         }
@@ -277,7 +285,7 @@ const HomeScreen = ({ navigation }) => {
 
   const handleRefresh = async () => {
     try {
-      setLoading(true);
+      setRefreshing(true);
       const isConnected = await checkNetworkConnectivity();
 
       if (isConnected) {
@@ -297,13 +305,13 @@ const HomeScreen = ({ navigation }) => {
             type: 'success',
             text1: 'Refreshed 👍',
             text2: 'Businesses refreshed successfully',
-            position: 'middle',
+            position: 'bottom',
             visibilityTime: 5000,
-            autoHide: true
+            autoHide: true,
+            bottomOffset: 60,
           });
 
-          // Alert.alert("Success", "Business listings refreshed successfully");
-          loadBusinesses();
+          await loadBusinesses();
           setLastRefresh("Last refresh was just now");
         } catch (err) {
           console.log("API Error:", err.message);
@@ -311,31 +319,207 @@ const HomeScreen = ({ navigation }) => {
           setLastRefresh("Using cached data (network unavailable)");
         }
       } else {
-        loadBusinesses();
+        await loadBusinesses();
         setLastRefresh("Using cached data (offline mode)");
       }
     } catch (err) {
       console.log("General Error:", err.message);
-      loadBusinesses();
+      await loadBusinesses();
       setLastRefresh("Using cached data");
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    handleRefresh();
   }, []);
 
   const hide = searchQuery.length > 0;
 
+
+
+  const states = [
+    {
+      id: "eswatini",
+      name: "eSwatini",
+      coatOfArmsIcon: "shield-outline",
+      flagIcon: "flag-outline",
+    },
+    {
+      id: "south_africa",
+      name: "South Africa",
+      coatOfArmsIcon: "shield-outline",
+      flagIcon: "flag-outline",
+    },
+    {
+      id: "mozambique",
+      name: "Mozambique",
+      coatOfArmsIcon: "shield-outline",
+      flagIcon: "flag-outline",
+    },
+  ];
+
+  // Drawer content
+  const drawerContent = () => (
+    <View style={[styles.drawerContainer, isDarkMode && styles.darkDrawerContainer]}>
+      <View style={styles.drawerHeader}>
+        <Text style={[styles.drawerTitle, isDarkMode && styles.darkText]}>Menu</Text>
+      </View>
+
+      <View style={styles.drawerSection}>
+        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Neighboring Countries</Text>
+        {states?.map((state) => (
+          <TouchableOpacity
+            key={state.id}
+            style={[styles.drawerItem, selectedState === state.name && styles.activeDrawerItem]}
+            onPress={() => {
+              setSelectedState(state.name);
+              setIsDrawerOpen(false);
+            }}
+          >
+            <Icons.Ionicons
+              name={state.coatOfArmsIcon}
+              size={20}
+              color={isDarkMode ? "#FFFFFF" : "#333333"}
+              style={styles.drawerIcon}
+            />
+            <Icons.Ionicons
+              name={state.flagIcon}
+              size={20}
+              color={isDarkMode ? "#FFFFFF" : "#333333"}
+              style={styles.drawerIcon}
+            />
+            <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>{state.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* State selection */}
+      <View style={styles.drawerSection}>
+        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>States</Text>
+        {states.map((state) => (
+          <TouchableOpacity
+            key={state.id}
+            style={[
+              styles.drawerItem,
+              selectedState === state.name && styles.activeDrawerItem,
+            ]}
+            onPress={() => {
+              setSelectedState(state.name);
+              setIsDrawerOpen(false);
+            }}
+          >
+            <Icons.Ionicons
+              name={state.flagIcon === "All" ? "globe-outline" : "map-outline"}
+              size={20}
+              color={isDarkMode ? "#FFFFFF" : "#333333"}
+            />
+            <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>{state.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+
+      {/* publications */}
+      <View style={styles.drawerSection}>
+        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Navigation</Text>
+        <TouchableOpacity
+          style={styles.drawerItem}
+          onPress={() => navigation.navigate("Publications")}
+        >
+          <Icons.Ionicons name="newspaper-outline" size={20} color={isDarkMode ? "#FFFFFF" : "#333333"} />
+          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Publications</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.drawerItem}
+          onPress={() => navigation.navigate("BusinessPromotions")}
+        >
+          <Icons.Ionicons name="megaphone-outline" size={20} color={isDarkMode ? "#FFFFFF" : "#333333"} />
+          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Business Promotions</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Settings */}
+      <View style={styles.drawerSection}>
+        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Settings</Text>
+        <View style={styles.drawerItem}>
+          <Icons.Ionicons
+            name={isDarkMode ? "moon-outline" : "sunny-outline"}
+            size={20}
+            color={isDarkMode ? "#FFFFFF" : "#333333"}
+          />
+          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Dark Mode</Text>
+          <Switch value={isDarkMode} onValueChange={toggleTheme} />
+        </View>
+        <View style={styles.drawerItem}>
+          <Icons.Ionicons
+            name="notifications-outline"
+            size={20}
+            color={isDarkMode ? "#FFFFFF" : "#333333"}
+          />
+          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Notifications</Text>
+          <Switch value={notificationsEnabled} onValueChange={toggleNotifications} />
+        </View>
+        <View style={styles.drawerItem}>
+          <Icons.Ionicons
+            name={isOnline ? "wifi-outline" : "cloud-offline-outline"}
+            size={20}
+            color={isDarkMode ? "#FFFFFF" : "#333333"}
+          />
+          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>
+            {isOnline ? "Go Offline" : "Go Online"}
+          </Text>
+          <Switch value={isOnline} onValueChange={toggleOnlineMode} />
+        </View>
+      </View>
+    </View>
+  );
+
+  // Toggle theme and save to AsyncStorage
+  const toggleTheme = async () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    await AsyncStorage.setItem("theme", JSON.stringify(newTheme));
+  };
+
+  // Toggle notifications and save to AsyncStorage
+  const toggleNotifications = async () => {
+    const newValue = !notificationsEnabled;
+    setNotificationsEnabled(newValue);
+    await AsyncStorage.setItem("notifications", JSON.stringify(newValue));
+  };
+
+  // Toggle online/offline mode
+  const toggleOnlineMode = async () => {
+    const newValue = !isOnline;
+    setIsOnline(newValue);
+    // Add logic to handle online/offline mode (e.g., disable API calls if offline)
+    Toast.show({
+      type: "info",
+      text1: newValue ? "Online Mode" : "Offline Mode",
+      text2: newValue ? "App is now online" : "App is now offline",
+      position: "bottom",
+      visibilityTime: 3000,
+    });
+  };
+
+  // Check network connectivity on mount
+  useEffect(() => {
+    const checkConnectivity = async () => {
+      const connected = await checkNetworkConnectivity();
+      setIsOnline(connected);
+    };
+    checkConnectivity();
+  }, []);
+
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Custom Loader */}
+      {(featuredBusinesses?.length === 0 && filteredBusinesses?.length === 0) && <CustomLoader />}
 
       {/* Upgrade Modal for Bronze Businesses */}
       <Modal
@@ -353,7 +537,7 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => setUpgradeModalVisible(false)}
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
               >
-                <Ionicons name="close" size={24} color="#FFFFFF" />
+                <Icons.Ionicons name="close" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
 
@@ -390,7 +574,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.basicInfoItem}
                         onPress={() => handleCall(selectedBronzeBusiness.phone)}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="call-outline"
                           size={20}
                           color="#003366"
@@ -411,7 +595,7 @@ const HomeScreen = ({ navigation }) => {
                           handleWhatsapp(selectedBronzeBusiness.phone)
                         }
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="logo-whatsapp"
                           size={20}
                           color="#25D366"
@@ -428,7 +612,7 @@ const HomeScreen = ({ navigation }) => {
                     style={styles.basicInfoItem}
                     onPress={() => findLocation(selectedBronzeBusiness.address)}
                   >
-                    <Ionicons
+                    <Icons.Ionicons
                       name="location-outline"
                       size={20}
                       color="#5856D6"
@@ -443,7 +627,7 @@ const HomeScreen = ({ navigation }) => {
                       style={styles.basicInfoItem}
                       onPress={() => connectEmail(selectedBronzeBusiness.email)}
                     >
-                      <Ionicons name="mail-outline" size={20} color="#FF9500" />
+                      <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
                       <Text style={styles.basicInfoText}>
                         {selectedBronzeBusiness.email}
                       </Text>
@@ -464,7 +648,7 @@ const HomeScreen = ({ navigation }) => {
                       }
                     }}
                   >
-                    <Ionicons name="call-outline" size={18} color="#FFFFFF" />
+                    <Icons.Ionicons name="call-outline" size={18} color="#FFFFFF" />
                     <Text style={styles.primaryActionText}>Call Business</Text>
                   </TouchableOpacity>
 
@@ -475,7 +659,7 @@ const HomeScreen = ({ navigation }) => {
                         handleWhatsapp(selectedBronzeBusiness.phone);
                       }}
                     >
-                      <Ionicons
+                      <Icons.Ionicons
                         name="logo-whatsapp"
                         size={20}
                         color="#25D366"
@@ -489,7 +673,7 @@ const HomeScreen = ({ navigation }) => {
                         connectEmail(selectedBronzeBusiness.email);
                       }}
                     >
-                      <Ionicons name="mail-outline" size={20} color="#FF9500" />
+                      <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
                       <Text style={styles.secondaryActionText}>Email</Text>
                     </TouchableOpacity>
 
@@ -499,7 +683,7 @@ const HomeScreen = ({ navigation }) => {
                         findLocation(selectedBronzeBusiness.address);
                       }}
                     >
-                      <Ionicons
+                      <Icons.Ionicons
                         name="location-outline"
                         size={20}
                         color="#5856D6"
@@ -516,24 +700,27 @@ const HomeScreen = ({ navigation }) => {
 
       {/* App Title */}
       <View style={styles.titleContainer}>
-        <Text style={styles.appTitle}>Directory</Text>
-        <TouchableOpacity
-          style={styles.alphabetButton}
-          onPress={handleRefresh}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#003366" />
-          ) : (
-            <AntDesign name="download" size={20} color="#003366" />
-          )}
+        {/* menu button */}
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <Icons.Ionicons name="menu-outline" size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
         </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image
+            source={eswatini}
+            style={styles.image}
+          />
+          <View style={{ marginLeft: 10 }}>
+            <Text style={[styles.appTitle, isDarkMode && styles.darkText]}>eSwatini</Text>
+            <Text style={[styles.appSubTitle, isDarkMode && styles.darkText]}>Directory</Text>
+          </View>
+        </View>
       </View>
+
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchWrapper}>
-          <Ionicons
+          <Icons.Ionicons
             name="search-outline"
             size={20}
             color="#AAAAAA"
@@ -551,7 +738,7 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.lastRefreshContainer}>
-        <Ionicons name="time-outline" size={14} color="#777777" />
+        <Icons.Ionicons name="time-outline" size={14} color={isDarkMode ? "#AAAAAA" : "#777777"} />
         <Text style={styles.lastRefreshText}>
           {lastRefresh || "Checking data age..."}
         </Text>
@@ -714,7 +901,7 @@ const HomeScreen = ({ navigation }) => {
                         }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name={
                             isInFavorites(item._id) ? "heart" : "heart-outline"
                           }
@@ -736,7 +923,7 @@ const HomeScreen = ({ navigation }) => {
                           handleCall(item.phone);
                         }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="call-outline"
                           size={18}
                           color="#003366"
@@ -753,7 +940,7 @@ const HomeScreen = ({ navigation }) => {
                               handleWhatsapp(item.phone);
                             }}
                           >
-                            <Ionicons
+                            <Icons.Ionicons
                               name="logo-whatsapp"
                               size={18}
                               color="#25D366"
@@ -771,7 +958,7 @@ const HomeScreen = ({ navigation }) => {
                           connectEmail(item.email);
                         }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="mail-outline"
                           size={18}
                           color="#FF9500"
@@ -786,7 +973,7 @@ const HomeScreen = ({ navigation }) => {
                           findLocation(item.address);
                         }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="location-outline"
                           size={18}
                           color="#5856D6"
@@ -801,7 +988,7 @@ const HomeScreen = ({ navigation }) => {
                       onPress={() => handleBusinessPress(item)}
                     >
                       <Text style={styles.viewDetailsText}>View Details</Text>
-                      <Ionicons
+                      <Icons.Ionicons
                         name="chevron-forward"
                         size={16}
                         color="#003366"
@@ -812,7 +999,7 @@ const HomeScreen = ({ navigation }) => {
                 ))
               ) : (
                 <View style={styles.noResultsContainer}>
-                  <Ionicons name="search" size={48} color="#DDDDDD" />
+                  <Icons.Ionicons name="search" size={48} color="#DDDDDD" />
                   <Text style={styles.noResultsText}>No businesses found</Text>
                   <Text style={styles.noResultsSubtext}>
                     Try a different search or category
@@ -886,7 +1073,7 @@ const HomeScreen = ({ navigation }) => {
                         }}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name={
                             isInFavorites(item._id) ? "heart" : "heart-outline"
                           }
@@ -908,7 +1095,7 @@ const HomeScreen = ({ navigation }) => {
                           handleCall(item.phone);
                         }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="call-outline"
                           size={18}
                           color="#003366"
@@ -925,7 +1112,7 @@ const HomeScreen = ({ navigation }) => {
                               handleWhatsapp(item.phone);
                             }}
                           >
-                            <Ionicons
+                            <Icons.Ionicons
                               name="logo-whatsapp"
                               size={18}
                               color="#25D366"
@@ -943,7 +1130,7 @@ const HomeScreen = ({ navigation }) => {
                           connectEmail(item.email);
                         }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="mail-outline"
                           size={18}
                           color="#FF9500"
@@ -958,7 +1145,7 @@ const HomeScreen = ({ navigation }) => {
                           findLocation(item.address);
                         }}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name="location-outline"
                           size={18}
                           color="#5856D6"
@@ -977,7 +1164,7 @@ const HomeScreen = ({ navigation }) => {
                         }
                       >
                         <Text style={styles.viewDetailsText}>View Details</Text>
-                        <Ionicons
+                        <Icons.Ionicons
                           name="chevron-forward"
                           size={16}
                           color="#003366"
@@ -988,7 +1175,7 @@ const HomeScreen = ({ navigation }) => {
                 ))
               ) : (
                 <View style={styles.noResultsContainer}>
-                  <Ionicons name="search" size={48} color="#DDDDDD" />
+                  <Icons.Ionicons name="search" size={48} color="#DDDDDD" />
                   <Text style={styles.noResultsText}>No businesses found</Text>
                   <Text style={styles.noResultsSubtext}>
                     Try a different search or category
@@ -1004,6 +1191,60 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  drawerContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    padding: 20,
+  },
+  darkDrawerContainer: {
+    backgroundColor: "#1C2526",
+  },
+  drawerHeader: {
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  drawerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333333",
+  },
+  drawerSection: {
+    marginVertical: 20,
+  },
+  drawerSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333333",
+    marginBottom: 10,
+  },
+  drawerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  activeDrawerItem: {
+    backgroundColor: "#F0F4FF",
+  },
+  drawerItemText: {
+    fontSize: 16,
+    color: "#333333",
+    marginLeft: 10,
+    flex: 1,
+  },
+  drawerIcon: {
+    marginRight: 8,
+  },
+
+  image: {
+    width: 60,
+    height: 40,
+    borderRadius: 5,
+  },
+
+  // that has always been there
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
@@ -1032,8 +1273,14 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   appTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
+    fontSize: 17,
+    fontWeight: "400",
+    color: "#333333",
+    letterSpacing: -0.5,
+  },
+  appSubTitle: {
+    fontSize: 17,
+    fontWeight: "200",
     color: "#333333",
     letterSpacing: -0.5,
   },
