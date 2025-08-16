@@ -23,7 +23,7 @@ export default function CustomLoader() {
   return (
     <View style={styles.fullScreenContainer}>
       <Animated.View style={animatedStyle}>
-        <Icons.FontAwesome name="spinner" size={50} color="#003366" />
+        <Icons.EvilIcons name="spinner" size={50} color="#003366" />
       </Animated.View>
     </View>
   );

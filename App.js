@@ -1,15 +1,17 @@
-import { useRef, useEffect, useState } from 'react';
-import { StyleSheet, useColorScheme, Animated, View, Text } from 'react-native';
+import 'react-native-gesture-handler';
+import { useState } from 'react';
+import { useColorScheme, View, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { Ionicons } from '@expo/vector-icons';
 import TabNavigator from './components/TabNavigator';
+import PublicationScreen from './screens/PublicationScreen';
+import BusinessArticlesScreen from './screens/BusinessArticlesScreen';
 import Toast from 'react-native-toast-message';
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import SplashScreen from './screens/SplashScreen'; // Import the SplashScreen component
+import SplashScreen from './screens/SplashScreen';
 import CustomDrawerContent from './components/Drawer';
+import { Images } from './utils/Images';
 
 const Drawer = createDrawerNavigator();
 
@@ -46,6 +48,11 @@ export default function App() {
   const isDark = scheme === 'dark';
   const theme = isDark ? CustomDarkTheme : CustomLightTheme;
   const [isAppReady, setIsAppReady] = useState(false);
+  const [selectedState, setSelectedState] = useState("eSwatini");
+  const [isDarkMode, setIsDarkMode] = useState(isDark);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+
   const toastConfig = {
     success: ({ text1, text2 }) => (
       <View
@@ -72,6 +79,10 @@ export default function App() {
     ),
   };
 
+  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  const toggleNotifications = () => setNotificationsEnabled(!notificationsEnabled);
+  const toggleOnlineMode = () => setIsOnline(!isOnline);
+
   return (
     <SafeAreaProvider>
       {!isAppReady ? (
@@ -86,16 +97,33 @@ export default function App() {
                 <CustomDrawerContent
                   {...props}
                   states={[
-                    { id: "eswatini", name: "eSwatini", coatOfArmsIcon: "shield-outline", flagIcon: "flag-outline" },
-                    { id: "south_africa", name: "South Africa", coatOfArmsIcon: "shield-outline", flagIcon: "flag-outline" },
-                    { id: "mozambique", name: "Mozambique", coatOfArmsIcon: "shield-outline", flagIcon: "flag-outline" },
+                    { id: "eswatini", name: "eSwatini", coatOfArmsIcon: Images.swatiEmblem, flagIcon: "flag-outline" },
+                    { id: "south_africa", name: "South Africa", coatOfArmsIcon: Images.mzansiEmblem, flagIcon: "flag-outline" },
+                    { id: "mozambique", name: "Mozambique", coatOfArmsIcon: Images.mozEmblem, flagIcon: "flag-outline" },
                   ]}
-                // Pass other props as needed
+                  selectedState={selectedState}
+                  setSelectedState={setSelectedState}
+                  isDarkMode={isDarkMode}
+                  notificationsEnabled={notificationsEnabled}
+                  isOnline={isOnline}
+                  toggleTheme={toggleTheme}
+                  toggleNotifications={toggleNotifications}
+                  toggleOnlineMode={toggleOnlineMode}
                 />
               )}
+
+              screenOptions={{
+                drawerStyle: {
+                  width: 250, // Set exact drawer width
+                },
+              }}
             >
-              <Drawer.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
-              {/* Add other screens here */}
+              <Drawer.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+              <Drawer.Screen name="Publications" component={PublicationScreen}
+                options={{ headerShown: false }}
+                initialParams={{ selectedState }}
+              />
+              <Drawer.Screen name="Promotions" component={BusinessArticlesScreen} options={{ headerShown: false }} />
             </Drawer.Navigator>
             <StatusBar style={isDark ? 'light' : 'dark'} />
           </NavigationContainer>
@@ -105,11 +133,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
