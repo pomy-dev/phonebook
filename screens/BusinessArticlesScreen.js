@@ -30,21 +30,45 @@ const BusinessArticlesScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerContainer}>
-        {/* back button */}
-        <TouchableOpacity
-          style={{ left: 10 }}
-          onPress={() => navigation.goBack()}
-        >
-          <Icons.Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        <View style={styles.header}>
+          {/* back button */}
+          <TouchableOpacity
+            style={{ left: 10 }}
+            onPress={() => navigation.goBack()}
+          >
+            <Icons.Ionicons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
 
-        <Text style={[styles.header, { color: colors.text }]}>
-          {company.name} Articles
-        </Text><Image
-          source={company.logo}
-          style={styles.companyLogo}
-          resizeMode="contain"
-        />
+          <Text style={[styles.header, { color: colors.text }]}>
+            {company.name}
+          </Text>
+          <Image
+            source={company.logo}
+            style={styles.companyLogo}
+            resizeMode="contain"
+          />
+        </View>
+        <View>
+          <Text style={[styles.header, { color: colors.text }]}>
+            Articles
+          </Text>
+          {/* display social media links */}
+          <View>
+            {company.socialMediaLinks.map((link, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => Linking.openURL(link.url)}
+                style={{ marginRight: 10 }}
+              >
+                <Icons.FontAwesome
+                  name={link.icon}
+                  size={24}
+                  color={colors.text}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {company.publications.map((article) => (
@@ -109,11 +133,13 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   headerContainer: {
+    marginBottom: 20,
+    paddingTop: 10,
+  },
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
-    paddingTop: 10,
   },
   companyLogo: {
     width: 40,

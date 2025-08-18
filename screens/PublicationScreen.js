@@ -195,7 +195,6 @@ const PublicationScreen = () => {
         </Text>
       </View>
 
-
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchWrapper}>
