@@ -12,7 +12,6 @@ import {
   Dimensions,
   Animated,
   StatusBar,
-  Share,
   Platform,
   FlatList,
   PanResponder,
@@ -21,14 +20,12 @@ import {
   TextInput,
   ActivityIndicator// Added Clipboard for copy functionality
 } from "react-native"
-import Clipboard from '@react-native-clipboard/clipboard';
-import { Ionicons } from "@expo/vector-icons"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { Icons } from "../utils/Icons"
 import { BlurView } from "expo-blur"
 import connectWhatsApp from "../components/connectWhatsApp"
+import { handleShareVia } from "../utils/callFunctions";
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Toast from "react-native-toast-message"
 import * as Location from 'expo-location';
 import { GOOGLE_MAPS_API_KEY } from "../config/env";
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -300,7 +297,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
         // Get user's current location
         const userLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-        console.log('User Location:', userLoc.coords);
+        // console.log('User Location:', userLoc.coords);
         setUserLocation({
           latitude: userLoc.coords.latitude,
           longitude: userLoc.coords.longitude,
@@ -320,7 +317,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             const geocoded = await Location.geocodeAsync(business.address);
             if (geocoded.length > 0) {
               const { latitude, longitude } = geocoded[0];
-              console.log('Business Location:', { latitude, longitude });
+              // console.log('Business Location:', { latitude, longitude });
               setBusinessLocation({ latitude, longitude });
 
               // Fetch directions
@@ -329,7 +326,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${GOOGLE_MAPS_API_KEY}`;
               const response = await fetch(url);
               const data = await response.json();
-              console.log('Directions API Response:', data);
+              // console.log('Directions API Response:', data);
 
               if (data.status === 'OK') {
                 const points = decodePolyline(data.routes[0].overview_polyline.points);
@@ -348,7 +345,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               }
             } else {
               setLocationError('Business location could not be found.');
-              console.log('Geocoding failed: No results for business address');
+              // console.log('Geocoding failed: No results for business address');
             }
           } catch (error) {
             setLocationError('Failed to geocode business address.');
@@ -489,91 +486,10 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     setShowShareOptions(!showShareOptions)
   }
 
-  const handleShareVia = async (method) => {
-    const deepLink = `https://industrylines.netlify.app/views/business-detail.html?id=${business._id}`; // Fallback URL
-    const phoneNumbers = business?.phone && business?.phone?.length > 0
-      ? business?.phone.map(phone => `${phone?.phone_type.charAt(0).toUpperCase() + phone?.phone_type.slice(1)}: ${phone?.number}`).join('\n')
-      : 'No phone numbers available';
-    const whatsAppNumbers = business?.phone && business?.phone.length > 0
-      ? business.phone
-        .filter(phone => phone?.phone_type.toLowerCase() === 'whatsapp' || phone?.phone_type.toLowerCase() === 'whatsApp')
-        .map(phone => phone?.number)
-        .join(', ')
-      : 'No WhatsApp numbers available';
-    const email = business?.email || 'No email available';
-    const address = business?.address || 'No address available';
-
-    const shareMessage = `Check out ${business?.company_name}!\n\n` +
-      `Address: ${address}\n` +
-      `Phone: ${phoneNumbers}\n` +
-      `WhatsApp: ${whatsAppNumbers}\n` +
-      `Email: ${email}\n` +
-      `Learn more: ${deepLink}`;
-
-    try {
-      switch (method) {
-        case "message":
-          // Platform-specific SMS URL
-          const smsUrl = Platform.OS === "ios"
-            ? `sms:;body=${encodeURIComponent(shareMessage)}` // iOS uses semicolon
-            : `smsto:?body=${encodeURIComponent(shareMessage)}`; // Android uses smsto
-          console.log('SMS URL:', smsUrl); // Debug log
-          const canOpenSMS = await Linking.canOpenURL(smsUrl);
-          if (!canOpenSMS) {
-            throw new Error('SMS client not available');
-          }
-          await Linking.openURL(smsUrl);
-          break;
-
-        case "email":
-          // Robust email URL with encoded parameters
-          const emailSubject = encodeURIComponent(`${business?.company_name} - Business Directory`);
-          const emailBody = encodeURIComponent(shareMessage);
-          const emailUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
-          console.log('Email URL:', emailUrl); // Debug log
-          const canOpenEmail = await Linking.canOpenURL('mailto:');
-          if (!canOpenEmail) {
-            throw new Error('Email client not available');
-          }
-          await Linking.openURL(emailUrl);
-          break;
-
-        case "copy":
-          if (!deepLink) {
-            throw new Error('Invalid deep link');
-          }
-          console.log('Copying to clipboard:', shareMessage); // Debug log
-          Clipboard.setString(shareMessage);
-          Toast.show({
-            type: 'success',
-            text1: 'Copied',
-            text2: 'Business details copied to clipboard!',
-            position: 'bottom',
-            visibilityTime: 5000,
-            autoHide: true,
-            bottomOffset: 60,
-          });
-          break;
-
-        case "more":
-          console.log('Sharing via system share sheet:', shareMessage); // Debug log
-          await Share.share({
-            message: shareMessage,
-            title: `${business?.company_name} - Business Directory`,
-            url: deepLink,
-          });
-          break;
-
-        default:
-          break;
-      }
-    } catch (error) {
-      console.error('Error in handleShareVia:', error.message);
-      Alert.alert('Error', `Failed to share via ${method}: ${error.message}`);
-    } finally {
-      setShowShareOptions(false);
-    }
-  };
+  const shareVia = async (method) => {
+    await handleShareVia(method, business);
+    setShowShareOptions(false);
+  }
 
   const handleGetDirections = () => {
     if (businessLocation) {
@@ -685,15 +601,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
-          <Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
+          <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
         )
       } else if (i === fullStars && halfStar) {
         stars.push(
-          <Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
+          <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
         )
       } else {
         stars.push(
-          <Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
+          <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
         )
       }
     }
@@ -705,7 +621,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     <TouchableOpacity style={styles.galleryItem} activeOpacity={0.9} onPress={() => handleImagePress(item)}>
       <Image source={{ uri: item.image }} style={styles.galleryImage} />
       <View style={styles.galleryItemOverlay}>
-        <Ionicons name="expand-outline" size={20} color="#FFFFFF" />
+        <Icons.Ionicons name="expand-outline" size={20} color="#FFFFFF" />
       </View>
     </TouchableOpacity>
   )
@@ -713,7 +629,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const renderServiceItem = ({ item, index }) => (
     <View style={styles.serviceCard}>
       <View style={styles.serviceIconContainer}>
-        <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+        <Icons.Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
       </View>
       <View style={styles.serviceContent}>
         <Text style={styles.serviceName} numberOfLines={2} ellipsizeMode="tail">{item}</Text>
@@ -763,7 +679,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     {averageRating.toFixed(1)} ({business.reviews ? business.reviews.length : 0})
                   </Text>
                 </View>
-                <Ionicons
+                <Icons.Ionicons
                   name={showRatingDetails ? "chevron-up" : "chevron-down"}
                   size={16}
                   color="#666666"
@@ -828,32 +744,32 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               onPress={handleCall}
               activeOpacity={0.8}
             >
-              <Ionicons name="call" size={18} color="#FFFFFF" />
+              <Icons.Ionicons name="call" size={18} color="#FFFFFF" />
               <Text style={styles.primaryActionText}>Call Now</Text>
             </TouchableOpacity>
 
             <View style={styles.secondaryActionsRow}>
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                <Ionicons name="navigate" size={20} color="#003366" />
+                <Icons.Ionicons name="navigate" size={20} color="#003366" />
                 <Text style={styles.secondaryActionText}>Directions</Text>
               </TouchableOpacity>
 
               {hasWhatsApp && (
                 <TouchableOpacity style={styles.secondaryActionButton} onPress={handleWhatsApp} activeOpacity={0.7}>
-                  <Ionicons name="logo-whatsapp" size={20} color="#003366" />
+                  <Icons.Ionicons name="logo-whatsapp" size={20} color="#003366" />
                   <Text style={styles.secondaryActionText}>WhatsApp</Text>
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleShare} activeOpacity={0.7}>
-                <Ionicons name="share-social" size={20} color="#003366" />
+                <Icons.Ionicons name="share-social" size={20} color="#003366" />
                 <Text style={styles.secondaryActionText}>Share</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={toggleFavorite} activeOpacity={0.7}>
                 <Animated.View style={{ transform: [{ scale: isFavorite ? callButtonScale : 1 }] }}>
-                  <Ionicons
+                  <Icons.Ionicons
                     name={isFavorite ? "heart" : "heart-outline"}
                     size={20}
                     color={isFavorite ? "#003366" : "#003366"}
@@ -878,7 +794,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             onPress={() => handleTabPress("about")}
             activeOpacity={0.7}
           >
-            <Ionicons
+            <Icons.Ionicons
               name={activeTab === "about" ? "information-circle" : "information-circle-outline"}
               size={20}
               color={activeTab === "about" ? "#FFFFFF" : "#999999"}
@@ -890,7 +806,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             onPress={() => handleTabPress("services")}
             activeOpacity={0.7}
           >
-            <Ionicons
+            <Icons.Ionicons
               name={activeTab === "services" ? "briefcase" : "briefcase-outline"}
               size={20}
               color={activeTab === "services" ? "#FFFFFF" : "#999999"}
@@ -902,7 +818,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             onPress={() => handleTabPress("gallery")}
             activeOpacity={0.7}
           >
-            <Ionicons
+            <Icons.Ionicons
               name={activeTab === "gallery" ? "images" : "images-outline"}
               size={20}
               color={activeTab === "gallery" ? "#FFFFFF" : "#999999"}
@@ -914,7 +830,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             onPress={() => handleTabPress("contact")}
             activeOpacity={0.7}
           >
-            <Ionicons
+            <Icons.Ionicons
               name={activeTab === "contact" ? "call" : "call-outline"}
               size={20}
               color={activeTab === "contact" ? "#FFFFFF" : "#999999"}
@@ -931,13 +847,13 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   <Text style={styles.sectionTitle}>About Us</Text>
                   {isGold && (
                     <View style={styles.subscriptionBadge}>
-                      <Ionicons name="star" size={12} color="#FFD700" />
+                      <Icons.Ionicons name="star" size={12} color="#FFD700" />
                       <Text style={styles.subscriptionText}>Gold Member</Text>
                     </View>
                   )}
                   {isSilver && (
                     <View style={[styles.subscriptionBadge, { backgroundColor: '#E0E0E0' }]}>
-                      <Ionicons name="star-half" size={12} color="#A9A9A9" />
+                      <Icons.Ionicons name="star-half" size={12} color="#A9A9A9" />
                       <Text style={[styles.subscriptionText, { color: '#707070' }]}>Silver Member</Text>
                     </View>
                   )}
@@ -984,7 +900,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                           title={business.company_name}
                           description={business.address}
                         >
-                          <Ionicons name="location" size={30} color="#FF0000" />
+                          <Icons.Ionicons name="location" size={30} color="#FF0000" />
                         </Marker>
                       )}
 
@@ -998,7 +914,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </MapView>
                   ) : (
                     <View style={styles.mapLoadingContainer}>
-                      <MaterialCommunityIcons name="access-point-network-off" style={{ height: 10, width: 8, padding: 10, color: '#ccccccb6' }} />
+                      <Icons.MaterialCommunityIcons name="access-point-network-off" style={{ height: 10, width: 8, padding: 10, color: '#ccccccb6' }} />
                       <ActivityIndicator size="large" color="#003366" />
                       <Text style={styles.mapLoadingText}>Loading map...</Text>
                     </View>
@@ -1007,7 +923,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   {business.address && (
                     <View style={{ paddingHorizontal: 20 }}>
                       <View style={styles.addressContainer}>
-                        <Ionicons name="location" size={18} color="#003366" />
+                        <Icons.Ionicons name="location" size={18} color="#003366" />
                         <Text style={styles.addressText} numberOfLines={2} ellipsizeMode="tail">
                           {business.address}
                         </Text>
@@ -1018,7 +934,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
                   <View style={{ paddingBottom: 20 }}>
                     <TouchableOpacity style={styles.getDirectionsButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                      <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+                      <Icons.Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
                       <Text style={styles.getDirectionsText}>Google Maps</Text>
                     </TouchableOpacity>
                   </View>
@@ -1035,13 +951,13 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     />
                   </View>
                   <View style={styles.addressContainer}>
-                    <Ionicons name="location" size={18} color="#003366" />
+                    <Icons.Ionicons name="location" size={18} color="#003366" />
                     <Text style={styles.addressText} numberOfLines={2} ellipsizeMode="tail">
                       {business.address}
                     </Text>
                   </View>
                   <TouchableOpacity style={styles.getDirectionsButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                    <Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+                    <Icons.Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
                     <Text style={styles.getDirectionsText}>Get Directions</Text>
                   </TouchableOpacity>
                 </View>
@@ -1058,7 +974,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                         onPress={() => Linking.openURL(social.link)}
                         activeOpacity={0.7}
                       >
-                        <Ionicons
+                        <Icons.Ionicons
                           name={
                             social.platform === "Facebook"
                               ? "logo-facebook"
@@ -1099,7 +1015,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 />
               ) : (
                 <View style={styles.noServicesContainer}>
-                  <Ionicons name="briefcase-outline" size={48} color="#DDDDDD" />
+                  <Icons.Ionicons name="briefcase-outline" size={48} color="#DDDDDD" />
                   <Text style={styles.noServicesText}>No services listed</Text>
                 </View>
               )}
@@ -1136,7 +1052,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </>
               ) : (
                 <View style={styles.noImagesContainer}>
-                  <Ionicons name="images-outline" size={48} color="#DDDDDD" />
+                  <Icons.Ionicons name="images-outline" size={48} color="#DDDDDD" />
                   <Text style={styles.noImagesText}>No images available</Text>
                 </View>
               )}
@@ -1154,7 +1070,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     activeOpacity={0.6}
                   >
                     <View style={styles.contactIconContainer}>
-                      <Ionicons name="call-outline" size={18} color="#003366" />
+                      <Icons.Ionicons name="call-outline" size={18} color="#003366" />
                     </View>
                     <View style={styles.contactDetails}>
                       <Text style={styles.contactLabel}>
@@ -1169,7 +1085,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 ))}
               <TouchableOpacity style={styles.contactItem} onPress={handleEmail} activeOpacity={0.6}>
                 <View style={styles.contactIconContainer}>
-                  <Ionicons name="mail-outline" size={18} color="#003366" />
+                  <Icons.Ionicons name="mail-outline" size={18} color="#003366" />
                 </View>
                 <View style={styles.contactDetails}>
                   <Text style={styles.contactLabel}>Email</Text>
@@ -1182,7 +1098,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               {business.website && (
                 <TouchableOpacity style={styles.contactItem} onPress={handleWebsite} activeOpacity={0.6}>
                   <View style={styles.contactIconContainer}>
-                    <Ionicons name="globe-outline" size={18} color="#003366" />
+                    <Icons.Ionicons name="globe-outline" size={18} color="#003366" />
                   </View>
                   <View style={styles.contactDetails}>
                     <Text style={styles.contactLabel}>Website</Text>
@@ -1197,7 +1113,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               )}
               <TouchableOpacity style={styles.contactItem} onPress={handleGetDirections} activeOpacity={0.6}>
                 <View style={styles.contactIconContainer}>
-                  <Ionicons name="location-outline" size={18} color="#003366" />
+                  <Icons.Ionicons name="location-outline" size={18} color="#003366" />
                 </View>
                 <View style={styles.contactDetails}>
                   <Text style={styles.contactLabel}>Address</Text>
@@ -1254,7 +1170,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+          <Icons.Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
         <View style={[styles.headerActions, Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 }]}>
@@ -1264,7 +1180,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
           >
             <Animated.View style={{ transform: [{ scale: isFavorite ? callButtonScale : 1 }] }}>
-              <Ionicons
+              <Icons.Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={24}
                 color={isFavorite ? "#035eb9ff" : "#FFFFFF"}
@@ -1277,7 +1193,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             onPress={handleShare}
             activeOpacity={0.7}
           >
-            <Ionicons name="share-social-outline" size={24} color="#FFFFFF" />
+            <Icons.Ionicons name="share-social-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
         </View>
@@ -1314,30 +1230,30 @@ const BusinessDetailScreen = ({ route, navigation }) => {
       >
         <BlurView intensity={80} style={styles.shareOptionsBlur}>
 
-          <TouchableOpacity style={styles.shareOption} onPress={() => handleShareVia("message")} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
             <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
-              <Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
+              <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
             </View>
             <Text style={styles.shareOptionText}>Message</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareOption} onPress={() => handleShareVia("email")} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("email")} activeOpacity={0.7}>
             <View style={[styles.shareOptionIcon, { backgroundColor: "#FF9500" }]}>
-              <Ionicons name="mail-outline" size={20} color="#FFFFFF" />
+              <Icons.Ionicons name="mail-outline" size={20} color="#FFFFFF" />
             </View>
             <Text style={styles.shareOptionText}>Email</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareOption} onPress={() => handleShareVia("copy")} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("copy")} activeOpacity={0.7}>
             <View style={[styles.shareOptionIcon, { backgroundColor: "#5856D6" }]}>
-              <Ionicons name="copy-outline" size={20} color="#FFFFFF" />
+              <Icons.Ionicons name="copy-outline" size={20} color="#FFFFFF" />
             </View>
             <Text style={styles.shareOptionText}>Copy</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.shareOption} onPress={() => handleShareVia("more")} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("more")} activeOpacity={0.7}>
             <View style={[styles.shareOptionIcon, { backgroundColor: "#8E8E93" }]}>
-              <Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
+              <Icons.Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
             </View>
             <Text style={styles.shareOptionText}>More</Text>
           </TouchableOpacity>
@@ -1375,7 +1291,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               <Image source={{ uri: selectedImage.image }} style={styles.imageViewerImage} resizeMode="contain" />
               <View style={styles.imageViewerControls}>
                 <TouchableOpacity style={styles.imageViewerCloseButton} onPress={closeImageViewer}>
-                  <Ionicons name="close" size={24} color="#FFFFFF" />
+                  <Icons.Ionicons name="close" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </Animated.View>
@@ -1410,7 +1326,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                         activeOpacity={0.6}
                       >
                         <View style={[styles.bottomSheetItemIcon, { backgroundColor: "#F0F4FF" }]}>
-                          <Ionicons name="call-outline" size={20} color="#003366" />
+                          <Icons.Ionicons name="call-outline" size={20} color="#003366" />
                         </View>
                         <View style={styles.bottomSheetItemContent}>
                           <Text style={styles.bottomSheetItemTitle}>
@@ -1420,7 +1336,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                         </View>
                         <View style={styles.callButtonContainer}>
                           <Text style={styles.callButtonText}>Call</Text>
-                          <Ionicons name="call" size={16} color="#003366" style={{ marginLeft: 4 }} />
+                          <Icons.Ionicons name="call" size={16} color="#003366" style={{ marginLeft: 4 }} />
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -1447,13 +1363,13 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   style={styles.reviewModalCloseButton}
                   onPress={() => setShowReviewModal(false)}
                 >
-                  <Ionicons name="close" size={24} color="#333333" />
+                  <Icons.Ionicons name="close" size={24} color="#333333" />
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.reviewModalContent}>
                 <Text style={styles.reviewModalLabel}>Your Name</Text>
                 <View style={styles.reviewModalInputContainer}>
-                  <Ionicons name="person-outline" size={20} color="#999999" style={styles.reviewModalInputIcon} />
+                  <Icons.Ionicons name="person-outline" size={20} color="#999999" style={styles.reviewModalInputIcon} />
                   <TextInput
                     style={styles.reviewModalInput}
                     placeholder="Enter your name"
@@ -1470,7 +1386,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                       onPress={() => setReviewRating(star)}
                       style={styles.ratingStarButton}
                     >
-                      <Ionicons
+                      <Icons.Ionicons
                         name={reviewRating >= star ? "star" : "star-outline"}
                         size={32}
                         color="#FFD700"

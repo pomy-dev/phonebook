@@ -3,5 +3,7 @@ import { Ionicons, AntDesign, Feather, MaterialIcons, FontAwesome6, FontAwesome5
 export const Icons = {
   FontAwesome,
   Ionicons,
-  EvilIcons
+  EvilIcons,
+  Feather,
+  MaterialCommunityIcons
 }

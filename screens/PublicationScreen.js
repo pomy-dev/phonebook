@@ -96,7 +96,7 @@ const PublicationScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredCompanies = mockCompanies.filter(
-    (company) => company.name === searchQuery || searchQuery === ""
+    (company) => company.name?.toLocaleLowerCase()?.includes(searchQuery?.toLowerCase()) || searchQuery === ""
   );
 
   const CompanyCard = ({ item, navigation, colors }) => {
@@ -190,7 +190,7 @@ const PublicationScreen = () => {
         </TouchableOpacity>
 
         {/* Screen title */}
-        <Text style={{ left: 70, color: colors.text }}>
+        <Text style={{ fontSize: 24, fontWeight: "700", left: '13%', color: colors.text }}>
           Publications & Articles
         </Text>
       </View>
@@ -270,7 +270,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 50,
     backgroundColor: "#FFFFFF",
   },
   card: {

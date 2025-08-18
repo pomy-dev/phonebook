@@ -14,8 +14,7 @@ import {
   Linking,
   Alert,
   Modal,
-  RefreshControl,
-  Switch,
+  RefreshControl
 } from "react-native";
 import { Icons } from "../utils/Icons";
 import connectWhatsApp from "../components/connectWhatsApp";
@@ -28,9 +27,9 @@ import {
 } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
-import Toast from "react-native-toast-message"
 import CustomLoader from "../components/customLoader";
 import eswatini from '../assets/pics/eswatini-state.jpg';
+import { CustomToast } from "../utils/customToast";
 
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,11 +44,7 @@ const HomeScreen = ({ navigation }) => {
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedState, setSelectedState] = useState("All");
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [isOnline, setIsOnline] = useState(true);
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
@@ -57,11 +52,11 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     const loadFavorites = async () => {
       try {
-        const theme = await AsyncStorage.getItem("theme");
-        const notifications = await AsyncStorage.getItem("notifications");
+        // const theme = await AsyncStorage.getItem("theme");
+        // const notifications = await AsyncStorage.getItem("notifications");
         const storedFavorites = await AsyncStorage.getItem("favorites");
-        if (theme) setIsDarkMode(JSON.parse(theme));
-        if (notifications) setNotificationsEnabled(JSON.parse(notifications));
+        // if (theme) setIsDarkMode(JSON.parse(theme));
+        // if (notifications) setNotificationsEnabled(JSON.parse(notifications));
         if (storedFavorites) {
           setFavorites(JSON.parse(storedFavorites));
         }
@@ -99,15 +94,10 @@ const HomeScreen = ({ navigation }) => {
       setFavorites(newFavorites);
       await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
 
-      Toast.show({
-        type: 'success',
-        text1: isInFavorites(business._id) ? "Removed from Favorites" : "Added to Favorites",
-        text2: isInFavorites(business._id) ? `${business.company_name} has been removed from your favorites.` : `${business.company_name} has been added to your favorites.`,
-        position: 'bottom',
-        visibilityTime: 5000,
-        autoHide: true,
-        bottomOffset: 60,
-      });
+      CustomToast(
+        isInFavorites(business._id) ? 'Removed from Favorites' : 'Added to Favorites',
+        isInFavorites(business._id) ? `${business.company_name} has been removed from your favorites.` : `${business.company_name} has been added to your favorites.`
+      )
 
     } catch (error) {
       console.log("Error updating favorites:", error);
@@ -301,15 +291,7 @@ const HomeScreen = ({ navigation }) => {
           setFeaturedBusinesses(featuredBusinesses);
           setBusinesses(nonGoldCompanies);
           setFilteredBusinesses(nonGoldCompanies);
-          Toast.show({
-            type: 'success',
-            text1: 'Refreshed 👍',
-            text2: 'Businesses refreshed successfully',
-            position: 'bottom',
-            visibilityTime: 5000,
-            autoHide: true,
-            bottomOffset: 60,
-          });
+          CustomToast('Refreshed 👍', 'Businesses refreshed successfully')
 
           await loadBusinesses();
           setLastRefresh("Last refresh was just now");
@@ -337,181 +319,14 @@ const HomeScreen = ({ navigation }) => {
 
   const hide = searchQuery.length > 0;
 
-
-
-  const states = [
-    {
-      id: "eswatini",
-      name: "eSwatini",
-      coatOfArmsIcon: "shield-outline",
-      flagIcon: "flag-outline",
-    },
-    {
-      id: "south_africa",
-      name: "South Africa",
-      coatOfArmsIcon: "shield-outline",
-      flagIcon: "flag-outline",
-    },
-    {
-      id: "mozambique",
-      name: "Mozambique",
-      coatOfArmsIcon: "shield-outline",
-      flagIcon: "flag-outline",
-    },
-  ];
-
-  // Drawer content
-  const drawerContent = () => (
-    <View style={[styles.drawerContainer, isDarkMode && styles.darkDrawerContainer]}>
-      <View style={styles.drawerHeader}>
-        <Text style={[styles.drawerTitle, isDarkMode && styles.darkText]}>Menu</Text>
-      </View>
-
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Neighboring Countries</Text>
-        {states?.map((state) => (
-          <TouchableOpacity
-            key={state.id}
-            style={[styles.drawerItem, selectedState === state.name && styles.activeDrawerItem]}
-            onPress={() => {
-              setSelectedState(state.name);
-              setIsDrawerOpen(false);
-            }}
-          >
-            <Icons.Ionicons
-              name={state.coatOfArmsIcon}
-              size={20}
-              color={isDarkMode ? "#FFFFFF" : "#333333"}
-              style={styles.drawerIcon}
-            />
-            <Icons.Ionicons
-              name={state.flagIcon}
-              size={20}
-              color={isDarkMode ? "#FFFFFF" : "#333333"}
-              style={styles.drawerIcon}
-            />
-            <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>{state.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* State selection */}
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>States</Text>
-        {states.map((state) => (
-          <TouchableOpacity
-            key={state.id}
-            style={[
-              styles.drawerItem,
-              selectedState === state.name && styles.activeDrawerItem,
-            ]}
-            onPress={() => {
-              setSelectedState(state.name);
-              setIsDrawerOpen(false);
-            }}
-          >
-            <Icons.Ionicons
-              name={state.flagIcon === "All" ? "globe-outline" : "map-outline"}
-              size={20}
-              color={isDarkMode ? "#FFFFFF" : "#333333"}
-            />
-            <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>{state.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-
-      {/* publications */}
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Navigation</Text>
-        <TouchableOpacity
-          style={styles.drawerItem}
-          onPress={() => navigation.navigate("Publications")}
-        >
-          <Icons.Ionicons name="newspaper-outline" size={20} color={isDarkMode ? "#FFFFFF" : "#333333"} />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Publications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.drawerItem}
-          onPress={() => navigation.navigate("BusinessPromotions")}
-        >
-          <Icons.Ionicons name="megaphone-outline" size={20} color={isDarkMode ? "#FFFFFF" : "#333333"} />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Business Promotions</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Settings */}
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Settings</Text>
-        <View style={styles.drawerItem}>
-          <Icons.Ionicons
-            name={isDarkMode ? "moon-outline" : "sunny-outline"}
-            size={20}
-            color={isDarkMode ? "#FFFFFF" : "#333333"}
-          />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Dark Mode</Text>
-          <Switch value={isDarkMode} onValueChange={toggleTheme} />
-        </View>
-        <View style={styles.drawerItem}>
-          <Icons.Ionicons
-            name="notifications-outline"
-            size={20}
-            color={isDarkMode ? "#FFFFFF" : "#333333"}
-          />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Notifications</Text>
-          <Switch value={notificationsEnabled} onValueChange={toggleNotifications} />
-        </View>
-        <View style={styles.drawerItem}>
-          <Icons.Ionicons
-            name={isOnline ? "wifi-outline" : "cloud-offline-outline"}
-            size={20}
-            color={isDarkMode ? "#FFFFFF" : "#333333"}
-          />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>
-            {isOnline ? "Go Offline" : "Go Online"}
-          </Text>
-          <Switch value={isOnline} onValueChange={toggleOnlineMode} />
-        </View>
-      </View>
-    </View>
-  );
-
-  // Toggle theme and save to AsyncStorage
-  const toggleTheme = async () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    await AsyncStorage.setItem("theme", JSON.stringify(newTheme));
-  };
-
-  // Toggle notifications and save to AsyncStorage
-  const toggleNotifications = async () => {
-    const newValue = !notificationsEnabled;
-    setNotificationsEnabled(newValue);
-    await AsyncStorage.setItem("notifications", JSON.stringify(newValue));
-  };
-
-  // Toggle online/offline mode
-  const toggleOnlineMode = async () => {
-    const newValue = !isOnline;
-    setIsOnline(newValue);
-    // Add logic to handle online/offline mode (e.g., disable API calls if offline)
-    Toast.show({
-      type: "info",
-      text1: newValue ? "Online Mode" : "Offline Mode",
-      text2: newValue ? "App is now online" : "App is now offline",
-      position: "bottom",
-      visibilityTime: 3000,
-    });
-  };
-
   // Check network connectivity on mount
-  useEffect(() => {
-    const checkConnectivity = async () => {
-      const connected = await checkNetworkConnectivity();
-      setIsOnline(connected);
-    };
-    checkConnectivity();
-  }, []);
+  // useEffect(() => {
+  //   const checkConnectivity = async () => {
+  //     const connected = await checkNetworkConnectivity();
+  //     setIsOnline(connected);
+  //   };
+  //   checkConnectivity();
+  // }, []);
 
 
   return (
