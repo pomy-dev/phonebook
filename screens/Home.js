@@ -28,8 +28,8 @@ import CustomLoader from "../components/customLoader";
 import eswatini from '../assets/pics/eswatini-state.jpg';
 import { CustomToast } from "../utils/customToast";
 import { CustomModal } from '../components/customModal'
-import CustomAlert from '../components/customAlert'
-import { handleLocation, handleBusinessPress, handleCall, handleEmail, handleWhatsapp } from "../utils/callFunctions";
+import { useCallFunction } from '../components/customCallAlert'
+import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp } from "../utils/callFunctions";
 
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,8 +45,7 @@ const HomeScreen = ({ navigation }) => {
   const [businesses, setBusinesses] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertOptions, setAlertOptions] = useState([]);
+  const { handleCall, AlertUI } = useCallFunction();
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
@@ -280,13 +279,7 @@ const HomeScreen = ({ navigation }) => {
       />
 
       {/* Custom Alert */}
-      <CustomAlert
-        visible={showAlert}
-        title="Select Phone Number"
-        message="Choose a number to call"
-        options={alertOptions}
-        onClose={() => setShowAlert(false)}
-      />
+      <AlertUI />
 
       {/* App Title */}
       <View style={styles.titleContainer}>
@@ -305,7 +298,6 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
       </View>
-
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -509,9 +501,11 @@ const HomeScreen = ({ navigation }) => {
                       <TouchableOpacity
                         style={styles.actionButton}
                         onPress={(e) => {
-                          const options = handleCall(item.phone, e)
-                          setAlertOptions(options);
-                          setShowAlert(true);
+                          e.stopPropagation();
+                          handleCall(
+                            item.phone,
+                            item.name
+                          )
                         }}
                       >
                         <Icons.Ionicons
@@ -681,7 +675,10 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.actionButtons}>
                       <TouchableOpacity
                         style={styles.actionButton}
-                        onPress={(e) => handleCall(item.phone, e)}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleCall(item.phone, item.name)
+                        }}
                       >
                         <Icons.Ionicons
                           name="call-outline"

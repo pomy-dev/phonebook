@@ -19,7 +19,8 @@ import { fetchAllCompaniesOffline } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CustomToast } from "../utils/customToast";
 import { CustomModal } from "../components/customModal";
-import { handleCall, handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
+import { useCallFunction } from '../components/customCallAlert'
+import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
 
 export default function BusinessList({ route, navigation }) {
   const { category } = route.params;
@@ -31,6 +32,7 @@ export default function BusinessList({ route, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
   const [favorites, setFavorites] = useState([]);
+  const { handleCall, AlertUI } = useCallFunction();
 
   // Load favorites from AsyncStorage
   useEffect(() => {
@@ -263,6 +265,8 @@ export default function BusinessList({ route, navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      <AlertUI />
 
       {/* Upgrade Modal for Bronze Businesses */}
       <CustomModal

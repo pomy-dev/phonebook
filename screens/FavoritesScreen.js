@@ -17,7 +17,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icons } from '../utils/Icons';
 import { CustomModal } from '../components/customModal';
-import { handleCall, handleBusinessPress, handleEmail, handleWhatsapp, handleLocation } from '../utils/callFunctions';
+import { useCallFunction } from '../components/customCallAlert'
+import { handleBusinessPress, handleEmail, handleWhatsapp, handleLocation } from '../utils/callFunctions';
 
 export default function FavoritesScreen({ navigation }) {
     const [favorites, setFavorites] = useState([]);
@@ -26,6 +27,7 @@ export default function FavoritesScreen({ navigation }) {
     const [refreshing, setRefreshing] = useState(false);
     const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
     const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
+    const { handleCall, AlertUI } = useCallFunction();
 
     // Load favorites from AsyncStorage
     const loadFavorites = async () => {
@@ -225,6 +227,8 @@ export default function FavoritesScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+            <AlertUI />
 
             {/* Upgrade Modal for Bronze Businesses */}
             <CustomModal

@@ -13,11 +13,13 @@ import {
 import { Icons } from "../utils/Icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CustomToast } from "../utils/customToast"
-import { handleCall, handleEmail, handleLocation, handleWhatsapp } from "../utils/callFunctions"
+import { useCallFunction } from '../components/customCallAlert'
+import { handleEmail, handleLocation, handleWhatsapp } from "../utils/callFunctions"
 
 const FeaturedScreen = ({ route, navigation }) => {
   const [favorites, setFavorites] = useState([])
   const [refreshing, setRefreshing] = useState(false);
+  const { handleCall, AlertUI } = useCallFunction();
 
   const { featuredBusinesses } = route.params || [
     {
@@ -107,12 +109,14 @@ const FeaturedScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AlertUI />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Icons.Ionicons name="arrow-back" size={24} color="#333333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Featured Businesses</Text>
+        <Text style={styles.headerTitle}>Exclusive Businesses</Text>
         <View style={styles.placeholder} />
       </View>
 

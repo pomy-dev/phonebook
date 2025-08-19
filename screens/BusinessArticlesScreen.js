@@ -8,11 +8,13 @@ import {
   StyleSheet,
   useWindowDimensions,
   Animated,
-  Easing,
+  Easing
 } from "react-native";
 import { useTheme, useRoute } from "@react-navigation/native";
 import { Icons } from "../utils/Icons";
 import { useNavigation } from "@react-navigation/native";
+import { useCallFunction } from '../components/customCallAlert'
+import { handleWhatsapp, handleEmail } from "../utils/callFunctions";
 
 const BusinessArticlesScreen = () => {
   const { colors } = useTheme();
@@ -24,6 +26,9 @@ const BusinessArticlesScreen = () => {
   const { width } = useWindowDimensions();
   const [expandedArticles, setExpandedArticles] = useState({});
   const [shareVia, setshareVia] = useState(false);
+  const { handleCall, AlertUI } = useCallFunction();
+
+  const data = contentType === "Promotions" ? company.promotions : company.publications;
 
   const toggleArticle = (articleId) => {
     setExpandedArticles((prev) => ({
@@ -73,34 +78,6 @@ const BusinessArticlesScreen = () => {
     }
   ]
 
-  // Define share options
-  const shareViaOptions = [
-    {
-      name: "LinkedIn",
-      icon: "linkedin",
-      color: "#0077B5",
-      url: ``
-    },
-    {
-      name: "Twitter",
-      icon: "twitter",
-      color: "#1DA1F2",
-      url: ``
-    },
-    {
-      name: "Facebook",
-      icon: "facebook",
-      color: "#1877F2",
-      url: ``
-    },
-    {
-      name: "Instagram",
-      icon: "instagram",
-      color: "#C13584",
-      url: ``
-    }
-  ]
-
   const companySocialMediaLinks = [
     {
       name: "Website",
@@ -141,9 +118,36 @@ const BusinessArticlesScreen = () => {
   //   url: link.url,
   // }));
 
+  const handleChannel = (channel) => {
+    try {
+      switch (channel) {
+        case channel === 'Phone': {
+          const calls = company.phoneNumbers?.filter((number) => number.type === 'Call')
+          handleCall(calls?.number, e);
+        }
+          break;
+        case channel === 'WhatsApp':
+          const whatsapp = company.phoneNumbers?.filter((number) => number.type === 'WhatsApp')
+          handleWhatsapp(whatsapp?.number, e);
+          break;
+        case channel === 'Email':
+          handleEmail(company.email, e);
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+
+      <AlertUI />
+
       <View style={styles.headerContainer}>
+
         <View style={styles.header}>
           {/* back button */}
           <TouchableOpacity
@@ -162,6 +166,7 @@ const BusinessArticlesScreen = () => {
             resizeMode="contain"
           />
         </View>
+
         <View style={styles.channels}>
           <Text style={{ marginLeft: 10, color: '#706f6fff', fontSize: 15 }}>
             Recent Articles
@@ -171,7 +176,7 @@ const BusinessArticlesScreen = () => {
             {communicationChanels.map((channel, index) => (
               <TouchableOpacity
                 key={index}
-                onPress={() => Linking.openURL(channel.url)}
+                onPress={() => handleChannel(channel.name)}
                 style={styles.button}
               >
                 <Icons.FontAwesome
@@ -186,7 +191,7 @@ const BusinessArticlesScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {company.publications.map((article) => (
+        {data.map((article) => (
           <View
             key={article.id}
             style={[styles.articleContainer, { backgroundColor: colors.card }]}
