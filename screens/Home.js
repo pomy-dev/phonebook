@@ -17,9 +17,6 @@ import {
   RefreshControl
 } from "react-native";
 import { Icons } from "../utils/Icons";
-import connectWhatsApp from "../components/connectWhatsApp";
-import connectEmail from "../components/connectEmail";
-import findLocation from "../components/findLocation";
 import {
   fetchAllCompanies,
   fetchAllCompaniesOffline,
@@ -30,6 +27,9 @@ import { checkNetworkConnectivity } from "../service/checkNetwork";
 import CustomLoader from "../components/customLoader";
 import eswatini from '../assets/pics/eswatini-state.jpg';
 import { CustomToast } from "../utils/customToast";
+import { CustomModal } from '../components/customModal'
+import CustomAlert from '../components/customAlert'
+import { handleLocation, handleBusinessPress, handleCall, handleEmail, handleWhatsapp } from "../utils/callFunctions";
 
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +45,8 @@ const HomeScreen = ({ navigation }) => {
   const [businesses, setBusinesses] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertOptions, setAlertOptions] = useState([]);
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
@@ -208,69 +210,13 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const handleCall = (phoneNumbers) => {
-    if (!phoneNumbers || phoneNumbers.length === 0) {
-      Alert.alert(
-        "No Phone Number",
-        "This business has no phone number listed."
-      );
-      return;
-    }
-
-    if (phoneNumbers.length === 1) {
-      Alert.alert(
-        "Call Business",
-        `Would you like to call ${phoneNumbers[0].number}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Call",
-            onPress: () => Linking.openURL(`tel:${phoneNumbers[0].number}`),
-          },
-        ]
-      );
-    } else if (phoneNumbers.length > 1) {
-      const options = phoneNumbers.map((phone) => ({
-        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-          }: ${phone.number}`,
-        onPress: () => Linking.openURL(`tel:${phone.number}`),
-      }));
-
-      options.push({ text: "Cancel", style: "cancel" });
-
-      Alert.alert("Select Phone Number", "Choose a number to call", options);
-    }
-  };
-
-  const handleBusinessPress = (business) => {
-    if (business.subscription_type.toLowerCase() === "bronze") {
-      setSelectedBronzeBusiness(business);
-      setUpgradeModalVisible(true);
-    } else {
-      navigation.navigate("BusinessDetail", { business });
-    }
-  };
-
-  const handleWhatsapp = (phones) => {
-    if (!phones || phones.length === 0) {
-      Alert.alert(
-        "No WhatsApp",
-        "This business has no WhatsApp number listed."
-      );
-      return;
-    }
-
-    for (const number in phones) {
-      if (phones[number].phone_type == "whatsapp") {
-        connectWhatsApp(phones[number].number);
-        return;
-      } else {
-        Alert.alert(
-          "No WhatsApp",
-          "This business has no WhatsApp number listed."
-        );
-      }
-    }
+  const onBusinessPress = (business) => {
+    handleBusinessPress(
+      business,
+      navigation,
+      setSelectedBronzeBusiness,
+      setUpgradeModalVisible
+    );
   };
 
   const handleRefresh = async () => {
@@ -319,16 +265,6 @@ const HomeScreen = ({ navigation }) => {
 
   const hide = searchQuery.length > 0;
 
-  // Check network connectivity on mount
-  // useEffect(() => {
-  //   const checkConnectivity = async () => {
-  //     const connected = await checkNetworkConnectivity();
-  //     setIsOnline(connected);
-  //   };
-  //   checkConnectivity();
-  // }, []);
-
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -337,181 +273,20 @@ const HomeScreen = ({ navigation }) => {
       {(featuredBusinesses?.length === 0 && filteredBusinesses?.length === 0) && <CustomLoader />}
 
       {/* Upgrade Modal for Bronze Businesses */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={upgradeModalVisible}
-        onRequestClose={() => setUpgradeModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.upgradeModalContent}>
-            <View style={styles.upgradeModalHeader}>
-              <Text style={styles.upgradeModalTitle}>Business Information</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setUpgradeModalVisible(false)}
-                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-              >
-                <Icons.Ionicons name="close" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+      <CustomModal
+        isModalVisible={upgradeModalVisible}
+        selectedBronzeBusiness={selectedBronzeBusiness}
+        onClose={() => setUpgradeModalVisible(false)}
+      />
 
-            {selectedBronzeBusiness && (
-              <View style={styles.upgradeModalBody}>
-                <View style={styles.businessBranding}>
-                  <View style={styles.businessLogoContainer}>
-                    {selectedBronzeBusiness.logo ? (
-                      <Image
-                        source={{ uri: selectedBronzeBusiness.logo }}
-                        style={styles.businessLogo}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <View style={styles.businessInitialContainer}>
-                        <Text style={styles.businessInitial}>
-                          {selectedBronzeBusiness.company_name.charAt(0)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.upgradeBusinessName}>
-                    {selectedBronzeBusiness.company_name}
-                  </Text>
-                  <Text style={styles.businessType}>
-                    {selectedBronzeBusiness.company_type}
-                  </Text>
-                </View>
-
-                <View style={styles.basicInfoContainer}>
-                  {selectedBronzeBusiness.phone &&
-                    selectedBronzeBusiness.phone.length > 0 && (
-                      <TouchableOpacity
-                        style={styles.basicInfoItem}
-                        onPress={() => handleCall(selectedBronzeBusiness.phone)}
-                      >
-                        <Icons.Ionicons
-                          name="call-outline"
-                          size={20}
-                          color="#003366"
-                        />
-                        <Text style={styles.basicInfoText}>
-                          {selectedBronzeBusiness.phone[0].number}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                  {selectedBronzeBusiness.phone &&
-                    selectedBronzeBusiness.phone.some(
-                      (p) => p.phone_type === "whatsApp"
-                    ) && (
-                      <TouchableOpacity
-                        style={styles.basicInfoItem}
-                        onPress={() =>
-                          handleWhatsapp(selectedBronzeBusiness.phone)
-                        }
-                      >
-                        <Icons.Ionicons
-                          name="logo-whatsapp"
-                          size={20}
-                          color="#25D366"
-                        />
-                        <Text style={styles.basicInfoText}>
-                          {selectedBronzeBusiness.phone.find(
-                            (p) => p.phone_type === "whatsApp"
-                          )?.number || selectedBronzeBusiness.phone[0].number}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                  <TouchableOpacity
-                    style={styles.basicInfoItem}
-                    onPress={() => findLocation(selectedBronzeBusiness.address)}
-                  >
-                    <Icons.Ionicons
-                      name="location-outline"
-                      size={20}
-                      color="#5856D6"
-                    />
-                    <Text style={styles.basicInfoText}>
-                      {selectedBronzeBusiness.address}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {selectedBronzeBusiness.email && (
-                    <TouchableOpacity
-                      style={styles.basicInfoItem}
-                      onPress={() => connectEmail(selectedBronzeBusiness.email)}
-                    >
-                      <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
-                      <Text style={styles.basicInfoText}>
-                        {selectedBronzeBusiness.email}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                <View style={styles.actionButtonsContainer}>
-                  <TouchableOpacity
-                    style={styles.primaryActionButton}
-                    onPress={() => {
-                      setUpgradeModalVisible(false);
-                      if (
-                        selectedBronzeBusiness.phone &&
-                        selectedBronzeBusiness.phone.length > 0
-                      ) {
-                        handleCall(selectedBronzeBusiness.phone);
-                      }
-                    }}
-                  >
-                    <Icons.Ionicons name="call-outline" size={18} color="#FFFFFF" />
-                    <Text style={styles.primaryActionText}>Call Business</Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.secondaryActionsRow}>
-                    <TouchableOpacity
-                      style={styles.secondaryActionButton}
-                      onPress={() => {
-                        handleWhatsapp(selectedBronzeBusiness.phone);
-                      }}
-                    >
-                      <Icons.Ionicons
-                        name="logo-whatsapp"
-                        size={20}
-                        color="#25D366"
-                      />
-                      <Text style={styles.secondaryActionText}>Chat</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.secondaryActionButton}
-                      onPress={() => {
-                        connectEmail(selectedBronzeBusiness.email);
-                      }}
-                    >
-                      <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
-                      <Text style={styles.secondaryActionText}>Email</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.secondaryActionButton}
-                      onPress={() => {
-                        findLocation(selectedBronzeBusiness.address);
-                      }}
-                    >
-                      <Icons.Ionicons
-                        name="location-outline"
-                        size={20}
-                        color="#5856D6"
-                      />
-                      <Text style={styles.secondaryActionText}>Map</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={showAlert}
+        title="Select Phone Number"
+        message="Choose a number to call"
+        options={alertOptions}
+        onClose={() => setShowAlert(false)}
+      />
 
       {/* App Title */}
       <View style={styles.titleContainer}>
@@ -594,7 +369,7 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity
                   key={item._id}
                   style={styles.featuredItem}
-                  onPress={() => handleBusinessPress(item)}
+                  onPress={() => onBusinessPress(item)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.featuredImageContainer}>
@@ -665,7 +440,7 @@ const HomeScreen = ({ navigation }) => {
                     key={item._id}
                     style={styles.favoriteCard}
                     activeOpacity={0.8}
-                    onPress={() => handleBusinessPress(item)}
+                    onPress={() => onBusinessPress(item)}
                   >
                     <View style={styles.favoriteHeader}>
                       <View style={styles.businessImageContainer}>
@@ -734,8 +509,9 @@ const HomeScreen = ({ navigation }) => {
                       <TouchableOpacity
                         style={styles.actionButton}
                         onPress={(e) => {
-                          e.stopPropagation();
-                          handleCall(item.phone);
+                          const options = handleCall(item.phone, e)
+                          setAlertOptions(options);
+                          setShowAlert(true);
                         }}
                       >
                         <Icons.Ionicons
@@ -770,7 +546,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          connectEmail(item.email);
+                          handleEmail(item.email, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -785,7 +561,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          findLocation(item.address);
+                          handleLocation(item.address, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -800,7 +576,7 @@ const HomeScreen = ({ navigation }) => {
                     {/* {item.subscription_type.toLowerCase() !== "bronze" && ( */}
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
-                      onPress={() => handleBusinessPress(item)}
+                      onPress={() => onBusinessPress(item)}
                     >
                       <Text style={styles.viewDetailsText}>View Details</Text>
                       <Icons.Ionicons
@@ -837,7 +613,7 @@ const HomeScreen = ({ navigation }) => {
                     key={item._id}
                     style={styles.favoriteCard}
                     activeOpacity={0.8}
-                    onPress={() => handleBusinessPress(item)}
+                    onPress={() => onBusinessPress(item)}
                   >
                     <View style={styles.favoriteHeader}>
                       <View style={styles.businessImageContainer}>
@@ -905,10 +681,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.actionButtons}>
                       <TouchableOpacity
                         style={styles.actionButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleCall(item.phone);
-                        }}
+                        onPress={(e) => handleCall(item.phone, e)}
                       >
                         <Icons.Ionicons
                           name="call-outline"
@@ -922,10 +695,9 @@ const HomeScreen = ({ navigation }) => {
                         item.phone.some((p) => p.phone_type == "whatsapp") && (
                           <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleWhatsapp(item.phone);
-                            }}
+                            onPress={(e) =>
+                              handleWhatsapp(item.phone, e)
+                            }
                           >
                             <Icons.Ionicons
                               name="logo-whatsapp"
@@ -936,13 +708,14 @@ const HomeScreen = ({ navigation }) => {
                               WhatsApp
                             </Text>
                           </TouchableOpacity>
-                        )}
+                        )
+                      }
 
                       <TouchableOpacity
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          connectEmail(item.email);
+                          handleEmail(item.email, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -957,7 +730,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          findLocation(item.address);
+                          handleLocation(item.address, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -999,9 +772,9 @@ const HomeScreen = ({ navigation }) => {
               )}
             </View>
           </View>
-        </ScrollView>
+        </ScrollView >
       )}
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

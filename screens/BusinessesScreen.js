@@ -7,23 +7,18 @@ import {
     TouchableOpacity,
     SafeAreaView,
     StatusBar,
-    Dimensions,
     TextInput,
     Image,
     Alert,
-    RefreshControl,
-    ActivityIndicator
+    RefreshControl
 } from 'react-native'
 import { Icons } from '../utils/Icons'
 import { loadOfflineData } from '../service/getApi'
 import { CustomToast } from '../utils/customToast'
 import { Images } from '../utils/Images'
 
-const { width } = Dimensions.get('window')
-
 export default function BusinessScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState("")
-    // const [featuredCategory, setFeaturedCategory] = useState("Emergency")
     const [loading, setLoading] = useState(false)
     const [businesses, setBusinesses] = useState([]);
     const [refreshing, setRefreshing] = useState(false)

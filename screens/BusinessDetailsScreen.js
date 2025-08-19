@@ -22,13 +22,13 @@ import {
 } from "react-native"
 import { Icons } from "../utils/Icons"
 import { BlurView } from "expo-blur"
-import connectWhatsApp from "../components/connectWhatsApp"
 import { handleShareVia } from "../utils/callFunctions";
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location';
 import { GOOGLE_MAPS_API_KEY } from "../config/env";
 import MapView, { Marker, Polyline } from 'react-native-maps';
+import { handleEmail, handleWhatsapp, handleWebsite } from "../utils/callFunctions"
 
 const { width, height } = Dimensions.get("window")
 const BOTTOM_SHEET_HEIGHT = height * 0.6
@@ -458,30 +458,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     closeBottomSheet()
   }
 
-  const handleEmail = () => {
-    Linking.openURL(`mailto:${business.email}`)
-  }
-
-  const handleWhatsApp = () => {
-    if (business.phone && business.phone.length > 0) {
-      for (let i = 0; i < business.phone.length; i++) {
-        if (business.phone[i].phone_type === 'whatsapp' || business.phone[i].phone_type === 'whatsApp') {
-          connectWhatsApp(business.phone[i].number)
-          return
-        }
-      }
-      Alert.alert('No WhatsApp', 'This business has no WhatsApp number listed.')
-    } else {
-      Alert.alert('No WhatsApp', 'This business has no phone numbers listed.')
-    }
-  }
-
-  const handleWebsite = () => {
-    if (business.website) {
-      Linking.openURL(business.website)
-    }
-  }
-
   const handleShare = async () => {
     setShowShareOptions(!showShareOptions)
   }
@@ -756,7 +732,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               </TouchableOpacity>
 
               {hasWhatsApp && (
-                <TouchableOpacity style={styles.secondaryActionButton} onPress={handleWhatsApp} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleWhatsapp(business.phone)} activeOpacity={0.7}>
                   <Icons.Ionicons name="logo-whatsapp" size={20} color="#003366" />
                   <Text style={styles.secondaryActionText}>WhatsApp</Text>
                 </TouchableOpacity>
@@ -1083,7 +1059,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </View>
                   </TouchableOpacity>
                 ))}
-              <TouchableOpacity style={styles.contactItem} onPress={handleEmail} activeOpacity={0.6}>
+              <TouchableOpacity style={styles.contactItem} onPress={(e) => handleEmail(business.email, e)} activeOpacity={0.6}>
                 <View style={styles.contactIconContainer}>
                   <Icons.Ionicons name="mail-outline" size={18} color="#003366" />
                 </View>
@@ -1096,7 +1072,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </View>
               </TouchableOpacity>
               {business.website && (
-                <TouchableOpacity style={styles.contactItem} onPress={handleWebsite} activeOpacity={0.6}>
+                <TouchableOpacity style={styles.contactItem} onPress={() => handleWebsite(business.website)} activeOpacity={0.6}>
                   <View style={styles.contactIconContainer}>
                     <Icons.Ionicons name="globe-outline" size={18} color="#003366" />
                   </View>

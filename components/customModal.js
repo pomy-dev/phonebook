@@ -1,16 +1,48 @@
+import { useState, useRef, useEffect } from "react"
 import {
   View,
   Text,
   TouchableOpacity,
   Image,
   Modal,
+  Platform,
+  StatusBar,
+  Animated,
   StyleSheet
 } from "react-native";
+import { BlurView } from "expo-blur"
 import { Icons } from '../utils/Icons';
-import findLocation from "../components/findLocation";
-import { handleCall, handleWhatsapp, handleEmail } from "../utils/callFunctions";
+import { handleCall, handleWhatsapp, handleEmail, handleShareVia, handleLocation } from "../utils/callFunctions";
 
 export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose }) {
+  const [showShareOptions, setShowShareOptions] = useState(false)
+  const shareOptionsAnim = useRef(new Animated.Value(0)).current
+  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
+
+  const handleShare = async () => {
+    setShowShareOptions(!showShareOptions)
+  }
+
+  const shareVia = async (method) => {
+    await handleShareVia(method, selectedBronzeBusiness);
+    setShowShareOptions(false);
+  }
+
+  useEffect(() => {
+    if (showShareOptions) {
+      Animated.spring(shareOptionsAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 8,
+      }).start()
+    } else {
+      Animated.timing(shareOptionsAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [showShareOptions])
 
   return (
     <Modal
@@ -50,13 +82,25 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                     </View>
                   )}
                 </View>
-                <Text style={styles.upgradeBusinessName}>
-                  {selectedBronzeBusiness.company_name}
-                </Text>
-                <Text style={styles.businessType}>
-                  {selectedBronzeBusiness.company_type}
-                </Text>
+                <View style={{ marginLeft: 10 }}>
+                  <Text style={[styles.upgradeBusinessName, { width: 160 }]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {selectedBronzeBusiness.company_name}
+                  </Text>
+                  <Text style={styles.businessType}>
+                    {selectedBronzeBusiness.company_type}
+                  </Text>
+                </View>
               </View>
+
+              <TouchableOpacity
+                style={{ alignSelf: 'flex-end', marginBottom: 5 }}
+                onPress={handleShare}
+              >
+                <Icons.Feather name="share-2" size={24} color={'#003366'} />
+              </TouchableOpacity>
 
               <View style={styles.basicInfoContainer}>
                 {selectedBronzeBusiness.phone &&
@@ -103,7 +147,7 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
 
                 <TouchableOpacity
                   style={styles.basicInfoItem}
-                  onPress={() => findLocation(selectedBronzeBusiness.address)}
+                  onPress={(e) => handleLocation(selectedBronzeBusiness.address, e)}
                 >
                   <Icons.Ionicons
                     name="location-outline"
@@ -144,50 +188,62 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                   <Icons.Ionicons name="call-outline" size={18} color="#FFFFFF" />
                   <Text style={styles.primaryActionText}>Call Business</Text>
                 </TouchableOpacity>
-
-                <View style={styles.secondaryActionsRow}>
-                  <TouchableOpacity
-                    style={styles.secondaryActionButton}
-                    onPress={() => {
-                      handleWhatsapp(selectedBronzeBusiness.phone);
-                    }}
-                  >
-                    <Icons.Ionicons
-                      name="logo-whatsapp"
-                      size={20}
-                      color="#25D366"
-                    />
-                    <Text style={styles.secondaryActionText}>Chat</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.secondaryActionButton}
-                    onPress={() => {
-                      handleEmail(selectedBronzeBusiness.email);
-                    }}
-                  >
-                    <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
-                    <Text style={styles.secondaryActionText}>Email</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.secondaryActionButton}
-                    onPress={() => {
-                      findLocation(selectedBronzeBusiness.address);
-                    }}
-                  >
-                    <Icons.Ionicons
-                      name="location-outline"
-                      size={20}
-                      color="#5856D6"
-                    />
-                    <Text style={styles.secondaryActionText}>Map</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
             </View>
           )}
         </View>
+
+        {/* share options */}
+        <Animated.View
+          style={[
+            styles.shareOptionsContainer,
+            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 190 },
+            {
+              opacity: shareOptionsAnim,
+              transform: [
+                {
+                  translateY: shareOptionsAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+          pointerEvents={showShareOptions ? "auto" : "none"}
+        >
+          <BlurView intensity={80} style={styles.shareOptionsBlur}>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
+                <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>Message</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("email")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#FF9500" }]}>
+                <Icons.Ionicons name="mail-outline" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>Email</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("copy")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#5856D6" }]}>
+                <Icons.Ionicons name="copy-outline" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>Copy</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("more")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#8E8E93" }]}>
+                <Icons.Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>More</Text>
+            </TouchableOpacity>
+
+          </BlurView>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -207,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     overflow: "hidden",
-    maxHeight: "80%",
+    maxHeight: 'auto'
   },
   upgradeModalHeader: {
     backgroundColor: "#003366",
@@ -238,13 +294,15 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   businessBranding: {
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     marginBottom: 20,
   },
   businessLogoContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 120,
+    height: 100,
+    borderRadius: 15,
     backgroundColor: "#F8F8F8",
     justifyContent: "center",
     alignItems: "center",
@@ -257,8 +315,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   businessLogo: {
-    width: 50,
-    height: 50,
+    width: '90%',
+    height: '90%',
+    borderRadius: 10
   },
   businessInitialContainer: {
     width: "100%",
@@ -340,5 +399,55 @@ const styles = StyleSheet.create({
     color: "#333333",
     marginTop: 4,
   },
+  shareOptionsContainer: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 100 : 90,
+    right: 64,
+    borderRadius: 16,
+    zIndex: 100,
+  },
+  shareOptionsBlur: {
+    flexDirection: "row",
+    backgroundColor: Platform.OS === "ios" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  shareOption: {
+    alignItems: "center",
+    marginHorizontal: 8,
+  },
+  shareOptionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  shareOptionText: {
+    fontSize: 12,
+    color: "#333333",
+  },
+  // modalOverlay: {
+  //   position: 'absolute',
+  //   top: 0,
+  //   left: 0,
+  //   right: 0,
+  //   bottom: 0,
+  //   backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   zIndex: 2000,
+  // },
 })
 

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Linking, Platform, Share, Alert } from "react-native";
 import { CustomToast } from "./customToast";
@@ -98,13 +99,13 @@ export async function handleCall(phoneNumbers, e) {
     const options = phoneNumbers.map((phone) => ({
       text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
         }: ${phone.number}`,
-      onPress: () => Linking.openURL(`tel:${phone.number}`),
+      onPress: () => Linking.openURL(`tel:${phone.number}`)
     }));
 
     // Add cancel option
-    options.push({ text: "Cancel", style: "cancel" });
-
-    Alert.alert("Select Phone Number", "Choose a number to call", options);
+    // options.push({ text: "Cancel", style: "cancel" });
+    // Alert.alert("Select Phone Number", "Choose a number to call", options);
+    return options
   }
 }
 
@@ -150,6 +151,14 @@ export async function handleLocation(address, e) {
     android: `geo:0,0?q=${address}`,
   })
   Linking.openURL(url)
+}
+
+export async function handleWebsite(business) {
+  if (business.website) {
+    Linking.openURL(business.website)
+  } else {
+    Alert.alert(`Website not Found','Company\'s own website could not be found\nTry this link though: https://industrylines.netlify.app/views/business-detail.html?id=${business._id}`)
+  }
 }
 
 export async function handleBusinessPress(business, navigation, setSelectedBronzeBusiness, setUpgradeModalVisible) {

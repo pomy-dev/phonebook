@@ -7,19 +7,13 @@ import {
   ScrollView,
   SafeAreaView,
   StyleSheet,
-  Dimensions,
-  Linking,
   RefreshControl,
   Alert
 } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { Icons } from "../utils/Icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import connectWhatsApp from "../components/connectWhatsApp"
-import connectEmail from "../components/connectEmail"
-import findLocation from "../components/findLocation"
-import Toast from "react-native-toast-message"
-
-const { width } = Dimensions.get("window")
+import { CustomToast } from "../utils/customToast"
+import { handleCall, handleEmail, handleLocation, handleWhatsapp } from "../utils/callFunctions"
 
 const FeaturedScreen = ({ route, navigation }) => {
   const [favorites, setFavorites] = useState([])
@@ -86,29 +80,12 @@ const FeaturedScreen = ({ route, navigation }) => {
       if (isInFavorites(business._id)) {
         // Remove from favorites
         newFavorites = newFavorites.filter(fav => fav._id !== business._id);
-        Toast.show({
-          type: 'success',
-          text1: 'Removed from Favorites',
-          text2: `${business.company_name} has been removed from your favorites.`,
-          position: 'bottom',
-          visibilityTime: 5000,
-          autoHide: true,
-          bottomOffset: 60
-        });
+        CustomToast('Removed from Favorites', `${business.company_name} has been removed from your favorites.`)
       } else {
         // Add to favorites
         newFavorites.push(business);
-        Toast.show({
-          type: 'success',
-          text1: 'Added to Favorites',
-          text2: `${business.company_name} has been added to your favorites.`,
-          position: 'bottom',
-          visibilityTime: 5000,
-          autoHide: true,
-          bottomOffset: 60
-        });
+        CustomToast('Added to Favorites', `${business.company_name} has been added to your favorites.`)
       }
-
       // Update state
       setFavorites(newFavorites);
 
@@ -119,70 +96,6 @@ const FeaturedScreen = ({ route, navigation }) => {
       Alert.alert('Error', 'Could not update favorites. Please try again.');
     }
   };
-
-  const handleCall = (phoneNumbers, e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-
-    if (!phoneNumbers || phoneNumbers.length === 0) {
-      Alert.alert('No Phone Number', 'This business has no phone number listed.');
-      return;
-    }
-
-    if (phoneNumbers.length === 1) {
-      // If there's only one phone number, ask for confirmation
-      Alert.alert("Call Business", `Would you like to call ${phoneNumbers[0].number}?`, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Call", onPress: () => Linking.openURL(`tel:${phoneNumbers[0].number}`) },
-      ])
-    } else if (phoneNumbers.length > 1) {
-      // If there are multiple phone numbers, show a selection dialog with cancel option
-      const options = phoneNumbers.map((phone) => ({
-        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}: ${phone.number}`,
-        onPress: () => Linking.openURL(`tel:${phone.number}`),
-      }))
-
-      // Add cancel option
-      options.push({ text: "Cancel", style: "cancel" })
-
-      Alert.alert("Select Phone Number", "Choose a number to call", options)
-    }
-  }
-
-  const handleWhatsapp = (phones, e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-
-    if (!phones || phones.length === 0) {
-      Alert.alert('No WhatsApp', 'This business has no WhatsApp number listed.');
-      return;
-    }
-
-    for (let i = 0; i < phones.length; i++) {
-      if (phones[i].phone_type === "whatsApp") {
-        connectWhatsApp(phones[i].number);
-        return;
-      }
-    }
-
-    Alert.alert('No WhatsApp', 'This business has no WhatsApp number listed.');
-  }
-
-  const handleEmail = (email, e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    connectEmail(email);
-  }
-
-  const handleLocation = (address, e) => {
-    if (e) {
-      e.stopPropagation();
-    }
-    findLocation(address);
-  }
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -197,7 +110,7 @@ const FeaturedScreen = ({ route, navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#333333" />
+          <Icons.Ionicons name="arrow-back" size={24} color="#333333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Featured Businesses</Text>
         <View style={styles.placeholder} />
@@ -245,7 +158,7 @@ const FeaturedScreen = ({ route, navigation }) => {
                 onPress={(e) => toggleFavorite(business, e)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons
+                <Icons.Ionicons
                   name={isInFavorites(business._id) ? "heart" : "heart-outline"}
                   size={22}
                   color={isInFavorites(business._id) ? "#003366" : "#AAAAAA"}
@@ -260,7 +173,7 @@ const FeaturedScreen = ({ route, navigation }) => {
                 style={styles.actionButton}
                 onPress={(e) => handleCall(business.phone, e)}
               >
-                <Ionicons name="call-outline" size={18} color="#003366" />
+                <Icons.Ionicons name="call-outline" size={18} color="#003366" />
                 <Text style={styles.actionButtonText}>Call</Text>
               </TouchableOpacity>
 
@@ -268,7 +181,7 @@ const FeaturedScreen = ({ route, navigation }) => {
                 style={styles.actionButton}
                 onPress={(e) => handleWhatsapp(business.phone, e)}
               >
-                <Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+                <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
                 <Text style={styles.actionButtonText}>WhatsApp</Text>
               </TouchableOpacity>
 
@@ -276,7 +189,7 @@ const FeaturedScreen = ({ route, navigation }) => {
                 style={styles.actionButton}
                 onPress={(e) => handleEmail(business.email, e)}
               >
-                <Ionicons name="mail-outline" size={18} color="#FF9500" />
+                <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
                 <Text style={styles.actionButtonText}>Email</Text>
               </TouchableOpacity>
 
@@ -284,7 +197,7 @@ const FeaturedScreen = ({ route, navigation }) => {
                 style={styles.actionButton}
                 onPress={(e) => handleLocation(business.address, e)}
               >
-                <Ionicons name="location-outline" size={18} color="#5856D6" />
+                <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
                 <Text style={styles.actionButtonText}>Map</Text>
               </TouchableOpacity>
             </View>
@@ -294,7 +207,7 @@ const FeaturedScreen = ({ route, navigation }) => {
               onPress={() => navigation.navigate("BusinessDetail", { business })}
             >
               <Text style={styles.viewDetailsText}>View Details</Text>
-              <Ionicons name="chevron-forward" size={16} color="#003366" />
+              <Icons.Ionicons name="chevron-forward" size={16} color="#003366" />
             </TouchableOpacity>
           </TouchableOpacity>
         ))}

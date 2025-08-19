@@ -12,8 +12,7 @@ import {
   Image,
   TextInput,
   Alert,
-  RefreshControl,
-  Dimensions,
+  RefreshControl
 } from "react-native";
 import { Icons } from '../utils/Icons'
 import { fetchAllCompaniesOffline } from "../service/getApi";
@@ -21,8 +20,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CustomToast } from "../utils/customToast";
 import { CustomModal } from "../components/customModal";
 import { handleCall, handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
-
-const { width } = Dimensions.get("window");
 
 export default function BusinessList({ route, navigation }) {
   const { category } = route.params;
@@ -132,20 +129,6 @@ export default function BusinessList({ route, navigation }) {
       setFilteredBusinesses(filtered);
     }
   }, [searchQuery, businesses]);
-
-  // const handleBusinessPress = (business) => {
-  //   if (
-  //     business.subscription_type &&
-  //     business.subscription_type.toLowerCase() === "bronze"
-  //   ) {
-  //     // For Bronze businesses, show upgrade modal instead of navigating
-  //     setSelectedBronzeBusiness(business);
-  //     setUpgradeModalVisible(true);
-  //   } else {
-  //     // For Silver and Gold, navigate to business detail
-  //     navigation.navigate("BusinessDetail", { business });
-  //   }
-  // };
 
   const onBusinessPress = (business) => {
     handleBusinessPress(
