@@ -60,7 +60,7 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
       </View>
       <FlatList
         ref={flatListRef}
-        data={item.publications}
+        data={data}
         renderItem={({ item }) => (
           <ImageBackground
             source={item.image}
@@ -70,16 +70,22 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
             <View style={styles.highlightOverlay}>
               <Text style={styles.highlightTeaser}>{item.teaser}</Text>
               <Text style={styles.highlightDate}>
-                {new Date(item.postedDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
-                  year: "numeric",
-                })}
+                {contentType === 'Promotions'
+                  ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}`
+                  : new Date(item.postedDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}
               </Text>
             </View>
           </ImageBackground>
         )}
-        keyExtractor={(pub) => pub.id}
+        keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -154,7 +160,7 @@ const PublicationScreen = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.text }]}>
-            No publications available.
+            No {contentType.toLocaleLowerCase()} available.
           </Text>
         }
       />

@@ -120,7 +120,13 @@ export default function App() {
               <Drawer.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
               <Drawer.Screen name="Publications" component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
-                initialParams={{ selectedState }}
+                initialParams={{ selectedState, contentType: "Publications" }}
+              />
+              <Drawer.Screen
+                name="Promotions"
+                component={PublicationScreen}
+                options={{ headerShown: false }}
+                initialParams={{ selectedState, contentType: "Promotions" }}
               />
             </Drawer.Navigator>
             <StatusBar style={isDark ? 'light' : 'dark'} />

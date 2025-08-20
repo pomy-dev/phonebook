@@ -22,18 +22,18 @@ const BusinessArticlesScreen = () => {
   const route = useRoute();
   const [fabOpen, setFabOpen] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
-  const { company } = route.params;
+  const { company, contentType = "Publications" } = route.params;
   const { width } = useWindowDimensions();
-  const [expandedArticles, setExpandedArticles] = useState({});
+  const [expandedItems, setExpandedItems] = useState({});
   const [shareVia, setshareVia] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
 
   const data = contentType === "Promotions" ? company.promotions : company.publications;
 
-  const toggleArticle = (articleId) => {
-    setExpandedArticles((prev) => ({
+  const toggleItem = (itemId) => {
+    setExpandedItems((prev) => ({
       ...prev,
-      [articleId]: !prev[articleId],
+      [itemId]: !prev[itemId],
     }));
   };
 
@@ -191,29 +191,36 @@ const BusinessArticlesScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {data.map((article) => (
+        {data.map((item) => (
           <View
-            key={article.id}
+            key={item.id}
             style={[styles.articleContainer, { backgroundColor: colors.card }]}
           >
             <Image
-              source={article.image}
+              source={item.image}
               style={[styles.articleImage, { width: width - 10 }]}
               resizeMode="cover"
             />
 
             <View style={{ padding: 12 }}>
               <Text style={[styles.articleTitle, { color: colors.text }]}>
-                {article.title}
+                {item.title}
               </Text>
 
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={[styles.articleDate, { color: '#7d7d7dff' }]}>
-                  {new Date(article.postedDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })}
+                  {contentType === 'Promotions'
+                    ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "2-digit",
+                      year: "numeric",
+                    })}`
+                    : new Date(item.postedDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "2-digit",
+                      year: "numeric",
+                    })
+                  }
                 </Text>
 
                 {/* sharevia button */}
@@ -223,15 +230,15 @@ const BusinessArticlesScreen = () => {
               </View>
 
               <Text style={[styles.articleIntro, { color: colors.text }]}>
-                {article.intro}
+                {contentType === "Promotions" ? item.description : item.intro}
               </Text>
 
-              {expandedArticles[article.id] && (
+              {contentType !== "Promotions" && expandedItems[item.id] && (
                 <View style={styles.expandedContent}>
-                  {article.paragraphs.map((paragraph, index) => (
+                  {item.paragraphs.map((paragraph, index) => (
                     <Text
                       key={index}
-                      style={[styles.articleParagraph, { color: '#3d3c3cff' }]}
+                      style={[styles.itemParagraph, { color: colors.border }]}
                     >
                       {paragraph}
                     </Text>
@@ -239,19 +246,26 @@ const BusinessArticlesScreen = () => {
                 </View>
               )}
 
-              <TouchableOpacity
-                style={styles.readMoreButton}
-                onPress={() => toggleArticle(article.id)}
-              >
-                <Text style={styles.readMoreText}>
-                  {expandedArticles[article.id] ? "Read Less" : "Read More"}
-                </Text>
-                <Icons.Ionicons
-                  name={expandedArticles[article.id] ? "chevron-up" : "chevron-down"}
-                  size={20}
-                  color="#003366"
-                />
-              </TouchableOpacity>
+              {contentType !== "Promotions" && (
+                <TouchableOpacity
+                  style={styles.readMoreButton}
+                  onPress={() => toggleItem(item.id)}
+                  accessibilityLabel={
+                    expandedItems[item.id]
+                      ? `Collapse ${item.title}`
+                      : `Expand ${item.title}`
+                  }
+                >
+                  <Text style={styles.readMoreText}>
+                    {expandedItems[item.id] ? "Read Less" : "Read More"}
+                  </Text>
+                  <Ionicons
+                    name={expandedItems[item.id] ? "chevron-up" : "chevron-down"}
+                    size={20}
+                    color="#003366"
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         ))}
