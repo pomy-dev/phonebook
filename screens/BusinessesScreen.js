@@ -7,27 +7,18 @@ import {
     TouchableOpacity,
     SafeAreaView,
     StatusBar,
-    Dimensions,
     TextInput,
     Image,
     Alert,
-    RefreshControl,
-    ActivityIndicator
+    RefreshControl
 } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
-import { AntDesign } from '@expo/vector-icons'
+import { Icons } from '../utils/Icons'
 import { loadOfflineData } from '../service/getApi'
-import Toast from "react-native-toast-message"
-import Healthcare from "../assets/pics/health.jpg"
-import Emergency from "../assets/pics/emergency.png"
-import Government from "../assets/pics/government.jpg"
-import Education from "../assets/pics/education.jpg"
-
-const { width } = Dimensions.get('window')
+import { CustomToast } from '../utils/customToast'
+import { Images } from '../utils/Images'
 
 export default function BusinessScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState("")
-    const [featuredCategory, setFeaturedCategory] = useState("Emergency")
     const [loading, setLoading] = useState(false)
     const [businesses, setBusinesses] = useState([]);
     const [refreshing, setRefreshing] = useState(false)
@@ -141,22 +132,22 @@ export default function BusinessScreen({ navigation }) {
         {
             name: "Emergency",
             icon: "bandage-outline",
-            image: Emergency
+            image: Images.Emergency
         },
         {
             name: "Healthcare",
             icon: "medical-outline",
-            image: Healthcare
+            image: Images.Healthcare
         },
         {
             name: "Government",
             icon: "business-outline",
-            image: Government
+            image: Images.Government
         },
         {
             name: "Education",
             icon: "school-outline",
-            image: Education
+            image: Images.Education
         }
     ]
 
@@ -177,15 +168,8 @@ export default function BusinessScreen({ navigation }) {
             // Set state with the refreshed data
             setBusinesses(companyData);
 
-            // Show a success message
-            Toast.show({
-                type: 'success',
-                text1: 'Refreshed 👍',
-                text2: 'Categories refreshed successfully',
-                position: 'middle',
-                visibilityTime: 5000,
-                autoHide: true
-            });
+            CustomToast('Refreshed 👍', 'Categories refreshed successfully')
+
         } catch (err) {
             console.log(err.message);
             Alert.alert("Error", "Failed to refresh business listings");
@@ -207,27 +191,13 @@ export default function BusinessScreen({ navigation }) {
             {/* App Title */}
             <View style={styles.titleContainer}>
                 <Text style={styles.appTitle}>Directory</Text>
-                <TouchableOpacity
-                    style={styles.alphabetButton}
-                    onPress={handleRefresh}
-                    disabled={loading}
-                >
-                    {loading ? (
-                        <ActivityIndicator size="small" color="#003366" />
-                    ) : (
-                        <AntDesign
-                            name="download"
-                            size={20}
-                            color="#003366"
-                        />
-                    )}
-                </TouchableOpacity>
+                <Text style={styles.appSubTitle}>Industries</Text>
             </View>
 
             {/* Search Bar */}
             <View style={styles.searchContainer}>
                 <View style={styles.searchWrapper}>
-                    <Ionicons name="search-outline" size={20} color="#AAAAAA" style={styles.searchIcon} />
+                    <Icons.Ionicons name="search-outline" size={20} color="#AAAAAA" style={styles.searchIcon} />
                     <TextInput
                         placeholder="Search categories"
                         style={styles.searchInput}
@@ -275,7 +245,7 @@ export default function BusinessScreen({ navigation }) {
 
                                     />
                                     <View style={styles.featuredOverlay}>
-                                        <Ionicons name={category.icon} size={28} color="#FFFFFF" />
+                                        <Icons.Ionicons name={category.icon} size={28} color="#FFFFFF" />
                                     </View>
                                 </View>
                                 <Text style={styles.featuredName}>{category.name}</Text>
@@ -300,7 +270,7 @@ export default function BusinessScreen({ navigation }) {
                             >
                                 <View style={styles.categoryContent}>
                                     <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
-                                        <Ionicons name={category.icon} size={20} color="#FFFFFF" />
+                                        <Icons.Ionicons name={category.icon} size={20} color="#FFFFFF" />
                                     </View>
                                     <View style={styles.categoryTextContainer}>
                                         <Text style={styles.categoryText}>{category.name}</Text>
@@ -308,7 +278,7 @@ export default function BusinessScreen({ navigation }) {
                                     </View>
                                 </View>
                                 <View style={styles.chevronContainer}>
-                                    <Ionicons name="chevron-forward" size={20} color="#AAAAAA" />
+                                    <Icons.Ionicons name="chevron-forward" size={20} color="#AAAAAA" />
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -316,7 +286,7 @@ export default function BusinessScreen({ navigation }) {
 
                     {filteredCategories.length === 0 && (
                         <View style={styles.noResultsContainer}>
-                            <Ionicons name="search" size={48} color="#DDDDDD" />
+                            <Icons.Ionicons name="search" size={48} color="#DDDDDD" />
                             <Text style={styles.noResultsText}>No categories found</Text>
                             <Text style={styles.noResultsSubtext}>Try a different search term</Text>
                         </View>
@@ -344,6 +314,12 @@ const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: "bold",
         color: "#333333",
+        letterSpacing: -0.5,
+    },
+    appSubTitle: {
+        fontSize: 18,
+        fontWeight: "200",
+        color: "#7c7c7cff",
         letterSpacing: -0.5,
     },
     alphabetButton: {

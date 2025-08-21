@@ -3,10 +3,9 @@ import { useState } from 'react';
 import { useColorScheme, View, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import PublicationsStackNavigator from './navigator/PublicationsStack';
 import { StatusBar } from 'expo-status-bar';
 import TabNavigator from './components/TabNavigator';
-import PublicationScreen from './screens/PublicationScreen';
-import BusinessArticlesScreen from './screens/BusinessArticlesScreen';
 import Toast from 'react-native-toast-message';
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import SplashScreen from './screens/SplashScreen';
@@ -119,11 +118,18 @@ export default function App() {
               }}
             >
               <Drawer.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
-              <Drawer.Screen name="Publications" component={PublicationScreen}
+              <Drawer.Screen
+                name="Publications"
+                component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
-                initialParams={{ selectedState }}
+                initialParams={{ selectedState, contentType: "Publications" }}
               />
-              <Drawer.Screen name="Promotions" component={BusinessArticlesScreen} options={{ headerShown: false }} />
+              <Drawer.Screen
+                name="Promotions"
+                component={PublicationsStackNavigator}
+                options={{ headerShown: false }}
+                initialParams={{ selectedState, contentType: "Promotions" }}
+              />
             </Drawer.Navigator>
             <StatusBar style={isDark ? 'light' : 'dark'} />
           </NavigationContainer>

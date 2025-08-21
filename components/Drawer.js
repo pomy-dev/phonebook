@@ -100,13 +100,13 @@ const CustomDrawerContent = (
       scrollEnabled={true}
     >
       <View style={styles.drawerContent}>
-      <Text style={[styles.drawerTitle, isDarkMode && styles.darkText]}>Explore</Text>
+        <Text style={[styles.drawerTitle, isDarkMode && styles.darkText]}>Explore</Text>
 
-      {/* Directories Section */}
-      <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>State Directories</Text>
+        {/* Directories Section */}
+        <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>State Directories</Text>
 
-      {/* default image (coat of arms) */}
-      <View style={styles.emblemContainer}>
+        {/* default image (coat of arms) */}
+        <View style={styles.emblemContainer}>
           <Image
             source={emblemSource}
             style={[styles.emblemImage, isDarkMode && styles.darkEmblemImage]}
@@ -114,8 +114,8 @@ const CustomDrawerContent = (
           />
         </View>
 
-      {/* states picker */}
-      <TouchableOpacity
+        {/* states picker */}
+        <TouchableOpacity
           style={[styles.pickerContainer, isDarkMode && styles.darkPickerContainer]}
           onPress={() => setModalVisible(true)}
         >
@@ -132,8 +132,8 @@ const CustomDrawerContent = (
           </View>
         </TouchableOpacity>
 
-      {/* Modal for Custom Picker */}
-      <Modal
+        {/* Modal for Custom Picker */}
+        <Modal
           animationType="slide"
           transparent={true}
           visible={modalVisible}
@@ -160,8 +160,8 @@ const CustomDrawerContent = (
           </View>
         </Modal>
 
-      {/* Navigation Section */}
-      <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Insights</Text>
+        {/* Navigation Section */}
+        <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Insights</Text>
         <Animated.View
           style={{
             opacity: fadeAnims[0],
@@ -173,7 +173,7 @@ const CustomDrawerContent = (
             onPressIn={() => handlePressIn(0)}
             onPressOut={() => handlePressOut(0)}
             onPress={() => {
-              navigation.navigate("Publications");
+              navigation.navigate("Publications", { screen: "PublicationList", params: { contentType: "Publications", selectedState } });
               navigation.closeDrawer();
             }}
           >
@@ -198,7 +198,7 @@ const CustomDrawerContent = (
             onPressIn={() => handlePressIn(1)}
             onPressOut={() => handlePressOut(1)}
             onPress={() => {
-              navigation.navigate("Promotions");
+              navigation.navigate("Promotions", { screen: "PublicationList", params: { contentType: "Promotions", selectedState } });
               navigation.closeDrawer();
             }}
           >
@@ -212,8 +212,8 @@ const CustomDrawerContent = (
           </TouchableOpacity>
         </Animated.View>
 
-      {/* Settings Section */}
-      <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Preferences</Text>
+        {/* Settings Section */}
+        <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Preferences</Text>
         <View style={styles.drawerItem}>
           <Icons.Ionicons
             name={isDarkMode ? "moon" : "sunny"}

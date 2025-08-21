@@ -14,13 +14,9 @@ import {
   Linking,
   Alert,
   Modal,
-  RefreshControl,
-  Switch,
+  RefreshControl
 } from "react-native";
 import { Icons } from "../utils/Icons";
-import connectWhatsApp from "../components/connectWhatsApp";
-import connectEmail from "../components/connectEmail";
-import findLocation from "../components/findLocation";
 import {
   fetchAllCompanies,
   fetchAllCompaniesOffline,
@@ -28,9 +24,12 @@ import {
 } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
-import Toast from "react-native-toast-message"
 import CustomLoader from "../components/customLoader";
 import eswatini from '../assets/pics/eswatini-state.jpg';
+import { CustomToast } from "../utils/customToast";
+import { CustomModal } from '../components/customModal'
+import { useCallFunction } from '../components/customCallAlert'
+import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp } from "../utils/callFunctions";
 
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,11 +44,8 @@ const HomeScreen = ({ navigation }) => {
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedState, setSelectedState] = useState("All");
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [isOnline, setIsOnline] = useState(true);
+  const { handleCall, AlertUI } = useCallFunction();
 
   const categories = ["All", "Government", "Emergency", "More..."];
 
@@ -57,11 +53,11 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     const loadFavorites = async () => {
       try {
-        const theme = await AsyncStorage.getItem("theme");
-        const notifications = await AsyncStorage.getItem("notifications");
+        // const theme = await AsyncStorage.getItem("theme");
+        // const notifications = await AsyncStorage.getItem("notifications");
         const storedFavorites = await AsyncStorage.getItem("favorites");
-        if (theme) setIsDarkMode(JSON.parse(theme));
-        if (notifications) setNotificationsEnabled(JSON.parse(notifications));
+        // if (theme) setIsDarkMode(JSON.parse(theme));
+        // if (notifications) setNotificationsEnabled(JSON.parse(notifications));
         if (storedFavorites) {
           setFavorites(JSON.parse(storedFavorites));
         }
@@ -99,15 +95,10 @@ const HomeScreen = ({ navigation }) => {
       setFavorites(newFavorites);
       await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
 
-      Toast.show({
-        type: 'success',
-        text1: isInFavorites(business._id) ? "Removed from Favorites" : "Added to Favorites",
-        text2: isInFavorites(business._id) ? `${business.company_name} has been removed from your favorites.` : `${business.company_name} has been added to your favorites.`,
-        position: 'bottom',
-        visibilityTime: 5000,
-        autoHide: true,
-        bottomOffset: 60,
-      });
+      CustomToast(
+        isInFavorites(business._id) ? 'Removed from Favorites' : 'Added to Favorites',
+        isInFavorites(business._id) ? `${business.company_name} has been removed from your favorites.` : `${business.company_name} has been added to your favorites.`
+      )
 
     } catch (error) {
       console.log("Error updating favorites:", error);
@@ -218,69 +209,13 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const handleCall = (phoneNumbers) => {
-    if (!phoneNumbers || phoneNumbers.length === 0) {
-      Alert.alert(
-        "No Phone Number",
-        "This business has no phone number listed."
-      );
-      return;
-    }
-
-    if (phoneNumbers.length === 1) {
-      Alert.alert(
-        "Call Business",
-        `Would you like to call ${phoneNumbers[0].number}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Call",
-            onPress: () => Linking.openURL(`tel:${phoneNumbers[0].number}`),
-          },
-        ]
-      );
-    } else if (phoneNumbers.length > 1) {
-      const options = phoneNumbers.map((phone) => ({
-        text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-          }: ${phone.number}`,
-        onPress: () => Linking.openURL(`tel:${phone.number}`),
-      }));
-
-      options.push({ text: "Cancel", style: "cancel" });
-
-      Alert.alert("Select Phone Number", "Choose a number to call", options);
-    }
-  };
-
-  const handleBusinessPress = (business) => {
-    if (business.subscription_type.toLowerCase() === "bronze") {
-      setSelectedBronzeBusiness(business);
-      setUpgradeModalVisible(true);
-    } else {
-      navigation.navigate("BusinessDetail", { business });
-    }
-  };
-
-  const handleWhatsapp = (phones) => {
-    if (!phones || phones.length === 0) {
-      Alert.alert(
-        "No WhatsApp",
-        "This business has no WhatsApp number listed."
-      );
-      return;
-    }
-
-    for (const number in phones) {
-      if (phones[number].phone_type == "whatsapp") {
-        connectWhatsApp(phones[number].number);
-        return;
-      } else {
-        Alert.alert(
-          "No WhatsApp",
-          "This business has no WhatsApp number listed."
-        );
-      }
-    }
+  const onBusinessPress = (business) => {
+    handleBusinessPress(
+      business,
+      navigation,
+      setSelectedBronzeBusiness,
+      setUpgradeModalVisible
+    );
   };
 
   const handleRefresh = async () => {
@@ -301,15 +236,7 @@ const HomeScreen = ({ navigation }) => {
           setFeaturedBusinesses(featuredBusinesses);
           setBusinesses(nonGoldCompanies);
           setFilteredBusinesses(nonGoldCompanies);
-          Toast.show({
-            type: 'success',
-            text1: 'Refreshed 👍',
-            text2: 'Businesses refreshed successfully',
-            position: 'bottom',
-            visibilityTime: 5000,
-            autoHide: true,
-            bottomOffset: 60,
-          });
+          CustomToast('Refreshed 👍', 'Businesses refreshed successfully')
 
           await loadBusinesses();
           setLastRefresh("Last refresh was just now");
@@ -337,183 +264,6 @@ const HomeScreen = ({ navigation }) => {
 
   const hide = searchQuery.length > 0;
 
-
-
-  const states = [
-    {
-      id: "eswatini",
-      name: "eSwatini",
-      coatOfArmsIcon: "shield-outline",
-      flagIcon: "flag-outline",
-    },
-    {
-      id: "south_africa",
-      name: "South Africa",
-      coatOfArmsIcon: "shield-outline",
-      flagIcon: "flag-outline",
-    },
-    {
-      id: "mozambique",
-      name: "Mozambique",
-      coatOfArmsIcon: "shield-outline",
-      flagIcon: "flag-outline",
-    },
-  ];
-
-  // Drawer content
-  const drawerContent = () => (
-    <View style={[styles.drawerContainer, isDarkMode && styles.darkDrawerContainer]}>
-      <View style={styles.drawerHeader}>
-        <Text style={[styles.drawerTitle, isDarkMode && styles.darkText]}>Menu</Text>
-      </View>
-
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Neighboring Countries</Text>
-        {states?.map((state) => (
-          <TouchableOpacity
-            key={state.id}
-            style={[styles.drawerItem, selectedState === state.name && styles.activeDrawerItem]}
-            onPress={() => {
-              setSelectedState(state.name);
-              setIsDrawerOpen(false);
-            }}
-          >
-            <Icons.Ionicons
-              name={state.coatOfArmsIcon}
-              size={20}
-              color={isDarkMode ? "#FFFFFF" : "#333333"}
-              style={styles.drawerIcon}
-            />
-            <Icons.Ionicons
-              name={state.flagIcon}
-              size={20}
-              color={isDarkMode ? "#FFFFFF" : "#333333"}
-              style={styles.drawerIcon}
-            />
-            <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>{state.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* State selection */}
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>States</Text>
-        {states.map((state) => (
-          <TouchableOpacity
-            key={state.id}
-            style={[
-              styles.drawerItem,
-              selectedState === state.name && styles.activeDrawerItem,
-            ]}
-            onPress={() => {
-              setSelectedState(state.name);
-              setIsDrawerOpen(false);
-            }}
-          >
-            <Icons.Ionicons
-              name={state.flagIcon === "All" ? "globe-outline" : "map-outline"}
-              size={20}
-              color={isDarkMode ? "#FFFFFF" : "#333333"}
-            />
-            <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>{state.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-
-      {/* publications */}
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Navigation</Text>
-        <TouchableOpacity
-          style={styles.drawerItem}
-          onPress={() => navigation.navigate("Publications")}
-        >
-          <Icons.Ionicons name="newspaper-outline" size={20} color={isDarkMode ? "#FFFFFF" : "#333333"} />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Publications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.drawerItem}
-          onPress={() => navigation.navigate("BusinessPromotions")}
-        >
-          <Icons.Ionicons name="megaphone-outline" size={20} color={isDarkMode ? "#FFFFFF" : "#333333"} />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Business Promotions</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Settings */}
-      <View style={styles.drawerSection}>
-        <Text style={[styles.drawerSectionTitle, isDarkMode && styles.darkText]}>Settings</Text>
-        <View style={styles.drawerItem}>
-          <Icons.Ionicons
-            name={isDarkMode ? "moon-outline" : "sunny-outline"}
-            size={20}
-            color={isDarkMode ? "#FFFFFF" : "#333333"}
-          />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Dark Mode</Text>
-          <Switch value={isDarkMode} onValueChange={toggleTheme} />
-        </View>
-        <View style={styles.drawerItem}>
-          <Icons.Ionicons
-            name="notifications-outline"
-            size={20}
-            color={isDarkMode ? "#FFFFFF" : "#333333"}
-          />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>Notifications</Text>
-          <Switch value={notificationsEnabled} onValueChange={toggleNotifications} />
-        </View>
-        <View style={styles.drawerItem}>
-          <Icons.Ionicons
-            name={isOnline ? "wifi-outline" : "cloud-offline-outline"}
-            size={20}
-            color={isDarkMode ? "#FFFFFF" : "#333333"}
-          />
-          <Text style={[styles.drawerItemText, isDarkMode && styles.darkText]}>
-            {isOnline ? "Go Offline" : "Go Online"}
-          </Text>
-          <Switch value={isOnline} onValueChange={toggleOnlineMode} />
-        </View>
-      </View>
-    </View>
-  );
-
-  // Toggle theme and save to AsyncStorage
-  const toggleTheme = async () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    await AsyncStorage.setItem("theme", JSON.stringify(newTheme));
-  };
-
-  // Toggle notifications and save to AsyncStorage
-  const toggleNotifications = async () => {
-    const newValue = !notificationsEnabled;
-    setNotificationsEnabled(newValue);
-    await AsyncStorage.setItem("notifications", JSON.stringify(newValue));
-  };
-
-  // Toggle online/offline mode
-  const toggleOnlineMode = async () => {
-    const newValue = !isOnline;
-    setIsOnline(newValue);
-    // Add logic to handle online/offline mode (e.g., disable API calls if offline)
-    Toast.show({
-      type: "info",
-      text1: newValue ? "Online Mode" : "Offline Mode",
-      text2: newValue ? "App is now online" : "App is now offline",
-      position: "bottom",
-      visibilityTime: 3000,
-    });
-  };
-
-  // Check network connectivity on mount
-  useEffect(() => {
-    const checkConnectivity = async () => {
-      const connected = await checkNetworkConnectivity();
-      setIsOnline(connected);
-    };
-    checkConnectivity();
-  }, []);
-
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -522,181 +272,14 @@ const HomeScreen = ({ navigation }) => {
       {(featuredBusinesses?.length === 0 && filteredBusinesses?.length === 0) && <CustomLoader />}
 
       {/* Upgrade Modal for Bronze Businesses */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={upgradeModalVisible}
-        onRequestClose={() => setUpgradeModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.upgradeModalContent}>
-            <View style={styles.upgradeModalHeader}>
-              <Text style={styles.upgradeModalTitle}>Business Information</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setUpgradeModalVisible(false)}
-                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-              >
-                <Icons.Ionicons name="close" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+      <CustomModal
+        isModalVisible={upgradeModalVisible}
+        selectedBronzeBusiness={selectedBronzeBusiness}
+        onClose={() => setUpgradeModalVisible(false)}
+      />
 
-            {selectedBronzeBusiness && (
-              <View style={styles.upgradeModalBody}>
-                <View style={styles.businessBranding}>
-                  <View style={styles.businessLogoContainer}>
-                    {selectedBronzeBusiness.logo ? (
-                      <Image
-                        source={{ uri: selectedBronzeBusiness.logo }}
-                        style={styles.businessLogo}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <View style={styles.businessInitialContainer}>
-                        <Text style={styles.businessInitial}>
-                          {selectedBronzeBusiness.company_name.charAt(0)}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.upgradeBusinessName}>
-                    {selectedBronzeBusiness.company_name}
-                  </Text>
-                  <Text style={styles.businessType}>
-                    {selectedBronzeBusiness.company_type}
-                  </Text>
-                </View>
-
-                <View style={styles.basicInfoContainer}>
-                  {selectedBronzeBusiness.phone &&
-                    selectedBronzeBusiness.phone.length > 0 && (
-                      <TouchableOpacity
-                        style={styles.basicInfoItem}
-                        onPress={() => handleCall(selectedBronzeBusiness.phone)}
-                      >
-                        <Icons.Ionicons
-                          name="call-outline"
-                          size={20}
-                          color="#003366"
-                        />
-                        <Text style={styles.basicInfoText}>
-                          {selectedBronzeBusiness.phone[0].number}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                  {selectedBronzeBusiness.phone &&
-                    selectedBronzeBusiness.phone.some(
-                      (p) => p.phone_type === "whatsApp"
-                    ) && (
-                      <TouchableOpacity
-                        style={styles.basicInfoItem}
-                        onPress={() =>
-                          handleWhatsapp(selectedBronzeBusiness.phone)
-                        }
-                      >
-                        <Icons.Ionicons
-                          name="logo-whatsapp"
-                          size={20}
-                          color="#25D366"
-                        />
-                        <Text style={styles.basicInfoText}>
-                          {selectedBronzeBusiness.phone.find(
-                            (p) => p.phone_type === "whatsApp"
-                          )?.number || selectedBronzeBusiness.phone[0].number}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-
-                  <TouchableOpacity
-                    style={styles.basicInfoItem}
-                    onPress={() => findLocation(selectedBronzeBusiness.address)}
-                  >
-                    <Icons.Ionicons
-                      name="location-outline"
-                      size={20}
-                      color="#5856D6"
-                    />
-                    <Text style={styles.basicInfoText}>
-                      {selectedBronzeBusiness.address}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {selectedBronzeBusiness.email && (
-                    <TouchableOpacity
-                      style={styles.basicInfoItem}
-                      onPress={() => connectEmail(selectedBronzeBusiness.email)}
-                    >
-                      <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
-                      <Text style={styles.basicInfoText}>
-                        {selectedBronzeBusiness.email}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                <View style={styles.actionButtonsContainer}>
-                  <TouchableOpacity
-                    style={styles.primaryActionButton}
-                    onPress={() => {
-                      setUpgradeModalVisible(false);
-                      if (
-                        selectedBronzeBusiness.phone &&
-                        selectedBronzeBusiness.phone.length > 0
-                      ) {
-                        handleCall(selectedBronzeBusiness.phone);
-                      }
-                    }}
-                  >
-                    <Icons.Ionicons name="call-outline" size={18} color="#FFFFFF" />
-                    <Text style={styles.primaryActionText}>Call Business</Text>
-                  </TouchableOpacity>
-
-                  <View style={styles.secondaryActionsRow}>
-                    <TouchableOpacity
-                      style={styles.secondaryActionButton}
-                      onPress={() => {
-                        handleWhatsapp(selectedBronzeBusiness.phone);
-                      }}
-                    >
-                      <Icons.Ionicons
-                        name="logo-whatsapp"
-                        size={20}
-                        color="#25D366"
-                      />
-                      <Text style={styles.secondaryActionText}>Chat</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.secondaryActionButton}
-                      onPress={() => {
-                        connectEmail(selectedBronzeBusiness.email);
-                      }}
-                    >
-                      <Icons.Ionicons name="mail-outline" size={20} color="#FF9500" />
-                      <Text style={styles.secondaryActionText}>Email</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.secondaryActionButton}
-                      onPress={() => {
-                        findLocation(selectedBronzeBusiness.address);
-                      }}
-                    >
-                      <Icons.Ionicons
-                        name="location-outline"
-                        size={20}
-                        color="#5856D6"
-                      />
-                      <Text style={styles.secondaryActionText}>Map</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
+      {/* Custom Alert */}
+      <AlertUI />
 
       {/* App Title */}
       <View style={styles.titleContainer}>
@@ -715,7 +298,6 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
       </View>
-
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -779,7 +361,7 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity
                   key={item._id}
                   style={styles.featuredItem}
-                  onPress={() => handleBusinessPress(item)}
+                  onPress={() => onBusinessPress(item)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.featuredImageContainer}>
@@ -850,7 +432,7 @@ const HomeScreen = ({ navigation }) => {
                     key={item._id}
                     style={styles.favoriteCard}
                     activeOpacity={0.8}
-                    onPress={() => handleBusinessPress(item)}
+                    onPress={() => onBusinessPress(item)}
                   >
                     <View style={styles.favoriteHeader}>
                       <View style={styles.businessImageContainer}>
@@ -920,7 +502,10 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleCall(item.phone);
+                          handleCall(
+                            item.phone,
+                            item.name
+                          )
                         }}
                       >
                         <Icons.Ionicons
@@ -955,7 +540,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          connectEmail(item.email);
+                          handleEmail(item.email, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -970,7 +555,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          findLocation(item.address);
+                          handleLocation(item.address, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -985,7 +570,7 @@ const HomeScreen = ({ navigation }) => {
                     {/* {item.subscription_type.toLowerCase() !== "bronze" && ( */}
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
-                      onPress={() => handleBusinessPress(item)}
+                      onPress={() => onBusinessPress(item)}
                     >
                       <Text style={styles.viewDetailsText}>View Details</Text>
                       <Icons.Ionicons
@@ -1022,7 +607,7 @@ const HomeScreen = ({ navigation }) => {
                     key={item._id}
                     style={styles.favoriteCard}
                     activeOpacity={0.8}
-                    onPress={() => handleBusinessPress(item)}
+                    onPress={() => onBusinessPress(item)}
                   >
                     <View style={styles.favoriteHeader}>
                       <View style={styles.businessImageContainer}>
@@ -1092,7 +677,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleCall(item.phone);
+                          handleCall(item.phone, item.name)
                         }}
                       >
                         <Icons.Ionicons
@@ -1107,10 +692,9 @@ const HomeScreen = ({ navigation }) => {
                         item.phone.some((p) => p.phone_type == "whatsapp") && (
                           <TouchableOpacity
                             style={styles.actionButton}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleWhatsapp(item.phone);
-                            }}
+                            onPress={(e) =>
+                              handleWhatsapp(item.phone, e)
+                            }
                           >
                             <Icons.Ionicons
                               name="logo-whatsapp"
@@ -1121,13 +705,14 @@ const HomeScreen = ({ navigation }) => {
                               WhatsApp
                             </Text>
                           </TouchableOpacity>
-                        )}
+                        )
+                      }
 
                       <TouchableOpacity
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          connectEmail(item.email);
+                          handleEmail(item.email, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -1142,7 +727,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.actionButton}
                         onPress={(e) => {
                           e.stopPropagation();
-                          findLocation(item.address);
+                          handleLocation(item.address, e);
                         }}
                       >
                         <Icons.Ionicons
@@ -1184,9 +769,9 @@ const HomeScreen = ({ navigation }) => {
               )}
             </View>
           </View>
-        </ScrollView>
+        </ScrollView >
       )}
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

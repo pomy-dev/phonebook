@@ -10,168 +10,103 @@ import {
   TextInput,
 } from "react-native";
 import { useTheme, useNavigation, useRoute } from "@react-navigation/native";
-import { Images } from "../utils/Images";
+import { mockPublications, mockPromotions } from "../utils/mockData";
 import { Icons } from "../utils/Icons";
 
-// Mock data
-const mockCompanies = [
-  {
-    id: "1",
-    name: "RSTP",
-    industry: "Technology",
-    logo: Images.RstpLogo,
-    publications: [
-      {
-        id: "1-1",
-        title: "AI-Powered Analytics Platform Launched",
-        teaser: "Revolutionizing data analysis for businesses.",
-        image: Images.RstpMainArticle,
-        intro: "The Royal Science & Technology Park has launched a groundbreaking AI-powered analytics platform.",
-        paragraphs: [
-          "The platform integrates advanced machine learning algorithms for real-time insights.",
-          "It ensures businesses of all sizes can harness AI without extensive expertise.",
-        ],
-        postedDate: "2025-08-01",
-      },
-      {
-        id: "1-2",
-        title: "RSTP Expands Cloud Services",
-        teaser: "New cloud solutions for scalable business growth.",
-        image: Images.RstpSubArticle,
-        intro: "RSTP introduces cloud services to enhance business scalability.",
-        paragraphs: [
-          "The services offer secure, flexible solutions for data storage and processing.",
-          "Integration with existing platforms is seamless, boosting efficiency.",
-        ],
-        postedDate: "2025-07-15",
-      },
-    ],
-  },
-  {
-    id: "2",
-    name: "Standard Bank",
-    industry: "Finance",
-    logo: Images.StandardBankLogo,
-    publications: [
-      {
-        id: "2-1",
-        title: "Standard Bank Secures $50M Funding",
-        teaser: "Driving eco-friendly investment opportunities.",
-        image: Images.StandardBankMain,
-        intro: "Standard Bank Solutions announced a $50M funding round for sustainable investments.",
-        paragraphs: [
-          "The company supports renewable energy projects and green startups.",
-          "The funding enhances GreenFin's digital platform for investors.",
-        ],
-        postedDate: "2025-06-20",
-      },
-    ],
-  },
-  {
-    id: "3",
-    name: "The Luke Commission",
-    industry: "Healthcare",
-    logo: Images.LukeLogo,
-    publications: [
-      {
-        id: "3-1",
-        title: "Telemedicine Expansion in eSwatini",
-        teaser: "Bringing healthcare to rural communities.",
-        image: Images.LukeMainArticle,
-        intro: "HealthCare Plus rolls out telemedicine to improve access in underserved regions.",
-        paragraphs: [
-          "The initiative includes virtual consultations and mobile health units.",
-          "Partnerships with local clinics support regional expansion.",
-        ],
-        postedDate: "2025-05-10",
-      },
-    ],
-  },
-];
+const CompanyCard = ({ item, navigation, colors, contentType }) => {
+  const flatListRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const data = contentType === "Promotions" ? item.ads : item.publications;
+
+  useEffect(() => {
+    if (data?.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentIndex((prevIndex) => {
+          const nextIndex = (prevIndex + 1) % data?.length;
+          flatListRef.current?.scrollToIndex({
+            index: nextIndex,
+            animated: true,
+          });
+          return nextIndex;
+        });
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [data?.length]);
+
+  return (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: colors.card }]}
+      onPress={() =>
+        navigation.navigate("BusinessArticlesScreen", { company: item, contentType })
+      }
+      activeOpacity={0.8}
+      accessibilityLabel={`View ${contentType} for ${item.name}`}
+    >
+      <View style={styles.cardHeader}>
+        <Image
+          source={item.logo}
+          style={styles.companyLogo}
+          resizeMode="contain"
+        />
+        <View style={styles.companyInfo}>
+          <Text style={[styles.companyName, { color: colors.text }]}>
+            {item.name}
+          </Text>
+          <Text style={[styles.companyIndustry, { color: colors.border }]}>
+            {item.industry}
+          </Text>
+        </View>
+      </View>
+      <FlatList
+        ref={flatListRef}
+        data={data}
+        renderItem={({ item }) => (
+          <ImageBackground
+            source={item.image}
+            style={styles.highlightBackground}
+            imageStyle={styles.highlightImage}
+          >
+            <View style={styles.highlightOverlay}>
+              <Text style={styles.highlightTeaser}>{item.teaser}</Text>
+              <Text style={styles.highlightDate}>
+                {contentType === 'Promotions'
+                  ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}`
+                  : new Date(item.postedDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}
+              </Text>
+            </View>
+          </ImageBackground>
+        )}
+        keyExtractor={(item) => item.id}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScrollToIndexFailed={() => { }}
+      />
+    </TouchableOpacity>
+  );
+};
 
 const PublicationScreen = () => {
   const { colors } = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const [searchQuery, setSearchQuery] = useState("");
+  const contentType = route.params?.contentType || "Publications";
 
-  const filteredCompanies = mockCompanies.filter(
-    (company) => company.name === searchQuery || searchQuery === ""
+  // Select data based on contentType
+  const data = contentType === "Promotions" ? mockPromotions : mockPublications;
+  const filteredCompanies = data.filter(
+    (company) => company.name?.toLocaleLowerCase()?.includes(searchQuery?.toLowerCase()) || searchQuery === ""
   );
-
-  const CompanyCard = ({ item, navigation, colors }) => {
-    const flatListRef = useRef(null);
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    useEffect(() => {
-      if (item.publications.length > 1) {
-        const interval = setInterval(() => {
-          setCurrentIndex((prevIndex) => {
-            const nextIndex = (prevIndex + 1) % item.publications.length;
-            flatListRef.current?.scrollToIndex({
-              index: nextIndex,
-              animated: true,
-            });
-            return nextIndex;
-          });
-        }, 3000);
-        return () => clearInterval(interval);
-      }
-    }, [item.publications.length]);
-
-    return (
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card }]}
-        onPress={() =>
-          navigation.navigate("Promotions", { company: item })
-        }
-        activeOpacity={0.8}
-      >
-        <View style={styles.cardHeader}>
-          <Image
-            source={item.logo}
-            style={styles.companyLogo}
-            resizeMode="contain"
-          />
-          <View style={styles.companyInfo}>
-            <Text style={[styles.companyName, { color: colors.text }]}>
-              {item.name}
-            </Text>
-            <Text style={[styles.companyIndustry, { color: colors.border }]}>
-              {item.industry}
-            </Text>
-          </View>
-        </View>
-        <FlatList
-          ref={flatListRef}
-          data={item.publications}
-          renderItem={({ item }) => (
-            <ImageBackground
-              source={item.image}
-              style={styles.highlightBackground}
-              imageStyle={styles.highlightImage}
-            >
-              <View style={styles.highlightOverlay}>
-                <Text style={styles.highlightTeaser}>{item.teaser}</Text>
-                <Text style={styles.highlightDate}>
-                  {new Date(item.postedDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                  })}
-                </Text>
-              </View>
-            </ImageBackground>
-          )}
-          keyExtractor={(pub) => pub.id}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScrollToIndexFailed={() => { }}
-        />
-      </TouchableOpacity>
-    );
-  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -190,11 +125,10 @@ const PublicationScreen = () => {
         </TouchableOpacity>
 
         {/* Screen title */}
-        <Text style={{ left: 70, color: colors.text }}>
-          Publications & Articles
+        <Text style={{ fontSize: 24, fontWeight: "700", left: '13%', color: colors.text }}>
+          {contentType === 'Promotions' ? 'Promotions/Adverts' : 'Publications/Articles'}
         </Text>
       </View>
-
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -219,14 +153,14 @@ const PublicationScreen = () => {
       <FlatList
         data={filteredCompanies}
         renderItem={({ item }) => (
-          <CompanyCard item={item} navigation={navigation} colors={colors} />
+          <CompanyCard item={item} navigation={navigation} colors={colors} contentType={contentType} />
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.text }]}>
-            No publications available.
+            No {contentType.toLocaleLowerCase()} available.
           </Text>
         }
       />
@@ -271,7 +205,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   listContainer: {
-    paddingBottom: 20,
+    paddingTop: 20,
+    paddingBottom: 50,
     backgroundColor: "#FFFFFF",
   },
   card: {
