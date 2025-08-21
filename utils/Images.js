@@ -38,8 +38,35 @@ import MozTel5G from "../assets/pics/mozTel5G.jpeg"
 import MozTelLogo from "../assets/pics/mozTelLogo.jpeg"
 
 // Promotions
-import AfricachicksAd1 from '../assets/pics/africa-ad1';
-import AfricachicksAd1 from '../assets/pics/africa-ad1';
+import AfricachicksAd1 from '../assets/pics/africa-ad1.jpeg';
+import AfricachicksAd2 from '../assets/pics/africa-ad3.jpeg';
+import AfricaChicksLogo from '../assets/pics/africachicks-logo.jpeg';
+import ClicksAd1 from '../assets/pics/clicks-ad1.jpeg';
+import ClicksAd2 from '../assets/pics/clicks-ad2.jpeg';
+import ClicksAd3 from '../assets/pics/clicks-ad3.jpeg';
+import ClicksLogo from '../assets/pics/clicks-logo.jpeg';
+import GeorgeAd1 from '../assets/pics/goerge-ad1.jpg';
+import GeorgeAd2 from '../assets/pics/goerge-ad2.jpeg';
+import GeorgeAd3 from '../assets/pics/goerge-ad3.jpeg';
+import GoergeLogo from '../assets/pics/goergehotel-logo.jpeg';
+import InsuranceLogo from '../assets/pics/insurance-logo.png';
+import InsuranceAd1 from '../assets/pics/insurance-ad1.jpeg';
+import InsuranceAd2 from '../assets/pics/insurance-ad2.jpeg';
+import InsuranceAd3 from '../assets/pics/insurance-ad3.jpeg';
+import LogicoLogo from '../assets/pics/logico-logo.png';
+import LogicoAd1 from '../assets/pics/logico-ad1.jpeg';
+import LogicoAd2 from '../assets/pics/logico-ad2.jpeg';
+import LogicoAd3 from '../assets/pics/logico-ad3.jpeg';
+import MozTelAd1 from '../assets/pics/moz-ad1.jpeg';
+import MozTelAd2 from '../assets/pics/moz-ad2.jpeg';
+import SfundzaniLogo from '../assets/pics/sfundzani-logo.jpeg';
+import SfundzaniAd1 from '../assets/pics/sfundza-ads.jpeg';
+import SfundzaniAd2 from '../assets/pics/sfundzani-ad2.jpeg';
+import SfundzaniAd3 from '../assets/pics/sfundzani-ad3.jpeg';
+import UneswaLogo from '../assets/pics/uneswa-logo.png';
+import UneswaAd1 from '../assets/pics/uneswa-ad1.jpeg';
+import UneswaAd2 from '../assets/pics/uneswa-ad2.jpeg';
+import UneswaAd3 from '../assets/pics/uneswa-ad3.jpeg';
 
 // export the images
 export const Images = {
@@ -53,6 +80,37 @@ export const Images = {
   Government,
   Emergency,
   Healthcare,
+
+  // Promotions
+  AfricaChicksLogo,
+  AfricachicksAd1,
+  AfricachicksAd2,
+  ClicksAd1,
+  ClicksAd2,
+  ClicksAd3,
+  ClicksLogo,
+  GeorgeAd1,
+  GoergeLogo,
+  GeorgeAd2,
+  GeorgeAd3,
+  InsuranceAd1,
+  InsuranceAd2,
+  InsuranceAd3,
+  InsuranceLogo,
+  LogicoAd1,
+  LogicoAd2,
+  LogicoAd3,
+  LogicoLogo,
+  MozTelAd1,
+  MozTelAd2,
+  SfundzaniAd1,
+  SfundzaniAd2,
+  SfundzaniAd3,
+  SfundzaniLogo,
+  UneswaAd1,
+  UneswaAd2,
+  UneswaAd3,
+  UneswaLogo,
 
   // Publications
   LukeLogo,

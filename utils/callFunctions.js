@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Linking, Platform, Share, Alert } from "react-native";
 import { CustomToast } from "./customToast";
@@ -96,7 +95,7 @@ export async function handleCall(phoneNumbers, e) {
     Linking.openURL(`tel:${phoneNumbers[0].number}`)
   } else if (phoneNumbers.length > 1) {
     // If there are multiple phone numbers, show a selection dialog with cancel option
-    const options = phoneNumbers.map((phone) => ({
+    const options = phoneNumbers?.map((phone) => ({
       text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
         }: ${phone.number}`,
       onPress: () => Linking.openURL(`tel:${phone.number}`)

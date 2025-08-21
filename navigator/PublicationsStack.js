@@ -6,8 +6,10 @@ const PublicationsStack = createStackNavigator();
 export default function PublicationsStackNavigator() {
   return (
     <PublicationsStack.Navigator>
-      <PublicationsStack.Screen name="Publications" component={PublicationScreen} options={{ headerShown: false }} />
-      <PublicationsStack.Screen name="Promotions" component={BusinessArticlesScreen} options={{ headerShown: false }} />
+      <PublicationsStack.Screen name="PublicationList" component={PublicationScreen} options={{ headerShown: false }} />
+      <PublicationsStack.Screen
+        name="BusinessArticlesScreen" component={BusinessArticlesScreen} options={{ headerShown: false }}
+      />
     </PublicationsStack.Navigator>
   );
 }

@@ -16,13 +16,13 @@ import { Icons } from "../utils/Icons";
 const CompanyCard = ({ item, navigation, colors, contentType }) => {
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const data = contentType === "Promotions" ? item.promotions : item.publications;
+  const data = contentType === "Promotions" ? item.ads : item.publications;
 
   useEffect(() => {
-    if (data.length > 1) {
+    if (data?.length > 1) {
       const interval = setInterval(() => {
         setCurrentIndex((prevIndex) => {
-          const nextIndex = (prevIndex + 1) % data.length;
+          const nextIndex = (prevIndex + 1) % data?.length;
           flatListRef.current?.scrollToIndex({
             index: nextIndex,
             animated: true,
@@ -32,13 +32,13 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [data.length]);
+  }, [data?.length]);
 
   return (
     <TouchableOpacity
       style={[styles.card, { backgroundColor: colors.card }]}
       onPress={() =>
-        navigation.navigate("Promotions", { company: item, contentType })
+        navigation.navigate("BusinessArticlesScreen", { company: item, contentType })
       }
       activeOpacity={0.8}
       accessibilityLabel={`View ${contentType} for ${item.name}`}
@@ -126,7 +126,7 @@ const PublicationScreen = () => {
 
         {/* Screen title */}
         <Text style={{ fontSize: 24, fontWeight: "700", left: '13%', color: colors.text }}>
-          Publications & Articles
+          {contentType === 'Promotions' ? 'Promotions/Adverts' : 'Publications/Articles'}
         </Text>
       </View>
 

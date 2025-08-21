@@ -49,6 +49,26 @@ export const mockPublications = [
         postedDate: "2025-06-10",
       },
     ],
+    socialLinks: [
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      }
+    ]
   },
   {
     id: "2",
@@ -99,6 +119,38 @@ export const mockPublications = [
         postedDate: "2025-04-15",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "3",
@@ -147,6 +199,26 @@ export const mockPublications = [
         postedDate: "2025-03-15",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      }
+    ]
   },
   {
     id: "4",
@@ -197,6 +269,26 @@ export const mockPublications = [
         postedDate: "2025-05-01",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      }
+    ]
   },
   {
     id: "5",
@@ -247,6 +339,38 @@ export const mockPublications = [
         postedDate: "2025-06-05",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "6",
@@ -298,6 +422,26 @@ export const mockPublications = [
         postedDate: "2025-05-05",
       },
     ],
+    socialLinks: [
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "7",
@@ -348,6 +492,26 @@ export const mockPublications = [
         postedDate: "2025-06-10",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
 ];
 
@@ -356,7 +520,7 @@ export const mockPromotions = [
     id: "1",
     name: "UNESWA",
     industry: "Education",
-    logo: Images.RstpLogo,
+    logo: Images.UneswaLogo,
     country: "eSwatini",
     phoneNumbers: [
       { type: "WhatsApp", number: "+26878012345" },
@@ -384,17 +548,43 @@ export const mockPromotions = [
         id: "1-3",
         title: "AI Summit 2025",
         teaser: "Join us for AI ground-breaking project launch.",
-        image: Images.RstpAd3,
+        image: Images.UneswaAd3,
         description: "Attend the Uneswa's first AI Summit 2025 in Mbabane. Connect with industry leaders and explore cutting-edge tech.",
         validUntil: "2025-10-15",
       },
     ],
+    socialLinks: [
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "2",
     name: "Goerge Hotel",
     industry: "Hospitality",
-    logo: Images.GoergeHotelLogo,
+    logo: Images.GoergeLogo,
     country: "South Africa",
     phoneNumbers: [
       { type: "Call", number: "+27112345678" },
@@ -428,12 +618,44 @@ export const mockPromotions = [
         validUntil: "2025-12-31",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "3",
     name: "Logico",
     industry: "Logistics",
-    logo: Images.LukeLogo,
+    logo: Images.LogicoLogo,
     country: "eSwatini",
     phoneNumbers: [
       { type: "Call", number: "+26825098765" },
@@ -465,6 +687,26 @@ export const mockPromotions = [
         validUntil: "2025-09-20",
       },
     ],
+    socialLinks: [
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      }
+    ]
   },
   {
     id: "4",
@@ -495,6 +737,38 @@ export const mockPromotions = [
         validUntil: "2025-08-31",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "5",
@@ -533,6 +807,38 @@ export const mockPromotions = [
         validUntil: "2025-09-15",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "6",
@@ -572,6 +878,26 @@ export const mockPromotions = [
         validUntil: "2025-09-20",
       },
     ],
+    socialLinks: [
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "7",
@@ -609,12 +935,44 @@ export const mockPromotions = [
         validUntil: "2025-09-10",
       },
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   },
   {
     id: "8",
     name: "Africa Chicks",
     industry: "Agriculture",
-    logo: Images.AfricachicksLogo,
+    logo: Images.AfricaChicksLogo,
     country: "South Africa",
     phoneNumbers: [
       { type: "WhatsApp", number: "+27117890123" },
@@ -639,5 +997,37 @@ export const mockPromotions = [
         validUntil: "2025-08-31",
       }
     ],
+    socialLinks: [
+      {
+        name: "Website",
+        icon: "globe",
+        color: "#60A5FA",
+        url: 'https://company.com/'
+      },
+      {
+        name: "LinkedIn",
+        icon: "linkedin",
+        color: "#0077B5",
+        url: 'https://linkedin.com'
+      },
+      {
+        name: "Twitter",
+        icon: "twitter",
+        color: "#1DA1F2",
+        url: 'https://twitter.com'
+      },
+      {
+        name: "Facebook",
+        icon: "facebook",
+        color: "#1877F2",
+        url: 'https://facebook.com'
+      },
+      {
+        name: "Instagram",
+        icon: "instagram",
+        color: "#C13584",
+        url: 'https://instagram.com'
+      }
+    ]
   }
 ];

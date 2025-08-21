@@ -8,6 +8,7 @@ import {
   StyleSheet,
   useWindowDimensions,
   Animated,
+  Linking,
   Easing
 } from "react-native";
 import { useTheme, useRoute } from "@react-navigation/native";
@@ -28,7 +29,7 @@ const BusinessArticlesScreen = () => {
   const [shareVia, setshareVia] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
 
-  const data = contentType === "Promotions" ? company.promotions : company.publications;
+  const data = contentType === "Promotions" ? company.ads : company.publications;
 
   const toggleItem = (itemId) => {
     setExpandedItems((prev) => ({
@@ -56,90 +57,12 @@ const BusinessArticlesScreen = () => {
     setFabOpen(!fabOpen);
   };
 
-  // Define communication channels
-  const communicationChanels = [
-    {
-      name: "Phone",
-      icon: "phone",
-      color: "#1E293B",
-      url: `tel:${company.phone}`
-    },
-    {
-      name: "Email",
-      icon: "envelope",
-      color: "#FF9500",
-      url: `mailto:${company.email}`
-    },
-    {
-      name: "WhatsApp",
-      icon: "whatsapp",
-      color: "#25D366",
-      url: `https://wa.me/${company.whatsapp}`
-    }
-  ]
-
-  const companySocialMediaLinks = [
-    {
-      name: "Website",
-      icon: "globe",
-      color: "#60A5FA",
-      url: 'https://company.com/'
-    },
-    {
-      name: "LinkedIn",
-      icon: "linkedin",
-      color: "#0077B5",
-      url: 'https://linkedin.com'
-    },
-    {
-      name: "Twitter",
-      icon: "twitter",
-      color: "#1DA1F2",
-      url: 'https://twitter.com'
-    },
-    {
-      name: "Facebook",
-      icon: "facebook",
-      color: "#1877F2",
-      url: 'https://facebook.com'
-    },
-    {
-      name: "Instagram",
-      icon: "instagram",
-      color: "#C13584",
-      url: 'https://instagram.com'
-    }
-  ]
-
-  // const companySocialMediaLinks = company.socialMediaLinks.map((link) => ({
-  //   name: link.name,
-  //   icon: link.icon,
-  //   color: link.color,
-  //   url: link.url,
-  // }));
-
-  const handleChannel = (channel) => {
-    try {
-      switch (channel) {
-        case channel === 'Phone': {
-          const calls = company.phoneNumbers?.filter((number) => number.type === 'Call')
-          handleCall(calls?.number, e);
-        }
-          break;
-        case channel === 'WhatsApp':
-          const whatsapp = company.phoneNumbers?.filter((number) => number.type === 'WhatsApp')
-          handleWhatsapp(whatsapp?.number, e);
-          break;
-        case channel === 'Email':
-          handleEmail(company.email, e);
-          break;
-        default:
-          break;
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
+  const companySocialMediaLinks = company.socialLinks.map((link) => ({
+    name: link.name,
+    icon: link.icon,
+    color: link.color,
+    url: link.url,
+  }));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -147,7 +70,6 @@ const BusinessArticlesScreen = () => {
       <AlertUI />
 
       <View style={styles.headerContainer}>
-
         <View style={styles.header}>
           {/* back button */}
           <TouchableOpacity
@@ -169,29 +91,51 @@ const BusinessArticlesScreen = () => {
 
         <View style={styles.channels}>
           <Text style={{ marginLeft: 10, color: '#706f6fff', fontSize: 15 }}>
-            Recent Articles
+            Recent {contentType !== "Promotions" ? 'Articles' : 'Adverts'}
           </Text>
           {/* display social media links */}
           <View style={{ justifyContent: 'space-around', flexDirection: 'row' }}>
-            {communicationChanels.map((channel, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleChannel(channel.name)}
-                style={styles.button}
-              >
-                <Icons.FontAwesome
-                  name={channel.icon}
-                  size={24}
-                  color={channel.color}
-                />
-              </TouchableOpacity>
-            ))}
+            {/* call button */}
+            <TouchableOpacity
+              onPress={(e) => handleCall(company.phoneNumbers.find((number) => number.type === 'Call')?.number, e)}
+              style={styles.button}
+            >
+              <Icons.FontAwesome
+                name='phone'
+                size={24}
+                color='#003366'
+              />
+            </TouchableOpacity>
+
+            {/* whatsApp button */}
+            <TouchableOpacity
+              onPress={(e) => handleWhatsapp(company.phoneNumbers.find((number) => number.type === 'WhatsApp')?.number, e)}
+              style={styles.button}
+            >
+              <Icons.FontAwesome
+                name='whatsapp'
+                size={24}
+                color='#25D366'
+              />
+            </TouchableOpacity>
+
+            {/* mail button */}
+            <TouchableOpacity
+              onPress={(e) => handleEmail(company.email, e)}
+              style={styles.button}
+            >
+              <Icons.Ionicons
+                name='mail-outline'
+                size={24}
+                color='#FF9500'
+              />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {data.map((item) => (
+        {data?.map((item) => (
           <View
             key={item.id}
             style={[styles.articleContainer, { backgroundColor: colors.card }]}
@@ -238,7 +182,7 @@ const BusinessArticlesScreen = () => {
                   {item.paragraphs.map((paragraph, index) => (
                     <Text
                       key={index}
-                      style={[styles.itemParagraph, { color: colors.border }]}
+                      style={[styles.itemParagraph, { color: '#7d7d7dff' }]}
                     >
                       {paragraph}
                     </Text>
@@ -259,7 +203,7 @@ const BusinessArticlesScreen = () => {
                   <Text style={styles.readMoreText}>
                     {expandedItems[item.id] ? "Read Less" : "Read More"}
                   </Text>
-                  <Ionicons
+                  <Icons.Ionicons
                     name={expandedItems[item.id] ? "chevron-up" : "chevron-down"}
                     size={20}
                     color="#003366"
@@ -291,7 +235,7 @@ const BusinessArticlesScreen = () => {
               ]}
             >
               <TouchableOpacity
-                onPress={() => console.log("Open:", link.url)}
+                onPress={() => Linking.openURL(link.url)}
                 style={[styles.fabButton, { backgroundColor: link.color }]}
               >
                 <Icons.FontAwesome name={link.icon} size={20} color="#fff" />

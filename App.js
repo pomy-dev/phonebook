@@ -118,13 +118,15 @@ export default function App() {
               }}
             >
               <Drawer.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
-              <Drawer.Screen name="Publications" component={PublicationsStackNavigator}
+              <Drawer.Screen
+                name="Publications"
+                component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
                 initialParams={{ selectedState, contentType: "Publications" }}
               />
               <Drawer.Screen
                 name="Promotions"
-                component={PublicationScreen}
+                component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
                 initialParams={{ selectedState, contentType: "Promotions" }}
               />
