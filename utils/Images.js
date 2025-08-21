@@ -1,3 +1,13 @@
+// States emblem directories
+import swatiEmblem from '../assets/pics/eswatini.png';
+import mzansiEmblem from '../assets/pics/south-africa.png';
+import mozEmblem from '../assets/pics/mozambique.png';
+// Popular Categories
+import Healthcare from "../assets/pics/health.jpg"
+import Emergency from "../assets/pics/emergency.png"
+import Government from "../assets/pics/government.jpg"
+import Education from "../assets/pics/education.jpg"
+// Publications
 import LukeLogo from "../assets/pics/luke-logo.jpeg";
 import LukeMainArticle from "../assets/pics/luke-article1.jpeg";
 import LukeSubArticle from "../assets/pics/luke-article2.jpeg";
@@ -9,13 +19,6 @@ import StandardBankLogo from "../assets/pics/standardBank-logo.jpg";
 import StandardBankMain from "../assets/pics/standardBank-article1.jpg";
 import StandardBankApp from '../assets/pics/standardBank-article3.jpeg'
 import StandardBankFintech from '../assets/pics/standardBank-article4.jpeg'
-import swatiEmblem from '../assets/pics/eswatini.png';
-import mzansiEmblem from '../assets/pics/south-africa.png';
-import mozEmblem from '../assets/pics/mozambique.png';
-import Healthcare from "../assets/pics/health.jpg"
-import Emergency from "../assets/pics/emergency.png"
-import Government from "../assets/pics/government.jpg"
-import Education from "../assets/pics/education.jpg"
 import RstpQuantum from "../assets/pics/rstp-article3.jpeg"
 import WomenClinicVaccine from "../assets/pics/womenClinicVaccine.jpg"
 import WomenClinicMental from "../assets/pics/womenClinicMental.jpg"
@@ -34,11 +37,24 @@ import MozTelData from "../assets/pics/mozTelData.png"
 import MozTel5G from "../assets/pics/mozTel5G.jpeg"
 import MozTelLogo from "../assets/pics/mozTelLogo.jpeg"
 
+// Promotions
+import AfricachicksAd1 from '../assets/pics/africa-ad1';
+import AfricachicksAd1 from '../assets/pics/africa-ad1';
+
 // export the images
 export const Images = {
+  // states
   swatiEmblem,
   mzansiEmblem,
   mozEmblem,
+
+  // Popular Categories
+  Education,
+  Government,
+  Emergency,
+  Healthcare,
+
+  // Publications
   LukeLogo,
   LukeMainArticle,
   LukeSubArticle,
@@ -51,10 +67,6 @@ export const Images = {
   StandardBankMain,
   StandardBankApp,
   StandardBankFintech,
-  Education,
-  Government,
-  Emergency,
-  Healthcare,
   WomenClinicVaccine,
   WomenClinicMental,
   WomenClinicHospital,
@@ -71,4 +83,7 @@ export const Images = {
   MozTelData,
   MozTel5G,
   MozTelLogo,
+
+  // Promotions
+
 };
