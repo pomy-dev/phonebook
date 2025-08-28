@@ -3,37 +3,47 @@ import { API_BASE_URL } from "../config/env";
 
 export const fetchAllCompanies = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/companies`, {
-      method: "GET", // HTTP method
-      headers: {
-        "Content-Type": "application/json", // Set content type to JSON
-      },
-    });
+    let page = 1;
+    const limit = 20; // how many companies per request
+    let allCompanies = [];
+    let totalPages = 1;
 
-    // Check if the response is okay (status code 200-299)
-    if (!response.ok) {
-      throw new Error("Network response was not ok " + response.statusText);
-    }
+    // Keep fetching until we’ve got all pages
+    do {
+      const response = await fetch(
+        `${API_BASE_URL}/api/companies?page=${page}&limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    await AsyncStorage.removeItem("companiesList");
-    const data = await response.json(); // Parse JSON response
+      if (!response.ok) {
+        throw new Error("Network response was not ok " + response.statusText);
+      }
 
-    // Filter to only include companies where paid is true
-    const paidCompanies = data.companies.filter(
-      (company) => company.paid === true
-    );
+      const data = await response.json();
 
+      // Only take paid companies
+      const paidCompanies = data.companies.filter((c) => c.paid === true);
+      allCompanies = [...allCompanies, ...paidCompanies];
 
-    await AsyncStorage.setItem("companiesList", JSON.stringify(paidCompanies));
+      totalPages = data.totalPages;
+      page++;
+    } while (page <= totalPages);
+
+    // Save all companies to AsyncStorage
+    await AsyncStorage.setItem("companiesList", JSON.stringify(allCompanies));
 
     const timestamp = new Date().toISOString();
     await AsyncStorage.setItem("companies_timestamp", timestamp);
 
-    // Return only the paid companies
-    return paidCompanies;
+    return allCompanies;
   } catch (error) {
     console.error("Error fetching companies:", error);
-    throw error; // Propagate the error for further handling
+    throw error;
   }
 };
 
