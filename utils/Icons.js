@@ -5,5 +5,6 @@ export const Icons = {
   Ionicons,
   EvilIcons,
   Feather,
+  MaterialIcons,
   MaterialCommunityIcons
 }

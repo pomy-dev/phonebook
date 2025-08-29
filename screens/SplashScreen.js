@@ -143,7 +143,6 @@ const SplashScreen = ({ onConnectionSuccess }) => {
     }
   };
 
-
   const checkNetworkAndApi = async () => {
     const isConnected = await checkNetworkConnectivity();
     if (isConnected) {

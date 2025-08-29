@@ -81,6 +81,95 @@ export const fetchCompaniesWithAge = async () => {
   }
 };
 
+export const fetchPromotions = async () => {
+  try {
+    let adverts = [];
+
+    const response = await fetch(`${API_BASE_URL}/api/ads`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+
+    const data = await response.json();
+    console.log(data.promotions)
+
+    // Filter promotions where validUntil is greater than or equal to current date
+    const currentAds = data.promotions.filter((c) => {
+      const validUntilDate = new Date(c.validUntil);
+      return validUntilDate >= new Date();
+    });
+
+    adverts = [...currentAds];
+
+    return adverts;
+  } catch (error) {
+    console.error("Error fetching promotions:", error.message);
+  }
+}
+
+export const fetchPublications = async () => {
+  try {
+    // Fetch the first 3 (fast load for UI)
+    const firstResponse = await fetch(
+      `${API_BASE_URL}/api/news?page=1&limit=3`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (!firstResponse.ok) {
+      throw new Error("Network response was not ok " + firstResponse.statusText);
+    }
+
+    const firstData = await firstResponse.json();
+    let allPublications = [...firstData.publications];
+    // console.log(allPublications)
+
+    // Background task: fetch the rest
+    (async () => {
+      try {
+        let currentPage = 2;
+        const totalPages = firstData.totalPages;
+
+        while (currentPage <= totalPages) {
+          const res = await fetch(
+            `${API_BASE_URL}/api/news?page=${currentPage}&limit=10`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+
+          if (!res.ok) break;
+
+          const pageData = await res.json();
+          allPublications = [...allPublications, ...pageData.publications];
+
+          currentPage++;
+        }
+
+      } catch (bgError) {
+        console.warn("Background load failed:", bgError.message);
+      }
+    })();
+
+    // Return the first 3 immediately
+    return { ...firstData, publications: allPublications }
+  } catch (error) {
+    console.error("Error fetching publications:", error.message);
+    return [];
+  }
+};
+
 // Helper function to load offline data
 export const loadOfflineData = async () => {
   try {
