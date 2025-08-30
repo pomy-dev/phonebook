@@ -613,6 +613,20 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     </View>
   )
 
+  const handleNews = () => {
+    navigation.navigate("BusinessArticle", {
+      company: business,
+      contentType: "Publications",
+    });
+  }
+
+  const handleAdvert = () => {
+    navigation.navigate("BusinessArticles", {
+      company: business,
+      contentType: "Promotions",
+    });
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
@@ -738,21 +752,19 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity style={styles.secondaryActionButton} onPress={handleShare} activeOpacity={0.7}>
-                <Icons.Ionicons name="share-social" size={20} color="#003366" />
-                <Text style={styles.secondaryActionText}>Share</Text>
+              <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleNews()} activeOpacity={0.7}>
+                <Icons.FontAwesome6 name="newspaper" size={20} color="#003366" />
+                <Text style={styles.secondaryActionText}>News</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.secondaryActionButton} onPress={toggleFavorite} activeOpacity={0.7}>
-                <Animated.View style={{ transform: [{ scale: isFavorite ? callButtonScale : 1 }] }}>
-                  <Icons.Ionicons
-                    name={isFavorite ? "heart" : "heart-outline"}
-                    size={20}
-                    color={isFavorite ? "#003366" : "#003366"}
-                  />
-                </Animated.View>
+              <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleAdvert()} activeOpacity={0.7}>
+                <Icons.Entypo
+                  name='price-tag'
+                  size={20}
+                  color={isFavorite ? "#003366" : "#003366"}
+                />
                 <Text style={styles.secondaryActionText}>
-                  {isFavorite ? "Saved" : "Save"}
+                  adverts
                 </Text>
               </TouchableOpacity>
 

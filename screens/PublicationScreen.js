@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
   ImageBackground,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useTheme, useNavigation, useRoute } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
-import { fetchPromotions, fetchPublications } from "../service/getApi";
-import CustomLoader from "../components/customLoader";
 import { Icons } from "../utils/Icons";
+import CustomLoader from '../components/customLoader';
+import { fetchPromotions, fetchPublications } from "../service/getApi";
 
 const CompanyCard = ({ item, navigation, colors, contentType }) => {
   const flatListRef = useRef(null);
@@ -44,11 +45,11 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
         navigation.navigate("BusinessArticlesScreen", { company: item, contentType })
       }
       activeOpacity={0.8}
-      accessibilityLabel={`View ${contentType} for ${item.name}`}
+      accessibilityLabel={`View ${contentType} for ${item.company_name}`}
     >
       <View style={styles.cardHeader}>
         <Image
-          source={item.company_logo}
+          source={{ uri: item.company_logo }}
           style={styles.companyLogo}
           resizeMode="contain"
         />
@@ -61,19 +62,21 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
           </Text>
         </View>
       </View>
+
       <FlatList
         ref={flatListRef}
         data={data}
         renderItem={({ item }) => (
           <ImageBackground
-            source={contentType === "Promotions" ? item.banner : item.featured_image}
+            source={{ uri: contentType === "Promotions" ? item.banner : item.featured_image }}
             style={styles.highlightBackground}
             imageStyle={styles.highlightImage}
+            key={item._id}
           >
             <View style={styles.highlightOverlay}>
               <Text style={styles.highlightTeaser}>{item.teaser_message}</Text>
               <Text style={styles.highlightDate}>
-                {contentType === 'Promotions'
+                {contentType === "Promotions"
                   ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
                     month: "short",
                     day: "2-digit",
@@ -88,7 +91,7 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
             </View>
           </ImageBackground>
         )}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => item.id}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -120,14 +123,8 @@ const PublicationScreen = () => {
           "No Internet Connection",
           "Please turn on Wi-Fi or mobile data to view content.",
           [
-            {
-              text: "Cancel",
-              style: "cancel",
-            },
-            {
-              text: "Open Settings",
-              onPress: () => Linking.openSettings(),
-            },
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
           ]
         );
       }
@@ -135,7 +132,6 @@ const PublicationScreen = () => {
 
     checkNetwork();
 
-    // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener((state) => {
       setIsConnected(state.isConnected);
     });
@@ -152,11 +148,15 @@ const PublicationScreen = () => {
       setError(null);
       try {
         if (contentType === "Promotions") {
-          const fetchedPromotions = await fetchPromotions();
-          setPromotions(fetchedPromotions);
+          const fetchedPromotions = await fetchPromotions((newPromotions) => {
+            setPublications(newPromotions); // Update state with each page
+          });
+          setPromotions(fetchedPromotions.promotions);
         } else {
-          const fetchedPublications = await fetchPublications();
-          setPublications(fetchedPublications);
+          const fetchedPublications = await fetchPublications((newPublications) => {
+            setPublications(newPublications); // Update state with each page
+          });
+          setPublications(fetchedPublications.publications);
         }
       } catch (err) {
         setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
@@ -168,6 +168,7 @@ const PublicationScreen = () => {
     loadData();
   }, [contentType, isConnected]);
 
+  // Retry connection or data fetch
   const retryConnection = async () => {
     const state = await NetInfo.fetch();
     setIsConnected(state.isConnected);
@@ -183,16 +184,19 @@ const PublicationScreen = () => {
       return;
     }
 
-    // Retry fetching data
     setIsLoading(true);
     setError(null);
     try {
       if (contentType === "Promotions") {
-        const fetchedPromotions = await fetchPromotions();
-        setPromotions(fetchedPromotions);
+        const fetchedPromotions = await fetchPromotions((newPromotions) => {
+          setPublications(newPromotions); // Update state with each page
+        });
+        setPromotions(fetchedPromotions.ads);
       } else {
-        const fetchedPublications = await fetchPublications();
-        setPublications(fetchedPublications);
+        const fetchedPublications = await fetchPublications((newPublications) => {
+          setPublications(newPublications);
+        });
+        setPublications(fetchedPublications.publications);
       }
     } catch (err) {
       setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
@@ -261,18 +265,15 @@ const PublicationScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={{ left: 10 }}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={{ left: 10 }} onPress={() => navigation.goBack()}>
           <Icons.Ionicons
             name="arrow-back-outline"
             size={24}
             color={colors.text}
           />
         </TouchableOpacity>
-        <Text style={{ fontSize: 24, fontWeight: "700", left: '13%', color: colors.text }}>
-          {contentType === 'Promotions' ? 'Promotions/Adverts' : 'Publications/Articles'}
+        <Text style={{ fontSize: 24, fontWeight: "700", left: "13%", color: colors.text }}>
+          {contentType === "Promotions" ? "Promotions/Adverts" : "Publications/Articles"}
         </Text>
       </View>
 
@@ -298,9 +299,14 @@ const PublicationScreen = () => {
       <FlatList
         data={filteredCompanies}
         renderItem={({ item }) => (
-          <CompanyCard item={item} navigation={navigation} colors={colors} contentType={contentType} />
+          <CompanyCard
+            item={item}
+            navigation={navigation}
+            colors={colors}
+            contentType={contentType}
+          />
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item?._id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -314,7 +320,6 @@ const PublicationScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // Existing styles...
   searchContainer: {
     paddingHorizontal: 5,
     paddingBottom: 20,
@@ -420,7 +425,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
   },
-  // New styles for no connection UI
   noConnectionContainer: {
     flex: 1,
     justifyContent: "center",
@@ -433,7 +437,6 @@ const styles = StyleSheet.create({
   noConnectionText: {
     fontSize: 18,
     fontWeight: "500",
-    marginBottom: 20,
     textAlign: "center",
   },
   retryButton: {

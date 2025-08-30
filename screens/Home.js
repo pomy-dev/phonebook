@@ -11,9 +11,7 @@ import {
   SafeAreaView,
   StatusBar,
   StyleSheet,
-  Linking,
   Alert,
-  Modal,
   RefreshControl
 } from "react-native";
 import { Icons } from "../utils/Icons";

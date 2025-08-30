@@ -81,45 +81,10 @@ export const fetchCompaniesWithAge = async () => {
   }
 };
 
-export const fetchPromotions = async () => {
+export const fetchPublications = async (onPageFetched) => {
   try {
-    let adverts = [];
-
-    const response = await fetch(`${API_BASE_URL}/api/ads`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok " + response.statusText);
-    }
-
-    const data = await response.json();
-    console.log(data.promotions)
-
-    // Filter promotions where validUntil is greater than or equal to current date
-    const currentAds = data.promotions.filter((c) => {
-      const validUntilDate = new Date(c.validUntil);
-      return validUntilDate >= new Date();
-    });
-
-    adverts = [...currentAds];
-
-    return adverts;
-  } catch (error) {
-    console.error("Error fetching promotions:", error.message);
-  }
-}
-
-export const fetchPublications = async () => {
-  try {
-    // Fetch the first 3 (fast load for UI)
-    const firstResponse = await fetch(
-      `${API_BASE_URL}/api/news?page=1&limit=3`,
+    // Fetch the first page (3 items for fast UI load)
+    const firstResponse = await fetch(`${API_BASE_URL}/api/news?page=1&limit=3`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -127,14 +92,29 @@ export const fetchPublications = async () => {
     );
 
     if (!firstResponse.ok) {
-      throw new Error("Network response was not ok " + firstResponse.statusText);
+      throw new Error(`Network response was not ok: ${firstResponse.statusText}`);
     }
 
     const firstData = await firstResponse.json();
-    let allPublications = [...firstData.publications];
-    // console.log(allPublications)
+    let allPublications = firstData.publications.map((item) => ({
+      ...item,
+      _id: item._id,
+      company_name: item.company_name,
+      logo: item.company_logo,
+      company_type: item.company_type,
+      publications: item.news,
+      email: item.email,
+      phone: item.phone,
+      address: item.address || "",
+      social_media: item.social_media,
+    }));
 
-    // Background task: fetch the rest
+    // Trigger callback with initial data
+    if (onPageFetched) {
+      onPageFetched(allPublications);
+    }
+
+    // Background task to fetch remaining pages
     (async () => {
       try {
         let currentPage = 2;
@@ -149,26 +129,200 @@ export const fetchPublications = async () => {
             }
           );
 
-          if (!res.ok) break;
+          if (!res.ok) {
+            console.warn(`Failed to fetch page ${currentPage}: ${res.statusText}`);
+            break;
+          }
 
           const pageData = await res.json();
-          allPublications = [...allPublications, ...pageData.publications];
+          const newPublications = pageData.publications.map((item) => ({
+            ...item,
+            _id: item._id,
+            company_name: item.company_name || "",
+            logo: item.company_logo || "",
+            company_type: item.company_type || "",
+            publications: item.news,
+            email: item.email || "",
+            address: item.address || "",
+            phone: item.phone,
+            social_media: item.social_media,
+          }));
+
+          allPublications = [...allPublications, ...newPublications];
+          console.log(`Fetched page ${currentPage}, total publications:`, allPublications.length);
+
+          // Trigger callback with updated data
+          if (onPageFetched) {
+            onPageFetched(allPublications);
+          }
 
           currentPage++;
         }
-
       } catch (bgError) {
         console.warn("Background load failed:", bgError.message);
       }
     })();
 
-    // Return the first 3 immediately
-    return { ...firstData, publications: allPublications }
+    return { ...firstData, publications: allPublications };
   } catch (error) {
     console.error("Error fetching publications:", error.message);
-    return [];
+    throw error;
   }
 };
+
+export const fetchPromotions = async (onPageFetched) => {
+  try {
+    // Map API promotion to UI-friendly format
+    const mapPromotion = (item) => {
+      const validUntilDate = new Date(item.validUntil);
+      const currentDate = new Date();
+      if (validUntilDate < currentDate) return null;
+
+      return {
+        _id: item._id || "",
+        company_name: item.company_name || "",
+        logo: item.company_logo || "",
+        company_type: item.company_type || "",
+        email: item.email || "",
+        phone: item.phone,
+        address: item.address || "",
+        social_media: item.social_media,
+        promotions: item.ads.filter((adItem) => {
+          const adValidUntil = new Date(adItem.validUntil);
+          return adValidUntil >= currentDate;
+        }),
+      };
+    };
+
+    // Step 1: Fetch the first page (5 items for fast load)
+    const firstResponse = await fetch(
+      `${API_BASE_URL}/api/ads?page=1&limit=5`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    if (!firstResponse.ok) {
+      throw new Error(`Network response was not ok: ${firstResponse.statusText}`);
+    }
+
+    const firstData = await firstResponse.json();
+
+    // Validate response
+    if (!firstData.promotions || !Array.isArray(firstData.promotions)) {
+      throw new Error("Invalid API response: promotions is not an array");
+    }
+
+    let currentAds = firstData.promotions
+      .map(mapPromotion)
+      .filter((item) => item !== null); // Remove expired promotions
+
+    // console.log("Initial promotions:", JSON.stringify(currentAds, null, 2));
+
+    // Trigger callback with initial data
+    if (onPageFetched) {
+      onPageFetched(currentAds);
+    }
+
+    // Step 2: Fetch remaining pages in background
+    (async () => {
+      try {
+        let currentPage = 2;
+        const totalPages = Number(firstData.totalPages) || 1;
+
+        while (currentPage <= totalPages) {
+          const res = await fetch(
+            `${API_BASE_URL}/api/ads?page=${currentPage}&limit=10`,
+            {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+
+          if (!res.ok) {
+            console.warn(`Failed to fetch page ${currentPage}: ${res.statusText}`);
+            break;
+          }
+
+          const pageData = await res.json();
+
+          if (!pageData.promotions || !Array.isArray(pageData.promotions)) {
+            console.warn(`Invalid API response for page ${currentPage}: promotions is not an array`);
+            break;
+          }
+
+          const newPromotions = pageData.promotions
+            .map(mapPromotion)
+            .filter((item) => item !== null); // Remove expired promotions
+
+          // console.log(`Page ${currentPage} promotions:`, JSON.stringify(newPromotions, null, 2));
+
+          currentAds = [...currentAds, ...newPromotions];
+
+          // Trigger callback with updated data
+          if (onPageFetched) {
+            onPageFetched(currentAds);
+          }
+
+          currentPage++;
+        }
+      } catch (bgError) {
+        console.warn("Background load failed:", bgError.message);
+      }
+    })();
+
+    return { ...firstData, promotions: currentAds };
+  } catch (error) {
+    console.error("Error fetching promotions:", error.message);
+    throw error;
+  }
+};
+
+export const fetchCompanyAds = async (companyId) => {
+  try {
+    if (!companyId) {
+      return res.status(400).json({ message: "Company ID is required" });
+    }
+    const response = await fetch(`${API_BASE_URL}/api/companyAds/:id/${companyId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch publications');
+    }
+    const fetchedPromotions = await response.json();
+
+    return fetchedPromotions;
+  } catch (err) {
+    console.error('Error fetching promotions:', err);
+    throw new Error(err.message)
+  }
+}
+
+export const fetchCompanyNews = async (companyId) => {
+  try {
+    if (!companyId) {
+      return res.status(400).json({ message: "Company ID is required" });
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/companyNews?companyId=${companyId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch publications');
+    }
+
+    const fetchedPublications = await response.json();
+
+    return fetchedPublications;
+  } catch (err) {
+    console.error('Error fetching publications:', err);
+    throw new Error(err.message)
+  }
+}
 
 // Helper function to load offline data
 export const loadOfflineData = async () => {
