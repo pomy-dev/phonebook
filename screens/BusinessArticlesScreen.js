@@ -70,13 +70,15 @@ const BusinessArticlesScreen = () => {
       }
 
       // Fetch publications if none exist
-      if (contentType === "Publications" && (!safeCompany.publications || safeCompany.publications.length === 0)) {
+      if (contentType === "Publications") {
         setIsLoading(true);
         setError(null);
-        console.log('Comp Id', safeCompany._id)
+        // console.log('Comp Id', safeCompany._id)
         try {
-          const response = await fetchCompanyNews(safeCompany._id);
-          console.log('News from DB Length:', response.publications.length);
+          if (!safeCompany.publications || safeCompany.publications.length === 0) {
+            const response = await fetchCompanyNews(safeCompany._id);
+          }
+          // console.log('News from DB Length:', response.publications.length);
           response.publications.length > 0 ? setData(response.publications) : setData(safeCompany.publications);
         } catch (err) {
           console.error('Error fetching publications:', err);
