@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
+  SafeAreaView,
   View,
   Text,
   ScrollView,
@@ -8,14 +9,20 @@ import {
   StyleSheet,
   useWindowDimensions,
   Animated,
+  Platform,
+  StatusBar,
   Linking,
-  Easing
+  Easing,
+  Alert,
 } from "react-native";
-import { useTheme, useRoute } from "@react-navigation/native";
+import { useTheme, useRoute, useNavigation } from "@react-navigation/native";
+import NetInfo from "@react-native-community/netinfo";
 import { Icons } from "../utils/Icons";
-import { useNavigation } from "@react-navigation/native";
-import { useCallFunction } from '../components/customCallAlert'
+import { BlurView } from "expo-blur"
+import { handleShareVia } from "../utils/callFunctions";
+import { useCallFunction } from "../components/customCallAlert";
 import { handleWhatsapp, handleEmail } from "../utils/callFunctions";
+import { fetchCompanyNews, fetchCompanyAds } from "../service/getApi"
 
 const BusinessArticlesScreen = () => {
   const { colors } = useTheme();
@@ -26,10 +33,85 @@ const BusinessArticlesScreen = () => {
   const { company, contentType = "Publications" } = route.params;
   const { width } = useWindowDimensions();
   const [expandedItems, setExpandedItems] = useState({});
-  const [shareVia, setshareVia] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
+  const [showShareOptions, setShowShareOptions] = useState(false)
+  const [isConnected, setIsConnected] = useState(true);
+  const [selectedItem, setSelectedItem] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // Added loading state
+  const [error, setError] = useState(null);
+  const [data, setData] = useState([]);
 
-  const data = contentType === "Promotions" ? company.ads : company.publications;
+  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
+  const shareOptionsAnim = useRef(new Animated.Value(0)).current
+
+  // Default company if undefined
+  const safeCompany = company || { name: "Unknown Company", phone: [], social_media: [], publications: [], promotions: [] };
+  // const data = contentType === "Promotions" ? safeCompany.promotions : safeCompany.publications;
+
+  const numberObject = safeCompany.phone
+  // console.log(numberObject)
+  const Calls = []
+  Calls.push(safeCompany.phone.find((num) => num.phone_type === 'call'))
+
+  // Check network status on mount
+  useEffect(() => {
+    const checkNetworkAndFetch = async () => {
+      const state = await NetInfo.fetch();
+      setIsConnected(state.isConnected);
+      if (!state.isConnected) {
+        Alert.alert(
+          "No Internet Connection",
+          "Please turn on Wi-Fi or mobile data to view content.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+      }
+
+      // Fetch publications if none exist
+      if (contentType === "Publications") {
+        setIsLoading(true);
+        setError(null);
+        // console.log('Comp Id', safeCompany._id)
+        try {
+          if (!safeCompany.publications || safeCompany.publications.length === 0) {
+            const response = await fetchCompanyNews(safeCompany._id);
+          }
+          // console.log('News from DB Length:', response.publications.length);
+          response.publications.length > 0 ? setData(response.publications) : setData(safeCompany.publications);
+        } catch (err) {
+          console.error('Error fetching publications:', err);
+          setError('Failed to load publications. Please try again.');
+        } finally {
+          console.log(data)
+          setIsLoading(false);
+        }
+      }
+
+      if (contentType === "Promotions" && (!safeCompany.promotions || safeCompany.promotions.length === 0)) {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const response = await fetchCompanyAds(safeCompany._id);
+          response.promotions.length > 0 ? setData(response.promotions) : setData(safeCompany.promotions);
+        } catch (err) {
+          console.error('Error fetching promotions:', err);
+          setError('Failed to load promotions. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    checkNetworkAndFetch();
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const toggleItem = (itemId) => {
     setExpandedItems((prev) => ({
@@ -37,6 +119,32 @@ const BusinessArticlesScreen = () => {
       [itemId]: !prev[itemId],
     }));
   };
+
+  useEffect(() => {
+    if (showShareOptions) {
+      Animated.spring(shareOptionsAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 8,
+      }).start()
+    } else {
+      Animated.timing(shareOptionsAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start()
+    }
+  }, [showShareOptions])
+
+  const handleShare = async (item) => {
+    setSelectedItem(item)
+    setShowShareOptions(!showShareOptions)
+  }
+
+  const shareVia = async (method) => {
+    await handleShareVia(method, company, selectedItem);
+    setShowShareOptions(false);
+  }
 
   const toggleFab = () => {
     if (fabOpen) {
@@ -57,225 +165,294 @@ const BusinessArticlesScreen = () => {
     setFabOpen(!fabOpen);
   };
 
-  const companySocialMediaLinks = company.socialLinks.map((link) => ({
-    name: link.name,
-    icon: link.icon,
-    color: link.color,
-    url: link.url,
+  const companySocialMediaLinks = company.social_media?.map((link) => ({
+    name: link.platform,
+    icon: link.platform === 'Facebook' ? "facebook" : link.platform === "Twitter" ? "twitter" : link.platform === "LinkedIn" ? "linkedin" : link.platform === "Instagram" ? "instagram" : "globe",
+    color: link.platform === 'Facebook' ? "#1877F2" : link.platform === "Twitter" ? "#1DA1F2" : link.platform === "LinkedIn" ? "#0077B5" : link.platform === "Instagram" ? "#C13584" : "#60A5FA",
+    url: link.link,
   }));
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+  const retryConnection = async () => {
+    const state = await NetInfo.fetch();
+    setIsConnected(state.isConnected);
+    if (!state.isConnected) {
+      Alert.alert(
+        "No Internet Connection",
+        "Please turn on Wi-Fi or mobile data to view content.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ]
+      );
+    }
+  };
 
-      <AlertUI />
-
-      <View style={styles.headerContainer}>
-        <View style={styles.header}>
-          {/* back button */}
-          <TouchableOpacity
-            style={{ left: 10 }}
-            onPress={() => navigation.goBack()}
-          >
-            <Icons.Ionicons name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-
-          <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}>
-            {company.name}
-          </Text>
-          <Image
-            source={company.logo}
-            style={styles.companyLogo}
-            resizeMode="contain"
-          />
-        </View>
-
-        <View style={styles.channels}>
-          <Text style={{ marginLeft: 10, color: '#706f6fff', fontSize: 15 }}>
-            Recent {contentType !== "Promotions" ? 'Articles' : 'Adverts'}
-          </Text>
-          {/* display social media links */}
-          <View style={{ justifyContent: 'space-around', flexDirection: 'row' }}>
-            {/* call button */}
-            <TouchableOpacity
-              onPress={(e) => handleCall(company.phoneNumbers.find((number) => number.type === 'Call')?.number, e)}
-              style={styles.button}
-            >
-              <Icons.FontAwesome
-                name='phone'
-                size={24}
-                color='#003366'
-              />
-            </TouchableOpacity>
-
-            {/* whatsApp button */}
-            <TouchableOpacity
-              onPress={(e) => handleWhatsapp(company.phoneNumbers.find((number) => number.type === 'WhatsApp')?.number, e)}
-              style={styles.button}
-            >
-              <Icons.FontAwesome
-                name='whatsapp'
-                size={24}
-                color='#25D366'
-              />
-            </TouchableOpacity>
-
-            {/* mail button */}
-            <TouchableOpacity
-              onPress={(e) => handleEmail(company.email, e)}
-              style={styles.button}
-            >
-              <Icons.Ionicons
-                name='mail-outline'
-                size={24}
-                color='#FF9500'
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+  if (!isConnected) {
+    return (
+      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+        <Icons.MaterialIcons
+          name="signal-wifi-off"
+          size={80}
+          color={colors.text}
+          style={styles.noConnectionIcon}
+        />
+        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+          No Internet Connection
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={retryConnection}>
+          <Text style={styles.retryButtonText}>Turn On Wi-Fi or Data</Text>
+        </TouchableOpacity>
       </View>
+    );
+  }
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {data?.map((item) => (
-          <View
-            key={item.id}
-            style={[styles.articleContainer, { backgroundColor: colors.card }]}
-          >
+  return (
+    <SafeAreaView style={[styles.container,]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fafafacc" translucent />
+      <View style={[styles.containerScreen, { backgroundColor: colors.background }]}>
+
+        <AlertUI />
+
+        <View style={styles.headerContainer}>
+          <View style={styles.header}>
+            <TouchableOpacity style={{ left: 10 }} onPress={() => navigation.goBack()}>
+              <Icons.Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={{ fontSize: 24, fontWeight: "700", color: colors.text }}
+            >
+              {company.company_name.length > 17
+                ? company.company_name.slice(0, 17) + "..."
+                : company.company_name}
+            </Text>
             <Image
-              source={item.image}
-              style={[styles.articleImage, { width: width - 10 }]}
-              resizeMode="cover"
+              source={{ uri: company.logo }}
+              style={styles.companyLogo}
+              resizeMode="contain"
             />
-
-            <View style={{ padding: 12 }}>
-              <Text style={[styles.articleTitle, { color: colors.text }]}>
-                {item.title}
-              </Text>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={[styles.articleDate, { color: '#7d7d7dff' }]}>
-                  {contentType === 'Promotions'
-                    ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "2-digit",
-                      year: "numeric",
-                    })}`
-                    : new Date(item.postedDate).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "2-digit",
-                      year: "numeric",
-                    })
-                  }
-                </Text>
-
-                {/* sharevia button */}
-                <TouchableOpacity onPress={() => { }} >
-                  <Icons.Feather name="share-2" size={24} color={'#003366'} />
-                </TouchableOpacity>
-              </View>
-
-              <Text style={[styles.articleIntro, { color: colors.text }]}>
-                {contentType === "Promotions" ? item.description : item.intro}
-              </Text>
-
-              {contentType !== "Promotions" && expandedItems[item.id] && (
-                <View style={styles.expandedContent}>
-                  {item.paragraphs.map((paragraph, index) => (
-                    <Text
-                      key={index}
-                      style={[styles.itemParagraph, { color: '#7d7d7dff' }]}
-                    >
-                      {paragraph}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {contentType !== "Promotions" && (
-                <TouchableOpacity
-                  style={styles.readMoreButton}
-                  onPress={() => toggleItem(item.id)}
-                  accessibilityLabel={
-                    expandedItems[item.id]
-                      ? `Collapse ${item.title}`
-                      : `Expand ${item.title}`
-                  }
-                >
-                  <Text style={styles.readMoreText}>
-                    {expandedItems[item.id] ? "Read Less" : "Read More"}
-                  </Text>
-                  <Icons.Ionicons
-                    name={expandedItems[item.id] ? "chevron-up" : "chevron-down"}
-                    size={20}
-                    color="#003366"
-                  />
-                </TouchableOpacity>
-              )}
+          </View>
+          <View style={styles.channels}>
+            <Text style={{ marginLeft: 10, color: "#706f6fff", fontSize: 15 }}>
+              Recent {contentType !== "Promotions" ? "Articles" : "Adverts"}
+            </Text>
+            <View style={{ justifyContent: "space-around", flexDirection: "row" }}>
+              <TouchableOpacity
+                onPress={(e) => numberObject && handleCall(Calls)}
+                style={styles.button}
+              >
+                <Icons.FontAwesome name="phone" size={24} color="#003366" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={(e) => handleWhatsapp(numberObject, e)}
+                style={styles.button}
+              >
+                <Icons.FontAwesome name="whatsapp" size={24} color="#25D366" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={(e) => handleEmail(company.email, e)}
+                style={styles.button}
+              >
+                <Icons.Ionicons name="mail-outline" size={24} color="#FF9500" />
+              </TouchableOpacity>
             </View>
           </View>
-        ))}
-      </ScrollView>
+        </View>
 
-      {/* Floating Action Button Group */}
-      <View style={styles.fabContainer}>
-        {companySocialMediaLinks.map((link, index) => {
-          const translateY = animation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, -(70 * (index + 1))], // stack upwards
-          });
-
-          return (
-            <Animated.View
-              key={index}
-              style={[
-                styles.fabItem,
-                {
-                  transform: [{ translateY }],
-                  opacity: animation,
-                },
-              ]}
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          {data?.map((item) => (
+            <View
+              key={item?._id}
+              style={[styles.articleContainer, { backgroundColor: colors.card }]}
             >
-              <TouchableOpacity
-                onPress={() => Linking.openURL(link.url)}
-                style={[styles.fabButton, { backgroundColor: link.color }]}
-              >
-                <Icons.FontAwesome name={link.icon} size={20} color="#fff" />
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        })}
+              {contentType === "Promotions"
+                ?
+                <Image
+                  source={{ uri: item?.banner }}
+                  style={[styles.articleImage, { width: width - 10 }]}
+                  resizeMode="cover"
+                />
+                :
+                <Image
+                  source={{ uri: item?.featured_image }}
+                  style={[styles.articleImage, { width: width - 10 }]}
+                  resizeMode="cover"
+                />
+              }
+              <View style={{ padding: 12 }}>
+                <Text style={[styles.articleTitle, { color: colors.text }]}>
+                  {item.title}
+                </Text>
 
-        {/* Main FAB */}
-        <TouchableOpacity style={styles.mainFab} onPress={toggleFab}>
-          <Animated.View
-            style={{
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Text style={[styles.articleDate, { color: "#7d7d7dff" }]}>
+                    {contentType === "Promotions"
+                      ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "2-digit",
+                        year: "numeric",
+                      })}`
+                      : new Date(item.publish_date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "2-digit",
+                        year: "numeric",
+                      })}
+                  </Text>
+
+                  <TouchableOpacity onPress={() => handleShare(item)}>
+                    <Icons.Feather name="share-2" size={24} color={"#003366"} />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.articleIntro, { color: colors.text }]}>
+                  {contentType === "Promotions" ? item.description : item.intro}
+                </Text>
+                {contentType !== "Promotions" && expandedItems[item.id] && (
+                  <View style={styles.expandedContent}>
+                    <Text
+                      // key={index}
+                      style={[styles.articleParagraph, { color: "#7d7d7dff" }]}
+                    >
+                      {item.content}
+                    </Text>
+
+                    {/* <Text
+                    // key={index}
+                    style={[styles.articleParagraph, { color: "#7d7d7dff" }]}
+                  >
+                    {item.conclussion}
+                  </Text> */}
+                  </View>
+                )}
+                {contentType !== "Promotions" && (
+                  <TouchableOpacity
+                    style={styles.readMoreButton}
+                    onPress={() => toggleItem(item.id)}
+                    accessibilityLabel={
+                      expandedItems[item.id] ? `Collapse ${item.title}` : `Expand ${item.title}`
+                    }
+                  >
+                    <Text style={styles.readMoreText}>
+                      {expandedItems[item.id] ? "Read Less" : "Read More"}
+                    </Text>
+                    <Icons.Ionicons
+                      name={expandedItems[item.id] ? "chevron-up" : "chevron-down"}
+                      size={20}
+                      color="#003366"
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+
+        <View style={styles.fabContainer}>
+          {companySocialMediaLinks.map((link, index) => {
+            const translateY = animation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -(70 * (index + 1))],
+            });
+            return (
+              <Animated.View
+                key={index}
+                style={[styles.fabItem, { transform: [{ translateY }], opacity: animation }]}
+              >
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(link.url)}
+                  style={[styles.fabButton, { backgroundColor: link.color }]}
+                >
+                  <Icons.FontAwesome name={link.icon} size={20} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+          <TouchableOpacity style={styles.mainFab} onPress={toggleFab}>
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "45deg"],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Icons.Ionicons name="add" size={28} color="#fff" />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+
+        <Animated.View
+          style={[
+            styles.shareOptionsContainer,
+            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 250 },
+            {
+              opacity: shareOptionsAnim,
               transform: [
                 {
-                  rotate: animation.interpolate({
+                  translateY: shareOptionsAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ["0deg", "45deg"], // spin animation
+                    outputRange: [20, 0],
                   }),
                 },
               ],
-            }}
-          >
-            <Icons.Ionicons name="add" size={28} color="#fff" />
-          </Animated.View>
-        </TouchableOpacity>
+            },
+          ]}
+          pointerEvents={showShareOptions ? "auto" : "none"}
+        >
+          <BlurView intensity={80} style={styles.shareOptionsBlur}>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
+                <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>Message</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("email")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#FF9500" }]}>
+                <Icons.Ionicons name="mail-outline" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>Email</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("copy")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#5856D6" }]}>
+                <Icons.Ionicons name="copy-outline" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>Copy</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("more")} activeOpacity={0.7}>
+              <View style={[styles.shareOptionIcon, { backgroundColor: "#8E8E93" }]}>
+                <Icons.Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
+              </View>
+              <Text style={styles.shareOptionText}>More</Text>
+            </TouchableOpacity>
+          </BlurView>
+
+        </Animated.View>
       </View>
-    </View>
+    </SafeAreaView>
+
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F8F9FA",
+  },
+  containerScreen: {
+    flex: 1,
     paddingHorizontal: 5,
-    paddingTop: 20,
+    paddingTop: 25
   },
   headerContainer: {
     paddingTop: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f2f2ff'
+    borderBottomColor: "#f3f2f2ff",
   },
   header: {
     flexDirection: "row",
@@ -293,19 +470,19 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   channels: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   button: {
-    backgroundColor: '#f8f8f8ff',
+    backgroundColor: "#f8f8f8ff",
     paddingHorizontal: 5,
     paddingVertical: 5,
-    alignItems: 'center',
+    alignItems: "center",
     width: 40,
     borderRadius: 20,
     marginVertical: 10,
-    marginHorizontal: 5
+    marginHorizontal: 5,
   },
   scrollContainer: {
     paddingTop: 20,
@@ -323,7 +500,7 @@ const styles = StyleSheet.create({
   articleImage: {
     height: 180,
     borderTopRightRadius: 8,
-    borderTopLeftRadius: 8
+    borderTopLeftRadius: 8,
   },
   articleTitle: {
     fontSize: 18,
@@ -388,6 +565,80 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
+  },
+  noConnectionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noConnectionIcon: {
+    marginBottom: 20,
+  },
+  noConnectionText: {
+    fontSize: 18,
+    fontWeight: "500",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: "#003366",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  // show share modal container
+  shareOptionsContainer: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 100 : 90,
+    right: 16,
+    borderRadius: 16,
+    zIndex: 100,
+  },
+  shareOptionsBlur: {
+    flexDirection: "row",
+    backgroundColor: Platform.OS === "ios" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  // shareOptionsOverlay: {
+  //   position: "absolute",
+  //   top: -100,
+  //   left: -100,
+  //   right: -100,
+  //   bottom: -100,
+  // },
+  shareOption: {
+    alignItems: "center",
+    marginHorizontal: 8,
+  },
+  shareOptionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  shareOptionText: {
+    fontSize: 12,
+    color: "#333333",
   },
 });
 

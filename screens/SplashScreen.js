@@ -65,49 +65,76 @@ const SplashScreen = ({ onConnectionSuccess }) => {
 
   const checkApiConnection = async () => {
     try {
+      let page = 1;
+      const limit = 20;
+      let allCompanies = [];
+      let totalPages = 1;
+
       setIsLoading(true);
       setError(null);
+
       Animated.timing(loadingOpacity, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
       }).start();
 
+      // fetch the first page (fastest response)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`${API_BASE_URL}/api/companies`, {
+      const response = await fetch(`${API_BASE_URL}/api/companies?page=${page}&limit=${limit}`, {
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error(`Server error: ${response.status}`);
-      const data = await response.json(); // Parse JSON response
 
-      // Filter to only include companies where paid is true
-      const paidCompanies = data.companies.filter(
-        (company) => company.paid === true
-      );
+      const data = await response.json();
 
-      await AsyncStorage.setItem(
-        "companiesList",
-        JSON.stringify(paidCompanies)
-      );
+      // Filter for paid companies only
+      const paidCompanies = data.companies.filter((c) => c.paid === true);
+      allCompanies = [...allCompanies, ...paidCompanies];
 
-      const timestamp = new Date().toISOString();
-      await AsyncStorage.setItem("companies_timestamp", timestamp);
+      totalPages = data.totalPages;
 
-      await addEmergencyToFavorites(data.companies);
+      // save immediately so splash can proceed
+      await AsyncStorage.setItem("companiesList", JSON.stringify(allCompanies));
+      await AsyncStorage.setItem("companies_timestamp", new Date().toISOString());
+      await addEmergencyToFavorites(allCompanies);
 
+      // ✅ proceed to app after splash
       setTimeout(() => {
         setIsLoading(false);
         onConnectionSuccess();
       }, 2000);
+
+      // 🔄 background fetch for remaining pages
+      if (totalPages > 1) {
+        for (let p = 2; p <= totalPages; p++) {
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/companies?page=${p}&limit=${limit}`);
+            if (!res.ok) continue;
+
+            const pageData = await res.json();
+            const morePaid = pageData.companies.filter((c) => c.paid === true);
+
+            // merge new companies into AsyncStorage
+            allCompanies = [...allCompanies, ...morePaid];
+            await AsyncStorage.setItem("companiesList", JSON.stringify(allCompanies));
+            await AsyncStorage.setItem("companies_timestamp", new Date().toISOString());
+          } catch (bgErr) {
+            console.warn(`Failed to fetch page ${p}:`, bgErr.message);
+          }
+        }
+      }
+
     } catch (err) {
       console.log("API Connection Error:", err.message);
       setError(err.message);
       setIsLoading(false);
+
       Animated.timing(loadingOpacity, {
         toValue: 0,
         duration: 300,
@@ -158,7 +185,7 @@ const SplashScreen = ({ onConnectionSuccess }) => {
 
     setTimeout(() => {
       checkNetworkAndApi();
-    }, 500);
+    }, 5000);
   }, []);
 
   const handleRetry = () => {

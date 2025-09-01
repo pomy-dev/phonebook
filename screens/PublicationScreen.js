@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,14 @@ import {
   StyleSheet,
   ImageBackground,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useTheme, useNavigation, useRoute } from "@react-navigation/native";
-import { mockPublications, mockPromotions } from "../utils/mockData";
+import NetInfo from "@react-native-community/netinfo";
 import { Icons } from "../utils/Icons";
+import CustomLoader from '../components/customLoader';
+import { fetchPromotions, fetchPublications } from "../service/getApi";
 
 const CompanyCard = ({ item, navigation, colors, contentType }) => {
   const flatListRef = useRef(null);
@@ -41,42 +45,44 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
         navigation.navigate("BusinessArticlesScreen", { company: item, contentType })
       }
       activeOpacity={0.8}
-      accessibilityLabel={`View ${contentType} for ${item.name}`}
+      accessibilityLabel={`View ${contentType} for ${item.company_name}`}
     >
       <View style={styles.cardHeader}>
         <Image
-          source={item.logo}
+          source={{ uri: item.company_logo }}
           style={styles.companyLogo}
           resizeMode="contain"
         />
         <View style={styles.companyInfo}>
           <Text style={[styles.companyName, { color: colors.text }]}>
-            {item.name}
+            {item.company_name}
           </Text>
           <Text style={[styles.companyIndustry, { color: colors.border }]}>
-            {item.industry}
+            {item.company_type}
           </Text>
         </View>
       </View>
+
       <FlatList
         ref={flatListRef}
         data={data}
         renderItem={({ item }) => (
           <ImageBackground
-            source={item.image}
+            source={{ uri: contentType === "Promotions" ? item.banner : item.featured_image }}
             style={styles.highlightBackground}
             imageStyle={styles.highlightImage}
+            key={item._id}
           >
             <View style={styles.highlightOverlay}>
-              <Text style={styles.highlightTeaser}>{item.teaser}</Text>
+              <Text style={styles.highlightTeaser}>{item.teaser_message}</Text>
               <Text style={styles.highlightDate}>
-                {contentType === 'Promotions'
+                {contentType === "Promotions"
                   ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
                     month: "short",
                     day: "2-digit",
                     year: "numeric",
                   })}`
-                  : new Date(item.postedDate).toLocaleDateString("en-US", {
+                  : new Date(item.publish_date).toLocaleDateString("en-US", {
                     month: "short",
                     day: "2-digit",
                     year: "numeric",
@@ -101,36 +107,176 @@ const PublicationScreen = () => {
   const route = useRoute();
   const [searchQuery, setSearchQuery] = useState("");
   const contentType = route.params?.contentType || "Publications";
+  const [isConnected, setIsConnected] = useState(true);
+  const [promotions, setPromotions] = useState([]);
+  const [publications, setPublications] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Check network status on mount
+  useEffect(() => {
+    const checkNetwork = async () => {
+      const state = await NetInfo.fetch();
+      setIsConnected(state.isConnected);
+      if (!state.isConnected) {
+        Alert.alert(
+          "No Internet Connection",
+          "Please turn on Wi-Fi or mobile data to view content.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+      }
+    };
+
+    checkNetwork();
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsConnected(state.isConnected);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch data based on contentType
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const loadData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        if (contentType === "Promotions") {
+          const fetchedPromotions = await fetchPromotions((newPromotions) => {
+            setPublications(newPromotions); // Update state with each page
+          });
+          setPromotions(fetchedPromotions.promotions);
+        } else {
+          const fetchedPublications = await fetchPublications((newPublications) => {
+            setPublications(newPublications); // Update state with each page
+          });
+          setPublications(fetchedPublications.publications);
+        }
+      } catch (err) {
+        setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [contentType, isConnected]);
+
+  // Retry connection or data fetch
+  const retryConnection = async () => {
+    const state = await NetInfo.fetch();
+    setIsConnected(state.isConnected);
+    if (!state.isConnected) {
+      Alert.alert(
+        "No Internet Connection",
+        "Please turn on Wi-Fi or mobile data to view content.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Open Settings", onPress: () => Linking.openSettings() },
+        ]
+      );
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (contentType === "Promotions") {
+        const fetchedPromotions = await fetchPromotions((newPromotions) => {
+          setPublications(newPromotions); // Update state with each page
+        });
+        setPromotions(fetchedPromotions.ads);
+      } else {
+        const fetchedPublications = await fetchPublications((newPublications) => {
+          setPublications(newPublications);
+        });
+        setPublications(fetchedPublications.publications);
+      }
+    } catch (err) {
+      setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Select data based on contentType
-  const data = contentType === "Promotions" ? mockPromotions : mockPublications;
-  const filteredCompanies = data.filter(
-    (company) => company.name?.toLocaleLowerCase()?.includes(searchQuery?.toLowerCase()) || searchQuery === ""
+  const data = contentType === "Promotions" ? promotions : publications;
+  const filteredCompanies = data?.filter(
+    (company) =>
+      company.company_name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+      searchQuery === ""
   );
+
+  if (!isConnected) {
+    return (
+      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+        <Icons.MaterialIcons
+          name="signal-wifi-off"
+          size={80}
+          color={colors.text}
+          style={styles.noConnectionIcon}
+        />
+        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+          No Internet Connection
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={retryConnection}>
+          <Text style={styles.retryButtonText}>Turn On Wi-Fi or Data</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+        <CustomLoader />
+        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+          Loading {contentType.toLowerCase()}...
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+        <Icons.MaterialIcons
+          name="error-outline"
+          size={80}
+          color={colors.text}
+          style={styles.noConnectionIcon}
+        />
+        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+          {error}
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={retryConnection}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-
       <View style={styles.header}>
-        {/* back button */}
-        <TouchableOpacity
-          style={{ left: 10 }}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={{ left: 10 }} onPress={() => navigation.goBack()}>
           <Icons.Ionicons
             name="arrow-back-outline"
             size={24}
             color={colors.text}
           />
         </TouchableOpacity>
-
-        {/* Screen title */}
-        <Text style={{ fontSize: 24, fontWeight: "700", left: '13%', color: colors.text }}>
-          {contentType === 'Promotions' ? 'Promotions/Adverts' : 'Publications/Articles'}
+        <Text style={{ fontSize: 24, fontWeight: "700", left: "13%", color: colors.text }}>
+          {contentType === "Promotions" ? "Promotions/Adverts" : "Publications/Articles"}
         </Text>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchWrapper}>
           <Icons.Ionicons
@@ -153,14 +299,19 @@ const PublicationScreen = () => {
       <FlatList
         data={filteredCompanies}
         renderItem={({ item }) => (
-          <CompanyCard item={item} navigation={navigation} colors={colors} contentType={contentType} />
+          <CompanyCard
+            item={item}
+            navigation={navigation}
+            colors={colors}
+            contentType={contentType}
+          />
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item?._id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: colors.text }]}>
-            No {contentType.toLocaleLowerCase()} available.
+            No {contentType.toLowerCase()} available.
           </Text>
         }
       />
@@ -274,7 +425,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 20,
   },
+  noConnectionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noConnectionIcon: {
+    marginBottom: 20,
+  },
+  noConnectionText: {
+    fontSize: 18,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  retryButton: {
+    backgroundColor: "#003366",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
 });
-
 
 export default PublicationScreen;

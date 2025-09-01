@@ -22,26 +22,3 @@ export const checkNetworkConnectivity = async () => {
     return false;
   }
 };
-
-// export const checkNetworkConnectivity = async () => {
-//     try {
-//         // Use a timeout to prevent hanging
-//         const controller = new AbortController();
-//         const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-//         try {
-//             // Try a very fast test fetch to Google's DNS service
-//             await fetch('https://8.8.8.8', {
-//                 mode: 'no-cors',
-//                 signal: controller.signal
-//             });
-//             clearTimeout(timeoutId);
-//             return true;
-//         } catch (err) {
-//             clearTimeout(timeoutId);
-//             return false;
-//         }
-//     } catch (err) {
-//         return false;
-//     }
-// };
