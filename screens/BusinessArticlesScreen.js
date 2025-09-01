@@ -17,12 +17,12 @@ import {
 } from "react-native";
 import { useTheme, useRoute, useNavigation } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
-import { Icons } from "../utils/Icons";
-import { BlurView } from "expo-blur"
-import { handleShareVia } from "../utils/callFunctions";
+import { Icons } from "../constants/Icons";
+import { BlurView } from "expo-blur";
 import { useCallFunction } from "../components/customCallAlert";
-import { handleWhatsapp, handleEmail } from "../utils/callFunctions";
+import { handleWhatsapp, handleEmail, handleShareVia } from "../utils/callFunctions";
 import { fetchCompanyNews, fetchCompanyAds } from "../service/getApi"
+import CustomLoader from "../components/customLoader";
 
 const BusinessArticlesScreen = () => {
   const { colors } = useTheme();
@@ -46,7 +46,6 @@ const BusinessArticlesScreen = () => {
 
   // Default company if undefined
   const safeCompany = company || { name: "Unknown Company", phone: [], social_media: [], publications: [], promotions: [] };
-  // const data = contentType === "Promotions" ? safeCompany.promotions : safeCompany.publications;
 
   const numberObject = safeCompany.phone
   // console.log(numberObject)
@@ -73,31 +72,35 @@ const BusinessArticlesScreen = () => {
       if (contentType === "Publications") {
         setIsLoading(true);
         setError(null);
-        // console.log('Comp Id', safeCompany._id)
+        console.log('Comp Id', safeCompany._id)
         try {
           if (!safeCompany.publications || safeCompany.publications.length === 0) {
             const response = await fetchCompanyNews(safeCompany._id);
+            response.publications.length > 0 ? setData(response.publications) : setData([])
+          } else {
+            setData(safeCompany.publications)
           }
-          // console.log('News from DB Length:', response.publications.length);
-          response.publications.length > 0 ? setData(response.publications) : setData(safeCompany.publications);
         } catch (err) {
           console.error('Error fetching publications:', err);
-          setError('Failed to load publications. Please try again.');
+          setError('Failed to load publications.', err);
         } finally {
-          console.log(data)
           setIsLoading(false);
         }
       }
 
-      if (contentType === "Promotions" && (!safeCompany.promotions || safeCompany.promotions.length === 0)) {
+      if (contentType === "Promotions") {
         setIsLoading(true);
         setError(null);
         try {
-          const response = await fetchCompanyAds(safeCompany._id);
-          response.promotions.length > 0 ? setData(response.promotions) : setData(safeCompany.promotions);
+          if (!safeCompany.promotions || safeCompany.promotions.length === 0) {
+            const response = await fetchCompanyAds(safeCompany._id);
+            response.promotions.length > 0 ? setData(response.promotions) : setData([])
+          } else {
+            setData(safeCompany.promotions);
+          }
         } catch (err) {
           console.error('Error fetching promotions:', err);
-          setError('Failed to load promotions. Please try again.');
+          setError('Failed to load promotions', err);
         } finally {
           setIsLoading(false);
         }
@@ -170,7 +173,7 @@ const BusinessArticlesScreen = () => {
     icon: link.platform === 'Facebook' ? "facebook" : link.platform === "Twitter" ? "twitter" : link.platform === "LinkedIn" ? "linkedin" : link.platform === "Instagram" ? "instagram" : "globe",
     color: link.platform === 'Facebook' ? "#1877F2" : link.platform === "Twitter" ? "#1DA1F2" : link.platform === "LinkedIn" ? "#0077B5" : link.platform === "Instagram" ? "#C13584" : "#60A5FA",
     url: link.link,
-  }));
+  })) || [];
 
   const retryConnection = async () => {
     const state = await NetInfo.fetch();
@@ -209,6 +212,9 @@ const BusinessArticlesScreen = () => {
   return (
     <SafeAreaView style={[styles.container,]}>
       <StatusBar barStyle="dark-content" backgroundColor="#fafafacc" translucent />
+
+      {isLoading && <CustomLoader />}
+
       <View style={[styles.containerScreen, { backgroundColor: colors.background }]}>
 
         <AlertUI />
@@ -258,91 +264,104 @@ const BusinessArticlesScreen = () => {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          {data?.map((item) => (
-            <View
-              key={item?._id}
-              style={[styles.articleContainer, { backgroundColor: colors.card }]}
-            >
-              {contentType === "Promotions"
-                ?
-                <Image
-                  source={{ uri: item?.banner }}
-                  style={[styles.articleImage, { width: width - 10 }]}
-                  resizeMode="cover"
-                />
-                :
-                <Image
-                  source={{ uri: item?.featured_image }}
-                  style={[styles.articleImage, { width: width - 10 }]}
-                  resizeMode="cover"
-                />
-              }
-              <View style={{ padding: 12 }}>
-                <Text style={[styles.articleTitle, { color: colors.text }]}>
-                  {item.title}
-                </Text>
-
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                  <Text style={[styles.articleDate, { color: "#7d7d7dff" }]}>
-                    {contentType === "Promotions"
-                      ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "2-digit",
-                        year: "numeric",
-                      })}`
-                      : new Date(item.publish_date).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "2-digit",
-                        year: "numeric",
-                      })}
+          {
+            data?.map((item) => (
+              <View
+                key={item?._id}
+                style={[styles.articleContainer, { backgroundColor: colors.card }]}
+              >
+                {contentType === "Promotions"
+                  ?
+                  <Image
+                    source={{ uri: item?.banner }}
+                    style={[styles.articleImage, { width: width - 10 }]}
+                    resizeMode="cover"
+                  />
+                  :
+                  <Image
+                    source={{ uri: item?.featured_image }}
+                    style={[styles.articleImage, { width: width - 10 }]}
+                    resizeMode="cover"
+                  />
+                }
+                <View style={{ padding: 12 }}>
+                  <Text style={[styles.articleTitle, { color: colors.text }]}>
+                    {item.title}
                   </Text>
 
-                  <TouchableOpacity onPress={() => handleShare(item)}>
-                    <Icons.Feather name="share-2" size={24} color={"#003366"} />
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={[styles.articleIntro, { color: colors.text }]}>
-                  {contentType === "Promotions" ? item.description : item.intro}
-                </Text>
-                {contentType !== "Promotions" && expandedItems[item.id] && (
-                  <View style={styles.expandedContent}>
-                    <Text
-                      // key={index}
-                      style={[styles.articleParagraph, { color: "#7d7d7dff" }]}
-                    >
-                      {item.content}
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <Text style={[styles.articleDate, { color: "#7d7d7dff" }]}>
+                      {contentType === "Promotions"
+                        ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "2-digit",
+                          year: "numeric",
+                        })}`
+                        : new Date(item.publish_date).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "2-digit",
+                          year: "numeric",
+                        })}
                     </Text>
 
-                    {/* <Text
+                    <TouchableOpacity onPress={() => handleShare(item)}>
+                      <Icons.Feather name="share-2" size={24} color={"#003366"} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text style={[styles.articleIntro, { color: colors.text }]}>
+                    {contentType === "Promotions" ? item.description : item.intro}
+                  </Text>
+                  {contentType !== "Promotions" && expandedItems[item.id] && (
+                    <View style={styles.expandedContent}>
+                      <Text
+                        // key={index}
+                        style={[styles.articleParagraph, { color: "#7d7d7dff" }]}
+                      >
+                        {item.content}
+                      </Text>
+
+                      {/* <Text
                     // key={index}
                     style={[styles.articleParagraph, { color: "#7d7d7dff" }]}
                   >
                     {item.conclussion}
                   </Text> */}
-                  </View>
-                )}
-                {contentType !== "Promotions" && (
-                  <TouchableOpacity
-                    style={styles.readMoreButton}
-                    onPress={() => toggleItem(item.id)}
-                    accessibilityLabel={
-                      expandedItems[item.id] ? `Collapse ${item.title}` : `Expand ${item.title}`
-                    }
-                  >
-                    <Text style={styles.readMoreText}>
-                      {expandedItems[item.id] ? "Read Less" : "Read More"}
-                    </Text>
-                    <Icons.Ionicons
-                      name={expandedItems[item.id] ? "chevron-up" : "chevron-down"}
-                      size={20}
-                      color="#003366"
-                    />
-                  </TouchableOpacity>
-                )}
+                    </View>
+                  )}
+                  {contentType !== "Promotions" && (
+                    <TouchableOpacity
+                      style={styles.readMoreButton}
+                      onPress={() => toggleItem(item.id)}
+                      accessibilityLabel={
+                        expandedItems[item.id] ? `Collapse ${item.title}` : `Expand ${item.title}`
+                      }
+                    >
+                      <Text style={styles.readMoreText}>
+                        {expandedItems[item.id] ? "Read Less" : "Read More"}
+                      </Text>
+                      <Icons.Ionicons
+                        name={expandedItems[item.id] ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        color="#003366"
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
+            ))
+          }
+          {error && (
+            <View>
+              <Text style={[styles.emptyText, { color: colors.text }]}>
+                No {contentType.toLowerCase()} available.
+              </Text>
+              <Text style={[styles.emptyText, { color: '#b34141ff' }]}>
+                {error}!
+              </Text>
             </View>
-          ))}
+          )
+          }
         </ScrollView>
 
         <View style={styles.fabContainer}>
@@ -364,7 +383,8 @@ const BusinessArticlesScreen = () => {
                 </TouchableOpacity>
               </Animated.View>
             );
-          })}
+          })
+          }
           <TouchableOpacity style={styles.mainFab} onPress={toggleFab}>
             <Animated.View
               style={{
@@ -402,7 +422,6 @@ const BusinessArticlesScreen = () => {
           pointerEvents={showShareOptions ? "auto" : "none"}
         >
           <BlurView intensity={80} style={styles.shareOptionsBlur}>
-
             <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
               <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
                 <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
@@ -431,11 +450,9 @@ const BusinessArticlesScreen = () => {
               <Text style={styles.shareOptionText}>More</Text>
             </TouchableOpacity>
           </BlurView>
-
         </Animated.View>
       </View>
     </SafeAreaView>
-
   );
 };
 
@@ -538,6 +555,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginRight: 8,
   },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "400",
+    textAlign: "center",
+    marginTop: 20,
+  },
   fabContainer: {
     position: "absolute",
     bottom: 60,
@@ -612,13 +635,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  // shareOptionsOverlay: {
-  //   position: "absolute",
-  //   top: -100,
-  //   left: -100,
-  //   right: -100,
-  //   bottom: -100,
-  // },
   shareOption: {
     alignItems: "center",
     marginHorizontal: 8,

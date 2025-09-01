@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react"
 import { View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Platform } from "react-native"
-import { Icons } from "../utils/Icons"
+import { Icons } from "../constants/Icons"
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get("window")

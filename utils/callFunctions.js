@@ -1,6 +1,8 @@
 import Clipboard from '@react-native-clipboard/clipboard';
 import { Linking, Platform, Share, Alert } from "react-native";
-import { CustomToast } from "./customToast";
+import { CustomToast } from "../components/customToast";
+import { fetchAllCompaniesOffline } from "../service/getApi";
+import SynonymsSearch from '../constants/synonymMap';
 
 export async function handleShareVia(method, business, selectedItem) {
   const deepLink = `https://industrylines.netlify.app/views/business-detail.html?id=${business._id}`; // Fallback URL
@@ -17,9 +19,9 @@ export async function handleShareVia(method, business, selectedItem) {
   const address = business?.address || 'No address available';
 
   const shareMessage = `Check out ${business?.company_name}!\n\n` +
-    `🪧-${selectedItem.title}` +
-    `📣-${selectedItem.tease_message || selectedItem.intro}` +
-    `ℹ️-${selectedItem.description || selectedItem.content}` +
+    `🪧-${selectedItem.title}\n` +
+    `📣-${selectedItem.tease_message || selectedItem.intro}\n` +
+    `ℹ️-${selectedItem.description || selectedItem.content}\n` +
     `📆-${new Date(selectedItem.validUntil) || new Date(selectedItem.publish_date)}\n\n` +
     `Address: ${address}\n` +
     `Phone: ${phoneNumbers} \n` +
@@ -32,40 +34,38 @@ export async function handleShareVia(method, business, selectedItem) {
       case "message":
         // Platform-specific SMS URL
         const smsUrl = Platform.OS === "ios"
-          ? `sms: ; body = ${encodeURIComponent(shareMessage)} ` // iOS uses semicolon
-          : `smsto:? body = ${encodeURIComponent(shareMessage)} `; // Android uses smsto
-        console.log('SMS URL:', smsUrl); // Debug log
-        const canOpenSMS = await Linking.canOpenURL(smsUrl);
-        if (!canOpenSMS) {
+          ? `sms:&body=${encodeURIComponent(shareMessage)}` // iOS uses semicolon
+          : `smsto:?body=${encodeURIComponent(shareMessage)}`; // Android uses smsto
+        console.log('SMS URL:', smsUrl);
+        if (await Linking.canOpenURL(smsUrl)) {
+          await Linking.openURL(smsUrl);
+        } else {
           throw new Error('SMS client not available');
         }
-        await Linking.openURL(smsUrl);
         break;
 
       case "email":
         // Robust email URL with encoded parameters
         const emailSubject = encodeURIComponent(`${business?.company_name} - Business Directory`);
         const emailBody = encodeURIComponent(shareMessage);
-        const emailUrl = `mailto:? subject = ${emailSubject}& body=${emailBody} `;
-        console.log('Email URL:', emailUrl); // Debug log
-        const canOpenEmail = await Linking.canOpenURL('mailto:');
-        if (!canOpenEmail) {
+        const emailUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+        console.log('Email URL:', emailUrl);
+        if (await Linking.canOpenURL('mailto:')) {
+          await Linking.openURL(emailUrl);
+        } else {
           throw new Error('Email client not available');
         }
-        await Linking.openURL(emailUrl);
         break;
 
       case "copy":
         if (!deepLink) {
           throw new Error('Invalid deep link');
         }
-        // console.log('Copying to clipboard:', shareMessage); // Debug log
         Clipboard.setString(shareMessage);
         CustomToast('Copied', 'Business details copied to clipboard!')
         break;
 
       case "more":
-        console.log('Sharing via system share sheet:', shareMessage); // Debug log
         await Share.share({
           message: shareMessage,
           title: `${business?.company_name} - Business Directory`,
@@ -224,3 +224,55 @@ export async function handleBusinessPress(business, navigation, setSelectedBronz
     navigation.navigate("BusinessDetail", { business });
   }
 };
+
+// Ensure getSynonyms uses the new synonymMap
+export const getSynonyms = (term) => {
+  const lowerTerm = term.toLowerCase();
+  return Object.keys(SynonymsSearch).reduce((acc, key) => {
+    if (lowerTerm.includes(key) || SynonymsSearch[key].some((syn) => lowerTerm.includes(syn))) {
+      return [...acc, key, ...SynonymsSearch[key]];
+    }
+    return acc;
+  }, [lowerTerm]);
+};
+
+export async function filterAllBusinesses(query = "") {
+  try {
+    const data = await fetchAllCompaniesOffline();
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // Split query into individual terms and get synonyms for each
+    const queryTerms = query.toLowerCase().trim().split(/\s+/);
+    const allSearchTerms = queryTerms.flatMap((term) => getSynonyms(term));
+
+    const filtered = data.filter((business) => {
+      // Combine all searchable fields into a single string
+      const searchableText = [
+        business.company_name || "",
+        business.company_type || "",
+        business.address || "",
+        business.description || "",
+        business.services?.join(" ") || "",
+        business.keywords?.join(" ") || "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      // Check if any query term or its synonyms match the searchable text
+      return allSearchTerms.some((term) => searchableText.includes(term));
+    });
+
+    // Show toast if no results are found
+    if (filtered.length === 0 && query) {
+      CustomToast("No Results", "No businesses match your search. Try different keywords.");
+    }
+
+    return filtered;
+  } catch (error) {
+    console.log("Error filtering businesses:", error);
+    CustomToast("Error", "Failed to filter businesses. Please try again.");
+    return [];
+  }
+}

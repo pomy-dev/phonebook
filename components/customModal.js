@@ -11,7 +11,7 @@ import {
   StyleSheet
 } from "react-native";
 import { BlurView } from "expo-blur"
-import { Icons } from '../utils/Icons';
+import { Icons } from '../constants/Icons';
 import { handleCall, handleWhatsapp, handleEmail, handleShareVia, handleLocation } from "../utils/callFunctions";
 
 export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose }) {

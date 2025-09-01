@@ -1,6 +1,6 @@
 import Animated, { useSharedValue, withRepeat, withTiming, useAnimatedStyle, Easing } from 'react-native-reanimated';
 import { View, StyleSheet, Dimensions } from 'react-native';
-import { Icons } from '../utils/Icons';
+import { Icons } from '../constants/Icons';
 import React from 'react';
 
 export default function CustomLoader() {

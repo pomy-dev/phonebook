@@ -12,10 +12,10 @@ import {
     Alert,
     RefreshControl
 } from 'react-native'
-import { Icons } from '../utils/Icons'
+import { Icons } from '../constants/Icons'
 import { loadOfflineData } from '../service/getApi'
-import { CustomToast } from '../utils/customToast'
-import { Images } from '../utils/Images'
+import { CustomToast } from '../components/customToast'
+import { Images } from '../constants/Images'
 
 export default function BusinessScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState("")

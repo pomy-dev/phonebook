@@ -8,19 +8,18 @@ import {
   StyleSheet,
   ImageBackground,
   TextInput,
-  Alert,
-  ActivityIndicator,
+  Alert
 } from "react-native";
 import { useTheme, useNavigation, useRoute } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
-import { Icons } from "../utils/Icons";
+import { Icons } from "../constants/Icons";
 import CustomLoader from '../components/customLoader';
 import { fetchPromotions, fetchPublications } from "../service/getApi";
 
 const CompanyCard = ({ item, navigation, colors, contentType }) => {
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const data = contentType === "Promotions" ? item.ads : item.publications;
+  const data = contentType === "Promotions" ? item.promotions : item.publications;
 
   useEffect(() => {
     if (data?.length > 1) {
@@ -49,7 +48,7 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
     >
       <View style={styles.cardHeader}>
         <Image
-          source={{ uri: item.company_logo }}
+          source={{ uri: item.logo }}
           style={styles.companyLogo}
           resizeMode="contain"
         />
@@ -108,6 +107,7 @@ const PublicationScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const contentType = route.params?.contentType || "Publications";
   const [isConnected, setIsConnected] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [promotions, setPromotions] = useState([]);
   const [publications, setPublications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -140,31 +140,30 @@ const PublicationScreen = () => {
   }, []);
 
   // Fetch data based on contentType
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (contentType === "Promotions") {
+        const fetchedPromotions = await fetchPromotions((newPromotions) => {
+          setPromotions(newPromotions || []); // Update state with each page
+        });
+        setPromotions(fetchedPromotions.promotions || []);
+      } else {
+        const fetchedPublications = await fetchPublications((newPublications) => {
+          setPublications(newPublications || []); // Update state with each page
+        });
+        setPublications(fetchedPublications.publications || []);
+      }
+    } catch (err) {
+      setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!isConnected) return;
-
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        if (contentType === "Promotions") {
-          const fetchedPromotions = await fetchPromotions((newPromotions) => {
-            setPublications(newPromotions); // Update state with each page
-          });
-          setPromotions(fetchedPromotions.promotions);
-        } else {
-          const fetchedPublications = await fetchPublications((newPublications) => {
-            setPublications(newPublications); // Update state with each page
-          });
-          setPublications(fetchedPublications.publications);
-        }
-      } catch (err) {
-        setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadData();
   }, [contentType, isConnected]);
 
@@ -183,35 +182,21 @@ const PublicationScreen = () => {
       );
       return;
     }
-
     setIsLoading(true);
     setError(null);
-    try {
-      if (contentType === "Promotions") {
-        const fetchedPromotions = await fetchPromotions((newPromotions) => {
-          setPublications(newPromotions); // Update state with each page
-        });
-        setPromotions(fetchedPromotions.ads);
-      } else {
-        const fetchedPublications = await fetchPublications((newPublications) => {
-          setPublications(newPublications);
-        });
-        setPublications(fetchedPublications.publications);
-      }
-    } catch (err) {
-      setError(`Failed to load ${contentType.toLowerCase()}. Please try again.`);
-    } finally {
-      setIsLoading(false);
-    }
+    // load data
+    loadData()
   };
 
   // Select data based on contentType
   const data = contentType === "Promotions" ? promotions : publications;
-  const filteredCompanies = data?.filter(
-    (company) =>
-      company.company_name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-      searchQuery === ""
-  );
+  const filteredCompanies = Array.isArray(data)
+    ? data.filter(
+      (company) =>
+        company.company_name?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
+        searchQuery === ""
+    )
+    : [];
 
   if (!isConnected) {
     return (
@@ -262,6 +247,23 @@ const PublicationScreen = () => {
     );
   }
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      if (contentType === "Promotions") {
+        const companyPromotions = await fetchPromotions();
+        setPromotions(companyPromotions.promotions)
+      } else {
+        const companyPublications = await fetchPublications();
+        setPublications(companyPublications.publications)
+      }
+    } catch (err) {
+      console.log("Refresh Error:", err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
@@ -306,7 +308,7 @@ const PublicationScreen = () => {
             contentType={contentType}
           />
         )}
-        keyExtractor={(item) => item?._id}
+        keyExtractor={(item) => item?.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -314,6 +316,8 @@ const PublicationScreen = () => {
             No {contentType.toLowerCase()} available.
           </Text>
         }
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
       />
     </View>
   );

@@ -11,9 +11,9 @@ import {
   Pressable,
 } from "react-native";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
-import { Icons } from "../utils/Icons";
+import { Icons } from "../constants/Icons";
 import { useRef, useState } from "react";
-import swatiEmblem from '../assets/pics/eswatini.png';
+import { Images } from '../constants/Images';
 
 const CustomDrawerContent = (
   {
@@ -67,7 +67,7 @@ const CustomDrawerContent = (
 
   // // Find the selected state's emblem, default to eSwatini if none selected
   const selectedStateData = states.find((state) => state.name === (selectedState || "eSwatini"));
-  const emblemSource = selectedStateData ? selectedStateData.coatOfArmsIcon : swatiEmblem;
+  const emblemSource = selectedStateData ? selectedStateData.coatOfArmsIcon : Images.swatiEmblem;
 
   const renderPickerItem = ({ item }) => (
     <Pressable

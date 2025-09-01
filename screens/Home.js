@@ -14,7 +14,7 @@ import {
   Alert,
   RefreshControl
 } from "react-native";
-import { Icons } from "../utils/Icons";
+import { Icons } from "../constants/Icons";
 import {
   fetchAllCompanies,
   fetchAllCompaniesOffline,
@@ -23,11 +23,11 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
 import CustomLoader from "../components/customLoader";
-import eswatini from '../assets/pics/eswatini-state.jpg';
-import { CustomToast } from "../utils/customToast";
-import { CustomModal } from '../components/customModal'
-import { useCallFunction } from '../components/customCallAlert'
-import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp } from "../utils/callFunctions";
+import { Images } from '../constants/Images';
+import { CustomToast } from "../components/customToast";
+import { CustomModal } from '../components/customModal';
+import { useCallFunction } from '../components/customCallAlert';
+import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from "../utils/callFunctions";
 
 const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -138,21 +138,13 @@ const HomeScreen = ({ navigation }) => {
   }, [searchQuery]);
 
   const filterALLBs = async (query = searchQuery) => {
-    data = await fetchAllCompaniesOffline();
-    const filtered = data.filter((business) => {
-      const matchesSearch =
-        business.company_name
-          .toLowerCase()
-          .includes(query.toLowerCase().trim()) ||
-        business.company_type
-          .toLowerCase()
-          .includes(query.toLowerCase().trim()) ||
-        business.address.toLowerCase().includes(query.toLowerCase().trim());
-
-      return matchesSearch;
-    });
-
-    setFilteredBusinesses(filtered);
+    try {
+      const filtered = await filterAllBusinesses(query); // Use await to resolve the Promise
+      setFilteredBusinesses(filtered); // Update state with results (empty or not)
+    } catch (error) {
+      console.log("Error in filterALLBs:", error);
+      setFilteredBusinesses([]);
+    }
   };
 
   const filterBusinesses = (
@@ -287,7 +279,7 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
-            source={eswatini}
+            source={Images.swatini}
             style={styles.image}
           />
           <View style={{ marginLeft: 10 }}>

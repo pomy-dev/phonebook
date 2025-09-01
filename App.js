@@ -10,7 +10,7 @@ import Toast from 'react-native-toast-message';
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import SplashScreen from './screens/SplashScreen';
 import CustomDrawerContent from './components/Drawer';
-import { Images } from './utils/Images';
+import { Images } from './constants/Images';
 
 const Drawer = createDrawerNavigator();
 

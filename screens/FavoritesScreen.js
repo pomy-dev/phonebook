@@ -15,7 +15,7 @@ import {
     Linking
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Icons } from '../utils/Icons';
+import { Icons } from '../constants/Icons';
 import { CustomModal } from '../components/customModal';
 import { useCallFunction } from '../components/customCallAlert'
 import { handleBusinessPress, handleEmail, handleWhatsapp, handleLocation } from '../utils/callFunctions';
