@@ -69,8 +69,9 @@ function AppContent() {
   useEffect(() => {
     let isMounted = true;
 
+    // In App.js, update the handleNotification function
     const handleNotification = (notification) => {
-      if (!notificationsEnabled) return; // Skip if notifications are disabled
+      if (!notificationsEnabled) return;
       const notificationData = {
         id: notification.request.content.data?.notificationId || Date.now().toString(),
         title: notification.request.content.title,
@@ -78,14 +79,16 @@ function AppContent() {
         data: notification.request.content.data,
         timestamp: new Date().toISOString(),
       };
-      // Add to global notifications state
+
       addNotification(notificationData);
-      // Navigate to NotificationListScreen with notificationId
+
       navigationRef.navigate('Nots', {
         screen: 'Notifications',
-        params: { notificationId: notificationData.id },
+        params: {
+          screen: 'Notifications',
+          params: { notificationId: notificationData.id }
+        },
       });
-
     };
 
     // Check for notifications that launched the app

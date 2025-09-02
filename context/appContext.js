@@ -1,5 +1,5 @@
 // AppContext.js
-import React, { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CustomDarkTheme, CustomLightTheme } from '../constants/colors';
 

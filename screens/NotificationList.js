@@ -1,5 +1,5 @@
 // screens/NotificationListScreen.js
-import React, { useState,useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -47,7 +47,7 @@ const NotificationListScreen = () => {
       {item.data.businessId && (
         <View style={styles.logoContainer}>
           <Image
-            source={{ uri: getCompanyLogo(item.data.businessId) }}
+            source={getCompanyLogo(item.data.businessId)}
             style={styles.companyLogo}
             resizeMode="contain"
           />
