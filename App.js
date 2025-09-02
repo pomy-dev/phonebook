@@ -18,11 +18,13 @@ import * as Notifications from 'expo-notifications';
 // Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
+
 
 const Drawer = createDrawerNavigator();
 
@@ -79,7 +81,11 @@ function AppContent() {
       // Add to global notifications state
       addNotification(notificationData);
       // Navigate to NotificationListScreen with notificationId
-      navigationRef.navigate('Nots', { notificationId: notificationData.id }, { screen: 'Notifications' });
+      navigationRef.navigate('Nots', {
+        screen: 'Notifications',
+        params: { notificationId: notificationData.id },
+      });
+
     };
 
     // Check for notifications that launched the app

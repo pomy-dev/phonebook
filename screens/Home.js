@@ -28,6 +28,7 @@ import { CustomModal } from '../components/customModal';
 import { useCallFunction } from '../components/customCallAlert';
 import { AppContext } from '../context/appContext';
 import * as Notifications from 'expo-notifications';
+import { mockNotifications } from '../utils/mockNotifications'
 import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from '../utils/callFunctions';
 
 const HomeScreen = ({ navigation }) => {
@@ -51,7 +52,7 @@ const HomeScreen = ({ navigation }) => {
   // Function to schedule and store a notification
   const scheduleNotification = async (title, body, data = {}) => {
     if (!notificationsEnabled) return;
-    const notificationId = Date.now().toString();
+    const notificationId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const notificationData = {
       id: notificationId,
       title,
@@ -73,6 +74,24 @@ const HomeScreen = ({ navigation }) => {
       trigger: null, // Immediate notification
     });
   };
+
+  // Function to simulate mock notifications one by one
+  const simulateNotifications = () => {
+    mockNotifications.forEach((company, index) => {
+      setTimeout(() => {
+        scheduleNotification(
+          `${company.company_name} - ${company.subscription_type}`,
+          `${company.company_type} company located at ${company.address}`,
+          { businessId: company._id }
+        );
+      }, index * 1000); // delay = 1 second * index
+    });
+  };
+
+  // Example: load notifications automatically on mount
+  useEffect(() => {
+    simulateNotifications();
+  }, []);
 
   // Load favorites from AsyncStorage
   useEffect(() => {
@@ -249,25 +268,6 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  // New function to load notifications
-  const loadNotifications = () => {
-
-    const loadedNotifications = notifications.map((notification) => {
-
-      if (notification.data.businessId) {
-        const company = mockCompanies.find((c) => c._id === notification.data.businessId);
-        return {
-          ...notification,
-          companyName: company ? company.company_name : 'Unknown Company',
-          companyLogo: company ? company.logo : null,
-        };
-      }
-      return notification;
-    });
-
-    return loadedNotifications;
-  };
-
   const onBusinessPress = (business) => {
     handleBusinessPress(
       business,
@@ -336,12 +336,6 @@ const HomeScreen = ({ navigation }) => {
   const onRefresh = useCallback(() => {
     handleRefresh();
   }, [isOnline, notificationsEnabled]);
-
-  // Example usage of loadNotifications (for testing)
-  useEffect(() => {
-    const notifications = loadNotifications();
-    console.log('Loaded Notifications:', notifications.length); // Log for debugging
-  }, [notifications]);
 
   const hide = searchQuery.length > 0;
 

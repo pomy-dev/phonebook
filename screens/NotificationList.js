@@ -1,17 +1,17 @@
 // screens/NotificationListScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState,useEffect, useRef, useContext } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../context/appContext';
-import { Icons } from '../constants/Icons';
 import { mockNotifications } from '../utils/mockNotifications';
 
 const NotificationListScreen = () => {
   const { theme } = React.useContext(AppContext);
   const route = useRoute();
+  const listRef = useRef(null);
   const navigation = useNavigation();
-  const [notifications, setNotifications] = useState([]);
+  const { notifications } = useContext(AppContext);
   const selectedNotificationId = route.params?.notificationId; // Get notification ID from params
 
   // Find company logo based on businessId
@@ -19,6 +19,15 @@ const NotificationListScreen = () => {
     const company = mockNotifications.find((c) => c._id === businessId);
     return company ? company.logo : null;
   };
+
+  useEffect(() => {
+    if (selectedNotificationId && notifications.length > 0 && listRef.current) {
+      const index = notifications.findIndex((n) => n.id === selectedNotificationId);
+      if (index !== -1) {
+        listRef.current.scrollToIndex({ index, animated: true });
+      }
+    }
+  }, [selectedNotificationId, notifications]);
 
   const renderNotification = ({ item }) => (
     <TouchableOpacity
@@ -28,9 +37,9 @@ const NotificationListScreen = () => {
       ]}
       onPress={() => {
         if (item.data.url === 'BusinessDetail') {
-          navigation.navigate('Tabs', {
-            screen: 'HomeStack',
-            params: { screen: 'BusinessDetail', params: { businessId: item.data.businessId } },
+          navigation.navigate('Countries', {
+            screen: 'BusinessDetail',
+            params: { businessId: item.data.businessId },
           });
         }
       }}
@@ -61,9 +70,10 @@ const NotificationListScreen = () => {
         <Text style={[styles.noNotifications, { color: theme.colors.text }]}>No notifications</Text>
       ) : (
         <FlatList
+          ref={listRef}
           data={notifications}
           renderItem={renderNotification}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item, index) => `${item.id}-${index}`}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
         />
