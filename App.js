@@ -1,56 +1,106 @@
+// App.js
 import 'react-native-gesture-handler';
-import { useState } from 'react';
-import { useColorScheme, View, Text } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import PublicationsStackNavigator from './navigator/PublicationsStack';
+import { useContext, useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { StatusBar } from 'expo-status-bar';
-import TabNavigator from './components/TabNavigator';
 import Toast from 'react-native-toast-message';
-import { createDrawerNavigator } from "@react-navigation/drawer";
+import PublicationsStackNavigator from './navigator/PublicationsStack';
+import TabNavigator from './components/TabNavigator';
 import SplashScreen from './screens/SplashScreen';
 import CustomDrawerContent from './components/Drawer';
 import { Images } from './constants/Images';
+import { AppContext, AppProvider } from './context/appContext';
+import * as Notifications from 'expo-notifications';
+
+// Configure notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const Drawer = createDrawerNavigator();
 
-// Define a custom light theme
-const CustomLightTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: '#003366',
-    background: '#FFFFFF',
-    card: '#F8F8F8',
-    text: '#333333',
-    border: '#CCCCCC',
-    notification: '#FF4500',
-  },
-};
-
-// Define a custom dark theme
-const CustomDarkTheme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: '#003366',
-    background: '#000000',
-    card: '#121212',
-    text: '#FFFFFF',
-    border: '#272727',
-    notification: '#FF4500',
-  },
-};
+// Request notification permissions
+async function requestNotificationPermissions() {
+  const { status } = await Notifications.requestPermissionsAsync({
+    ios: {
+      allowAlert: true,
+      allowSound: true,
+      allowBadge: false,
+    },
+  });
+  if (status !== 'granted') {
+    console.log('Notification permissions not granted');
+    return false;
+  }
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+  return true;
+}
 
 export default function App() {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  const theme = isDark ? CustomDarkTheme : CustomLightTheme;
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
+
+function AppContent() {
+  const { isDarkMode, theme, selectedState, setSelectedState, notificationsEnabled, addNotification, isOnline, toggleTheme, toggleNotifications, toggleOnlineMode } = useContext(AppContext);
   const [isAppReady, setIsAppReady] = useState(false);
-  const [selectedState, setSelectedState] = useState("eSwatini");
-  const [isDarkMode, setIsDarkMode] = useState(isDark);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
+  const navigationRef = useNavigationContainerRef();
+
+  // Notification observer logic
+  useEffect(() => {
+    let isMounted = true;
+
+    const handleNotification = (notification) => {
+      if (!notificationsEnabled) return; // Skip if notifications are disabled
+      const notificationData = {
+        id: notification.request.content.data?.notificationId || Date.now().toString(),
+        title: notification.request.content.title,
+        body: notification.request.content.body,
+        data: notification.request.content.data,
+        timestamp: new Date().toISOString(),
+      };
+      // Add to global notifications state
+      addNotification(notificationData);
+      // Navigate to NotificationListScreen with notificationId
+      navigationRef.navigate('Nots', { notificationId: notificationData.id }, { screen: 'Notifications' });
+    };
+
+    // Check for notifications that launched the app
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!isMounted || !response?.notification) return;
+      handleNotification(response.notification);
+    });
+
+    // Listen for notification taps while the app is running
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      handleNotification(response.notification);
+    });
+
+    // Request permissions on mount
+    requestNotificationPermissions();
+
+    return () => {
+      isMounted = false;
+      subscription.remove();
+    };
+  }, [navigationRef, notificationsEnabled, addNotification]);
 
   const toastConfig = {
     success: ({ text1, text2 }) => (
@@ -58,7 +108,7 @@ export default function App() {
         style={{
           height: 60,
           width: '90%',
-          backgroundColor: isDark ? '#FFFFFF' : 'rgba(247, 245, 245, 0.99)',
+          backgroundColor: isDarkMode ? '#FFFFFF' : 'rgba(247, 245, 245, 0.99)',
           borderRadius: 10,
           padding: 10,
           justifyContent: 'center',
@@ -78,27 +128,20 @@ export default function App() {
     ),
   };
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-  const toggleNotifications = () => setNotificationsEnabled(!notificationsEnabled);
-  const toggleOnlineMode = () => setIsOnline(!isOnline);
-
   return (
     <SafeAreaProvider>
       {!isAppReady ? (
-        // Show splash screen before the app is ready
         <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
       ) : (
-        // Show main app with navigation when ready
         <>
-          <NavigationContainer theme={theme}>
+          <NavigationContainer ref={navigationRef} theme={theme}>
             <Drawer.Navigator
               drawerContent={(props) => (
                 <CustomDrawerContent
                   {...props}
                   states={[
-                    { id: "eswatini", name: "eSwatini", coatOfArmsIcon: Images.swatiEmblem, flagIcon: "flag-outline" },
-                    { id: "south_africa", name: "South Africa", coatOfArmsIcon: Images.mzansiEmblem, flagIcon: "flag-outline" },
-                    { id: "mozambique", name: "Mozambique", coatOfArmsIcon: Images.mozEmblem, flagIcon: "flag-outline" },
+                    { id: 'Business eSwatini', name: 'Business Eswatini', coatOfArmsIcon: Images.bs_eswatini, flagIcon: 'flag-outline' },
+                    { id: 'E.P.T.C', name: 'E.P.T.C', coatOfArmsIcon: Images.eptc, flagIcon: 'flag-outline' },
                   ]}
                   selectedState={selectedState}
                   setSelectedState={setSelectedState}
@@ -110,10 +153,9 @@ export default function App() {
                   toggleOnlineMode={toggleOnlineMode}
                 />
               )}
-
               screenOptions={{
                 drawerStyle: {
-                  width: 250, // Set exact drawer width
+                  width: 250,
                 },
               }}
             >
@@ -122,16 +164,16 @@ export default function App() {
                 name="Publications"
                 component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
-                initialParams={{ selectedState, contentType: "Publications" }}
+                initialParams={{ selectedState, contentType: 'Publications' }}
               />
               <Drawer.Screen
                 name="Promotions"
                 component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
-                initialParams={{ selectedState, contentType: "Promotions" }}
+                initialParams={{ selectedState, contentType: 'Promotions' }}
               />
             </Drawer.Navigator>
-            <StatusBar style={isDark ? 'light' : 'dark'} />
+            <StatusBar style={isDarkMode ? 'light' : 'dark'} />
           </NavigationContainer>
           <Toast config={toastConfig} />
         </>

@@ -1,3 +1,5 @@
+// CustomDrawerContent.js
+import { useContext, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,31 +11,19 @@ import {
   Modal,
   FlatList,
   Pressable,
-} from "react-native";
-import { DrawerContentScrollView } from "@react-navigation/drawer";
-import { Icons } from "../constants/Icons";
-import { useRef, useState } from "react";
+} from 'react-native';
+import { DrawerContentScrollView } from '@react-navigation/drawer';
+import { Icons } from '../constants/Icons';
 import { Images } from '../constants/Images';
+import { AppContext } from '../context/appContext';
 
-const CustomDrawerContent = (
-  {
-    states,
-    selectedState,
-    setSelectedState,
-    isDarkMode,
-    notificationsEnabled,
-    isOnline,
-    toggleTheme,
-    toggleNotifications,
-    toggleOnlineMode,
-    navigation,
-  }
-) => {
-  // Animation refs for each item
+const CustomDrawerContent = ({ states, navigation }) => {
+  const { isDarkMode, selectedState, setSelectedState, notificationsEnabled, isOnline, toggleTheme, toggleNotifications, toggleOnlineMode } = useContext(AppContext);
+
   const fadeAnims = useRef(states.map(() => new Animated.Value(1))).current;
   const scaleAnims = useRef(states.map(() => new Animated.Value(1))).current;
   const [modalVisible, setModalVisible] = useState(false);
-  const [pickerValue, setPickerValue] = useState(selectedState || "eSwatini");
+  const [pickerValue, setPickerValue] = useState(selectedState || 'E.P.T.C');
 
   const handlePressIn = (index) => {
     Animated.parallel([
@@ -65,9 +55,8 @@ const CustomDrawerContent = (
     ]).start();
   };
 
-  // // Find the selected state's emblem, default to eSwatini if none selected
-  const selectedStateData = states.find((state) => state.name === (selectedState || "eSwatini"));
-  const emblemSource = selectedStateData ? selectedStateData.coatOfArmsIcon : Images.swatiEmblem;
+  const selectedStateData = states.find((state) => state.name === (selectedState || 'E.P.T.C'));
+  const emblemSource = selectedStateData ? selectedStateData.coatOfArmsIcon : Images.eptc;
 
   const renderPickerItem = ({ item }) => (
     <Pressable
@@ -102,10 +91,8 @@ const CustomDrawerContent = (
       <View style={styles.drawerContent}>
         <Text style={[styles.drawerTitle, isDarkMode && styles.darkText]}>Explore</Text>
 
-        {/* Directories Section */}
         <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>State Directories</Text>
 
-        {/* default image (coat of arms) */}
         <View style={styles.emblemContainer}>
           <Image
             source={emblemSource}
@@ -114,25 +101,23 @@ const CustomDrawerContent = (
           />
         </View>
 
-        {/* states picker */}
         <TouchableOpacity
           style={[styles.pickerContainer, isDarkMode && styles.darkPickerContainer]}
           onPress={() => setModalVisible(true)}
         >
           <View style={styles.pickerDisplay}>
             <Text style={[styles.pickerText, isDarkMode && styles.darkText]}>
-              {selectedState || "Select a country"}
+              {selectedState || 'Select a Directory'}
             </Text>
             <Icons.Ionicons
               name="chevron-down"
               size={20}
-              color={isDarkMode ? "#E0E0E0" : "#4B5EAA"}
+              color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
               style={styles.pickerIcon}
             />
           </View>
         </TouchableOpacity>
 
-        {/* Modal for Custom Picker */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -142,7 +127,7 @@ const CustomDrawerContent = (
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, isDarkMode && styles.darkModalContent]}>
               <Text style={[styles.modalTitle, isDarkMode && styles.darkText]}>
-                Select a State
+                Select a Directory
               </Text>
               <FlatList
                 data={states}
@@ -160,7 +145,6 @@ const CustomDrawerContent = (
           </View>
         </Modal>
 
-        {/* Navigation Section */}
         <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Insights</Text>
         <Animated.View
           style={{
@@ -173,14 +157,14 @@ const CustomDrawerContent = (
             onPressIn={() => handlePressIn(0)}
             onPressOut={() => handlePressOut(0)}
             onPress={() => {
-              navigation.navigate("Publications", { screen: "PublicationList", params: { contentType: "Publications", selectedState } });
+              navigation.navigate('Publications', { screen: 'PublicationList', params: { contentType: 'Publications', selectedState } });
               navigation.closeDrawer();
             }}
           >
             <Icons.Ionicons
               name="newspaper-outline"
               size={20}
-              color={isDarkMode ? "#E0E0E0" : "#4B5EAA"}
+              color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
               style={styles.icon}
             />
             <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Publications</Text>
@@ -198,71 +182,68 @@ const CustomDrawerContent = (
             onPressIn={() => handlePressIn(1)}
             onPressOut={() => handlePressOut(1)}
             onPress={() => {
-              navigation.navigate("Promotions", { screen: "PublicationList", params: { contentType: "Promotions", selectedState } });
+              navigation.navigate('Promotions', { screen: 'PublicationList', params: { contentType: 'Promotions', selectedState } });
               navigation.closeDrawer();
             }}
           >
             <Icons.Ionicons
               name="megaphone-outline"
               size={20}
-              color={isDarkMode ? "#E0E0E0" : "#4B5EAA"}
+              color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
               style={styles.icon}
             />
             <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Promotions</Text>
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Settings Section */}
         <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Preferences</Text>
         <View style={styles.drawerItem}>
           <Icons.Ionicons
-            name={isDarkMode ? "moon" : "sunny"}
+            name={isDarkMode ? 'moon' : 'sunny'}
             size={20}
-            color={isDarkMode ? "#E0E0E0" : "#4B5EAA"}
+            color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
             style={styles.icon}
           />
-
           <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Dark Mode</Text>
-
           <Switch
             value={isDarkMode}
             onValueChange={toggleTheme}
-            trackColor={{ false: "#D1D5DB", true: "#60A5FA" }}
-            thumbColor={isDarkMode ? "#FBBF24" : "#FFFFFF"}
+            trackColor={{ false: '#D1D5DB', true: '#60A5FA' }}
+            thumbColor={isDarkMode ? '#FBBF24' : '#FFFFFF'}
             style={styles.switch}
           />
         </View>
         <View style={styles.drawerItem}>
           <Icons.Ionicons
-            name="notifications"
+            name={notificationsEnabled ? "notifications" : "notifications-off"}
             size={20}
-            color={isDarkMode ? "#E0E0E0" : "#4B5EAA"}
+            color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
             style={styles.icon}
           />
           <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Notifications</Text>
           <Switch
             value={notificationsEnabled}
             onValueChange={toggleNotifications}
-            trackColor={{ false: "#D1D5DB", true: "#60A5FA" }}
-            thumbColor={notificationsEnabled ? "#FBBF24" : "#FFFFFF"}
+            trackColor={{ false: '#D1D5DB', true: '#60A5FA' }}
+            thumbColor={notificationsEnabled ? '#FBBF24' : '#FFFFFF'}
             style={styles.switch}
           />
         </View>
         <View style={styles.drawerItem}>
           <Icons.Ionicons
-            name={isOnline ? "wifi" : "cloud-offline"}
+            name={isOnline ? 'wifi' : 'cloud-offline'}
             size={20}
-            color={isDarkMode ? "#E0E0E0" : "#4B5EAA"}
+            color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
             style={styles.icon}
           />
           <Text style={[styles.itemText, isDarkMode && styles.darkText]}>
-            {isOnline ? "Online" : "Offline"}
+            {isOnline ? 'Online' : 'Offline'}
           </Text>
           <Switch
             value={isOnline}
             onValueChange={toggleOnlineMode}
-            trackColor={{ false: "#D1D5DB", true: "#60A5FA" }}
-            thumbColor={isOnline ? "#FBBF24" : "#FFFFFF"}
+            trackColor={{ false: '#D1D5DB', true: '#60A5FA' }}
+            thumbColor={isOnline ? '#FBBF24' : '#FFFFFF'}
             style={styles.switch}
           />
         </View>
@@ -271,6 +252,7 @@ const CustomDrawerContent = (
   );
 };
 
+// Styles remain unchanged
 const styles = StyleSheet.create({
   drawerContainer: {
     backgroundColor: "#F8FAFC",
@@ -436,7 +418,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
-  },
+  }
 });
 
 export default CustomDrawerContent;

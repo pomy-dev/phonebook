@@ -1,6 +1,5 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
+// HomeScreen.js
+import { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,55 +11,79 @@ import {
   StatusBar,
   StyleSheet,
   Alert,
-  RefreshControl
-} from "react-native";
-import { Icons } from "../constants/Icons";
+  RefreshControl,
+} from 'react-native';
+import { Icons } from '../constants/Icons';
 import {
   fetchAllCompanies,
   fetchAllCompaniesOffline,
   fetchCompaniesWithAge,
-} from "../service/getApi";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { checkNetworkConnectivity } from "../service/checkNetwork";
-import CustomLoader from "../components/customLoader";
+} from '../service/getApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { checkNetworkConnectivity } from '../service/checkNetwork';
+import CustomLoader from '../components/customLoader';
 import { Images } from '../constants/Images';
-import { CustomToast } from "../components/customToast";
+import { CustomToast } from '../components/customToast';
 import { CustomModal } from '../components/customModal';
 import { useCallFunction } from '../components/customCallAlert';
-import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from "../utils/callFunctions";
+import { AppContext } from '../context/appContext';
+import * as Notifications from 'expo-notifications';
+import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from '../utils/callFunctions';
 
 const HomeScreen = ({ navigation }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All");
+  const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, addNotification, notifications } = useContext(AppContext);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
   const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState("");
+  const [lastRefresh, setLastRefresh] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [featuredBusinesses, setFeaturedBusinesses] = useState([]);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
 
-  const categories = ["All", "Government", "Emergency", "More..."];
+  const categories = ['All', 'Government', 'Emergency', 'More...'];
+
+  // Function to schedule and store a notification
+  const scheduleNotification = async (title, body, data = {}) => {
+    if (!notificationsEnabled) return;
+    const notificationId = Date.now().toString();
+    const notificationData = {
+      id: notificationId,
+      title,
+      body,
+      data,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Add to global notifications state
+    addNotification(notificationData);
+
+    // Schedule notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { ...data, notificationId }, // Include notificationId for deep linking
+      },
+      trigger: null, // Immediate notification
+    });
+  };
 
   // Load favorites from AsyncStorage
   useEffect(() => {
     const loadFavorites = async () => {
       try {
-        // const theme = await AsyncStorage.getItem("theme");
-        // const notifications = await AsyncStorage.getItem("notifications");
-        const storedFavorites = await AsyncStorage.getItem("favorites");
-        // if (theme) setIsDarkMode(JSON.parse(theme));
-        // if (notifications) setNotificationsEnabled(JSON.parse(notifications));
+        const storedFavorites = await AsyncStorage.getItem('favorites');
         if (storedFavorites) {
           setFavorites(JSON.parse(storedFavorites));
         }
       } catch (error) {
-        console.log("Error loading favorites:", error);
+        console.log('Error loading favorites:', error);
       }
     };
 
@@ -70,7 +93,6 @@ const HomeScreen = ({ navigation }) => {
       loadFavorites();
     });
 
-    // Clean up the listener
     return unsubscribe;
   }, [navigation]);
 
@@ -79,35 +101,52 @@ const HomeScreen = ({ navigation }) => {
     return favorites.some((fav) => fav._id === businessId);
   };
 
-  // Toggle favorite status
   const toggleFavorite = async (business) => {
     try {
       let newFavorites = [...favorites];
 
       if (isInFavorites(business._id)) {
         newFavorites = newFavorites.filter((fav) => fav._id !== business._id);
+        if (notificationsEnabled) {
+          scheduleNotification(
+            `${business.company_logo}`,
+            'Removed from Favorites',
+            `${business.company_name} has been removed from your favorites.`,
+            { url: 'Notifications', businessId: business._id }
+          );
+          CustomToast(
+            'Removed from Favorites',
+            `${business.company_name} has been removed from your favorites.`
+          );
+        }
       } else {
         newFavorites.push(business);
+        if (notificationsEnabled) {
+          scheduleNotification(
+            `${business.company_logo}`,
+            'Added to Favorites',
+            `${business.company_name} has been added to your favorites.`,
+            { url: 'Notifications', businessId: business._id }
+          );
+          CustomToast(
+            'Added to Favorites',
+            `${business.company_name} has been added to your favorites.`
+          );
+        }
       }
 
       setFavorites(newFavorites);
-      await AsyncStorage.setItem("favorites", JSON.stringify(newFavorites));
-
-      CustomToast(
-        isInFavorites(business._id) ? 'Removed from Favorites' : 'Added to Favorites',
-        isInFavorites(business._id) ? `${business.company_name} has been removed from your favorites.` : `${business.company_name} has been added to your favorites.`
-      )
-
+      await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
     } catch (error) {
-      console.log("Error updating favorites:", error);
-      Alert.alert("Error", "Could not update favorites. Please try again.");
+      console.log('Error updating favorites:', error);
+      Alert.alert('Error', 'Could not update favorites. Please try again.');
     }
   };
 
   useEffect(() => {
     const initializeData = async () => {
       const { ageInHours } = await fetchCompaniesWithAge();
-      console.log("Data age (hours):", ageInHours);
+      console.log('Data age (hours):', ageInHours);
 
       if (ageInHours < 1) {
         const ageInMinutes = Math.round(ageInHours * 60);
@@ -127,60 +166,68 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadBusinesses();
-  }, []);
+  }, [selectedState, isOnline]); // Add selectedState as a dependency to reload businesses when state changes
 
   useEffect(() => {
     filterBusinesses(allBusinesses, activeCategory);
   }, [activeCategory, allBusinesses]);
 
   useEffect(() => {
-    filterALLBs(searchQuery)
+    filterALLBs(searchQuery);
   }, [searchQuery]);
 
   const filterALLBs = async (query = searchQuery) => {
     try {
-      const filtered = await filterAllBusinesses(query); // Use await to resolve the Promise
-      setFilteredBusinesses(filtered); // Update state with results (empty or not)
+      const filtered = await filterAllBusinesses(query);
+      setFilteredBusinesses(filtered);
     } catch (error) {
-      console.log("Error in filterALLBs:", error);
+      console.log('Error in filterALLBs:', error);
       setFilteredBusinesses([]);
     }
   };
 
-  const filterBusinesses = (
-    data = allBusinesses,
-    category = activeCategory,
-    // query = searchQuery
-  ) => {
-    if (activeCategory !== "More...") {
+  const filterBusinesses = (data = allBusinesses, category = activeCategory) => {
+    if (activeCategory !== 'More...') {
       const filtered = data.filter((business) => {
         const matchesCategory =
-          category === "All" ||
+          category === 'All' ||
           business.company_type?.toLowerCase() === category.toLowerCase();
         return matchesCategory;
       });
 
       setFilteredBusinesses(filtered);
     } else {
-      setActiveCategory("All")
-      navigation.navigate("Countries", { screen: "BusinessesMain" });
+      setActiveCategory('All');
+      navigation.navigate('Countries', { screen: 'BusinessesMain' });
     }
   };
 
   const loadBusinesses = async () => {
     try {
       setLoading(true);
-      const companyData = await fetchAllCompaniesOffline();
+      let companyData;
+      if (isOnline) {
+        const isConnected = await checkNetworkConnectivity();
+        companyData = isConnected ? await fetchAllCompanies() : await fetchAllCompaniesOffline();
+      } else {
+        companyData = await fetchAllCompaniesOffline();
+        if (notificationsEnabled) {
+          scheduleNotification(
+            'Offline Mode',
+            'Using mock data as app is in offline mode.',
+            { url: 'Tabs' }
+          );
+          CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
+        }
+      }
 
       const featuredBusinesses = companyData.filter(
-        (company) => company.subscription_type === "Gold"
+        (company) => company.subscription_type === 'Gold'
       );
-      const shuffledFeatured = featuredBusinesses.sort(
-        () => Math.random() - 0.5
-      );
+      const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
       const nonGoldCompanies = companyData.filter(
-        (company) => company.subscription_type !== "Gold"
+        (company) => company.subscription_type !== 'Gold'
       );
 
       setAllBusinesses(nonGoldCompanies);
@@ -194,9 +241,31 @@ const HomeScreen = ({ navigation }) => {
       filterBusinesses(nonGoldCompanies, activeCategory, searchQuery);
     } catch (err) {
       console.log(err.message);
+      if (notificationsEnabled) {
+        CustomToast('Error', 'Failed to load businesses. Using cached data if available.');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // New function to load notifications
+  const loadNotifications = () => {
+
+    const loadedNotifications = notifications.map((notification) => {
+
+      if (notification.data.businessId) {
+        const company = mockCompanies.find((c) => c._id === notification.data.businessId);
+        return {
+          ...notification,
+          companyName: company ? company.company_name : 'Unknown Company',
+          companyLogo: company ? company.logo : null,
+        };
+      }
+      return notification;
+    });
+
+    return loadedNotifications;
   };
 
   const onBusinessPress = (business) => {
@@ -211,38 +280,54 @@ const HomeScreen = ({ navigation }) => {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      const isConnected = await checkNetworkConnectivity();
+      if (isOnline) {
+        const isConnected = await checkNetworkConnectivity();
+        if (isConnected) {
+          try {
+            const companyData = await fetchAllCompanies();
+            const featuredBusinesses = companyData.filter(
+              (company) => company.subscription_type === 'Gold'
+            );
+            const nonGoldCompanies = companyData.filter(
+              (company) => company.subscription_type !== 'Gold'
+            );
 
-      if (isConnected) {
-        try {
-          const companyData = await fetchAllCompanies();
-          const featuredBusinesses = companyData.filter(
-            (company) => company.subscription_type === "Gold"
-          );
-          const nonGoldCompanies = companyData.filter(
-            (company) => company.subscription_type !== "Gold"
-          );
-
-          setFeaturedBusinesses(featuredBusinesses);
-          setBusinesses(nonGoldCompanies);
-          setFilteredBusinesses(nonGoldCompanies);
-          CustomToast('Refreshed 👍', 'Businesses refreshed successfully')
-
+            setFeaturedBusinesses(featuredBusinesses);
+            setBusinesses(nonGoldCompanies);
+            setFilteredBusinesses(nonGoldCompanies);
+            if (notificationsEnabled) {
+              CustomToast('Refreshed 👍', 'Businesses refreshed successfully');
+            }
+            setLastRefresh('Last refresh was just now');
+          } catch (err) {
+            console.log('API Error:', err.message);
+            await loadBusinesses();
+            setLastRefresh('Using cached data (network unavailable)');
+            if (notificationsEnabled) {
+              CustomToast('Network Error', 'Failed to fetch new data. Using cached data.');
+            }
+          }
+        } else {
           await loadBusinesses();
-          setLastRefresh("Last refresh was just now");
-        } catch (err) {
-          console.log("API Error:", err.message);
-          await loadBusinesses();
-          setLastRefresh("Using cached data (network unavailable)");
+          setLastRefresh('Using cached data (offline mode)');
+          if (notificationsEnabled) {
+            CustomToast('Offline Mode', 'No network connection. Using cached data.');
+          }
         }
       } else {
         await loadBusinesses();
-        setLastRefresh("Using cached data (offline mode)");
+        setLastRefresh('Using cached data (offline mode)');
+        if (notificationsEnabled) {
+          CustomToast('Offline Mode', 'App is in offline mode. Using cached data.');
+        }
       }
     } catch (err) {
-      console.log("General Error:", err.message);
+      console.log('General Error:', err.message);
       await loadBusinesses();
-      setLastRefresh("Using cached data");
+      setLastRefresh('Using cached data');
+      if (notificationsEnabled) {
+        CustomToast('Error', 'An error occurred. Using cached data.');
+      }
     } finally {
       setRefreshing(false);
     }
@@ -250,13 +335,20 @@ const HomeScreen = ({ navigation }) => {
 
   const onRefresh = useCallback(() => {
     handleRefresh();
-  }, []);
+  }, [isOnline, notificationsEnabled]);
+
+  // Example usage of loadNotifications (for testing)
+  useEffect(() => {
+    const notifications = loadNotifications();
+    console.log('Loaded Notifications:', notifications.length); // Log for debugging
+  }, [notifications]);
 
   const hide = searchQuery.length > 0;
 
+  // The old return
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
       {/* Custom Loader */}
       {(featuredBusinesses?.length === 0 && filteredBusinesses?.length === 0) && <CustomLoader />}
@@ -275,33 +367,33 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.titleContainer}>
         {/* menu button */}
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Icons.Ionicons name="menu-outline" size={24} color={isDarkMode ? "#FFFFFF" : "#000000"} />
+          <Icons.Ionicons name="menu-outline" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
-            source={Images.swatini}
+            source={selectedState === 'Business Eswatini' ? Images.bs_eswatini : Images.eptc}
             style={styles.image}
           />
           <View style={{ marginLeft: 10 }}>
-            <Text style={[styles.appTitle, isDarkMode && styles.darkText]}>eSwatini</Text>
-            <Text style={[styles.appSubTitle, isDarkMode && styles.darkText]}>Directory</Text>
+            <Text style={[styles.appTitle, { color: theme.colors.text }]}>{selectedState}</Text>
+            <Text style={[styles.appSubTitle, { color: theme.colors.text }]}>Directory</Text>
           </View>
         </View>
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchWrapper}>
+        <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border }]}>
           <Icons.Ionicons
             name="search-outline"
             size={20}
-            color="#AAAAAA"
+            color={theme.colors.text}
             style={styles.searchIcon}
           />
           <TextInput
             placeholder="Search business..."
-            style={styles.searchInput}
-            placeholderTextColor="#AAAAAA"
+            style={[styles.searchInput, { color: theme.colors.text }]}
+            placeholderTextColor={theme.colors.text}
             value={searchQuery}
             onChangeText={setSearchQuery}
             numberOfLines={1}
@@ -310,9 +402,9 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.lastRefreshContainer}>
-        <Icons.Ionicons name="time-outline" size={14} color={isDarkMode ? "#AAAAAA" : "#777777"} />
-        <Text style={styles.lastRefreshText}>
-          {lastRefresh || "Checking data age..."}
+        <Icons.Ionicons name="time-outline" size={14} color={theme.colors.text} />
+        <Text style={[styles.lastRefreshText, { color: theme.colors.text }]}>
+          {lastRefresh || 'Checking data age...'}
         </Text>
       </View>
 
@@ -324,22 +416,22 @@ const HomeScreen = ({ navigation }) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#003366']} // Spinner color (Android only)
-              tintColor="#003366"  // Spinner color (iOS only)
-              progressBackgroundColor="#ffff" // Background of the spinner (Android)
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+              progressBackgroundColor={theme.colors.card}
             />
           }
         >
           {/* Featured Businesses */}
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Exclusive</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Exclusive</Text>
               <TouchableOpacity
                 onPress={() =>
                   navigation.navigate("Featured", { featuredBusinesses })
                 }
               >
-                <Text style={styles.viewAllText}>View all</Text>
+                <Text style={[styles.viewAllText, { color: theme.colors.text }]}>View all</Text>
               </TouchableOpacity>
             </View>
             <ScrollView
@@ -363,16 +455,16 @@ const HomeScreen = ({ navigation }) => {
                       />
                     ) : (
                       <View style={styles.placeholderContent}>
-                        <Text style={styles.placeholderText}>
+                        <Text style={[styles.placeholderText, , { color: theme.colors.background }]}>
                           {item.company_name.charAt(0)}
                         </Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.featuredName} numberOfLines={1}>
+                  <Text style={[styles.featuredName, { color: theme.colors.text }]} numberOfLines={1}>
                     {item.company_name}
                   </Text>
-                  <Text style={styles.featuredCategory} numberOfLines={1}>
+                  <Text style={[styles.featuredCategory, { color: theme.colors.text }]} numberOfLines={1}>
                     {item.company_type}
                   </Text>
                 </TouchableOpacity>
@@ -392,17 +484,17 @@ const HomeScreen = ({ navigation }) => {
                   key={index}
                   style={[
                     styles.categoryButton,
-                    activeCategory === category && styles.activeCategoryButton,
+                    { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border },
+                    activeCategory === category && { backgroundColor: theme.colors.primary },
                   ]}
-                  onPress={() => {
-                    setActiveCategory(category);
-                  }}
+                  onPress={() => setActiveCategory(category)}
                   activeOpacity={0.7}
                 >
                   <Text
                     style={[
                       styles.categoryText,
-                      activeCategory === category && styles.activeCategoryText,
+                      { color: theme.colors.text },
+                      activeCategory === category && { color: theme.colors.card },
                     ]}
                   >
                     {category}
@@ -414,13 +506,13 @@ const HomeScreen = ({ navigation }) => {
 
           {/* All Businesses */}
           <View style={styles.businessesContainer}>
-            <Text style={styles.businessesTitle}>Featured</Text>
+            <Text style={[styles.businessesTitle, { color: theme.colors.text }]}>Featured</Text>
             <View>
               {filteredBusinesses.length > 0 ? (
                 filteredBusinesses.map((item) => (
                   <TouchableOpacity
                     key={item._id}
-                    style={styles.favoriteCard}
+                    style={[styles.favoriteCard, , { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
                     activeOpacity={0.8}
                     onPress={() => onBusinessPress(item)}
                   >
@@ -433,8 +525,8 @@ const HomeScreen = ({ navigation }) => {
                             resizeMode="cover"
                           />
                         ) : (
-                          <View style={styles.businessInitialContainer}>
-                            <Text style={styles.businessInitial}>
+                          <View style={[styles.businessInitialContainer, { backgroundColor: theme.colors.primary }]}>
+                            <Text style={[styles.businessInitial, { color: theme.colors.background }]}>
                               {item.company_name.charAt(0)}
                             </Text>
                           </View>
@@ -443,21 +535,21 @@ const HomeScreen = ({ navigation }) => {
 
                       <View style={styles.businessInfo}>
                         <Text
-                          style={styles.businessName}
+                          style={[styles.businessName, { color: theme.colors.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
                           {item.company_name}
                         </Text>
                         <Text
-                          style={styles.businessCategory}
+                          style={[styles.businessCategory, { color: theme.colors.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
                           {item.company_type}
                         </Text>
                         <Text
-                          style={styles.businessAddress}
+                          style={[styles.businessAddress, { color: theme.colors.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
@@ -478,107 +570,76 @@ const HomeScreen = ({ navigation }) => {
                             isInFavorites(item._id) ? "heart" : "heart-outline"
                           }
                           size={22}
-                          color={
-                            isInFavorites(item._id) ? "#003366" : "#AAAAAA"
-                          }
+                          color={isInFavorites(item._id) ? theme.colors.primary : theme.colors.text}
                         />
                       </TouchableOpacity>
                     </View>
 
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, { backgroundColor: theme.colors.secondary }]} />
 
                     <View style={styles.actionButtons}>
                       <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleCall(
-                            item.phone,
-                            item.name
-                          )
+                          handleCall(item.phone, item.name);
                         }}
                       >
-                        <Icons.Ionicons
-                          name="call-outline"
-                          size={18}
-                          color="#003366"
-                        />
-                        <Text style={styles.actionButtonText}>Call</Text>
+                        <Icons.Ionicons name="call-outline" size={18} color={theme.colors.primary} />
+                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Call</Text>
                       </TouchableOpacity>
 
                       {item.phone &&
-                        item.phone.some((p) => p.phone_type == "whatsapp") && (
+                        item.phone.some((p) => p.phone_type === "whatsapp") && (
                           <TouchableOpacity
-                            style={styles.actionButton}
+                            style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                             onPress={(e) => {
                               e.stopPropagation();
                               handleWhatsapp(item.phone);
                             }}
                           >
-                            <Icons.Ionicons
-                              name="logo-whatsapp"
-                              size={18}
-                              color="#25D366"
-                            />
-                            <Text style={styles.actionButtonText}>
-                              WhatsApp
-                            </Text>
+                            <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+                            <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>WhatsApp</Text>
                           </TouchableOpacity>
                         )}
 
                       <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleEmail(item.email, e);
                         }}
                       >
-                        <Icons.Ionicons
-                          name="mail-outline"
-                          size={18}
-                          color="#FF9500"
-                        />
-                        <Text style={styles.actionButtonText}>Email</Text>
+                        <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
+                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Email</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleLocation(item.address, e);
                         }}
                       >
-                        <Icons.Ionicons
-                          name="location-outline"
-                          size={18}
-                          color="#5856D6"
-                        />
-                        <Text style={styles.actionButtonText}>Map</Text>
+                        <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
+                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Map</Text>
                       </TouchableOpacity>
                     </View>
 
-                    {/* {item.subscription_type.toLowerCase() !== "bronze" && ( */}
                     <TouchableOpacity
-                      style={styles.viewDetailsButton}
+                      style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
                       onPress={() => onBusinessPress(item)}
                     >
-                      <Text style={styles.viewDetailsText}>View Details</Text>
-                      <Icons.Ionicons
-                        name="chevron-forward"
-                        size={16}
-                        color="#003366"
-                      />
+                      <Text style={[styles.viewDetailsText, { color: "#FFFF" }]}>View Details</Text>
+                      <Icons.Ionicons name="chevron-forward" size={16} color='#FFFF' />
                     </TouchableOpacity>
-                    {/* )} */}
                   </TouchableOpacity>
                 ))
               ) : (
                 <View style={styles.noResultsContainer}>
-                  <Icons.Ionicons name="search" size={48} color="#DDDDDD" />
-                  <Text style={styles.noResultsText}>No businesses found</Text>
-                  <Text style={styles.noResultsSubtext}>
-                    Try a different search or category
-                  </Text>
+                  <Icons.Ionicons name="search" size={48} color={theme.colors.text} />
+                  <Text style={[styles.noResultsText, { color: theme.colors.text }]}>No businesses found</Text>
+                  <Text style={[styles.noResultsSubtext, { color: theme.colors.text }]}>Try a different search or category</Text>
                 </View>
               )}
             </View>
@@ -608,8 +669,8 @@ const HomeScreen = ({ navigation }) => {
                             resizeMode="cover"
                           />
                         ) : (
-                          <View style={styles.businessInitialContainer}>
-                            <Text style={styles.businessInitial}>
+                          <View style={[styles.businessInitialContainer, { backgroundColor: theme.colors.primary }]}>
+                            <Text style={[styles.businessInitial, { color: theme.colors.background }]}>
                               {item.company_name.charAt(0)}
                             </Text>
                           </View>
@@ -618,21 +679,21 @@ const HomeScreen = ({ navigation }) => {
 
                       <View style={styles.businessInfo}>
                         <Text
-                          style={styles.businessName}
+                          style={[styles.businessName, { color: theme.colors.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
                           {item.company_name}
                         </Text>
                         <Text
-                          style={styles.businessCategory}
+                          style={[styles.businessCategory, { color: theme.colors.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
                           {item.company_type}
                         </Text>
                         <Text
-                          style={styles.businessAddress}
+                          style={[styles.businessAddress, { color: theme.colors.text }]}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
@@ -649,112 +710,79 @@ const HomeScreen = ({ navigation }) => {
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       >
                         <Icons.Ionicons
-                          name={
-                            isInFavorites(item._id) ? "heart" : "heart-outline"
-                          }
+                          name={isInFavorites(item._id) ? 'heart' : 'heart-outline'}
                           size={22}
-                          color={
-                            isInFavorites(item._id) ? "#003366" : "#AAAAAA"
-                          }
+                          color={isInFavorites(item._id) ? theme.colors.primary : theme.colors.text}
                         />
                       </TouchableOpacity>
                     </View>
 
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
                     <View style={styles.actionButtons}>
                       <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
                         onPress={(e) => {
                           e.stopPropagation();
-                          handleCall(item.phone, item.name)
+                          handleCall(item.phone, item.name);
                         }}
                       >
-                        <Icons.Ionicons
-                          name="call-outline"
-                          size={18}
-                          color="#003366"
-                        />
-                        <Text style={styles.actionButtonText}>Call</Text>
+                        <Icons.Ionicons name="call-outline" size={18} color={theme.colors.primary} />
+                        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Call</Text>
                       </TouchableOpacity>
 
-                      {item.phone &&
-                        item.phone.some((p) => p.phone_type == "whatsapp") && (
-                          <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={(e) =>
-                              handleWhatsapp(item.phone, e)
-                            }
-                          >
-                            <Icons.Ionicons
-                              name="logo-whatsapp"
-                              size={18}
-                              color="#25D366"
-                            />
-                            <Text style={styles.actionButtonText}>
-                              WhatsApp
-                            </Text>
-                          </TouchableOpacity>
-                        )
-                      }
+                      {item.phone && item.phone.some((p) => p.phone_type === 'whatsapp') && (
+                        <TouchableOpacity
+                          style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleWhatsapp(item.phone, e);
+                          }}
+                        >
+                          <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+                          <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>WhatsApp</Text>
+                        </TouchableOpacity>
+                      )}
 
                       <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleEmail(item.email, e);
                         }}
                       >
-                        <Icons.Ionicons
-                          name="mail-outline"
-                          size={18}
-                          color="#FF9500"
-                        />
-                        <Text style={styles.actionButtonText}>Email</Text>
+                        <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
+                        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Email</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
                         onPress={(e) => {
                           e.stopPropagation();
                           handleLocation(item.address, e);
                         }}
                       >
-                        <Icons.Ionicons
-                          name="location-outline"
-                          size={18}
-                          color="#5856D6"
-                        />
-                        <Text style={styles.actionButtonText}>Map</Text>
+                        <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
+                        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Map</Text>
                       </TouchableOpacity>
                     </View>
 
-                    {item.subscription_type.toLowerCase() !== "bronze" && (
+                    {item.subscription_type.toLowerCase() !== 'bronze' && (
                       <TouchableOpacity
-                        style={styles.viewDetailsButton}
-                        onPress={() =>
-                          navigation.navigate("BusinessDetail", {
-                            business: item,
-                          })
-                        }
+                        style={[styles.viewDetailsButton, { backgroundColor: theme.colors.card }]}
+                        onPress={() => navigation.navigate('BusinessDetail', { business: item })}
                       >
-                        <Text style={styles.viewDetailsText}>View Details</Text>
-                        <Icons.Ionicons
-                          name="chevron-forward"
-                          size={16}
-                          color="#003366"
-                        />
+                        <Text style={[styles.viewDetailsText, { color: theme.colors.primary }]}>View Details</Text>
+                        <Icons.Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
                       </TouchableOpacity>
                     )}
                   </TouchableOpacity>
                 ))
               ) : (
                 <View style={styles.noResultsContainer}>
-                  <Icons.Ionicons name="search" size={48} color="#DDDDDD" />
-                  <Text style={styles.noResultsText}>No businesses found</Text>
-                  <Text style={styles.noResultsSubtext}>
-                    Try a different search or category
-                  </Text>
+                  <Icons.Ionicons name="search" size={48} color={theme.colors.text} />
+                  <Text style={[styles.noResultsText, { color: theme.colors.text }]}>No businesses found</Text>
+                  <Text style={[styles.noResultsSubtext, { color: theme.colors.text }]}>Try a different search or category</Text>
                 </View>
               )}
             </View>
@@ -763,6 +791,7 @@ const HomeScreen = ({ navigation }) => {
       )}
     </SafeAreaView >
   );
+
 };
 
 const styles = StyleSheet.create({
@@ -817,6 +846,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 40,
     borderRadius: 5,
+    objectFit: 'contain'
   },
 
   // that has always been there
@@ -1130,65 +1160,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
   },
-  upgradeModalContent: {
-    width: "100%",
-    maxWidth: 400,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    overflow: "hidden",
-    maxHeight: "80%",
-  },
-  upgradeModalHeader: {
-    backgroundColor: "#003366",
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  upgradeModalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
-  closeButton: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  upgradeModalBody: {
-    padding: 20,
-  },
-  businessBranding: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  businessLogoContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "#F8F8F8",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  businessLogo: {
-    width: 50,
-    height: 50,
-  },
   businessInitialContainer: {
     width: "100%",
     height: "100%",
@@ -1200,75 +1171,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#FFFFFF",
-  },
-  upgradeBusinessName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333333",
-    marginBottom: 4,
-    textAlign: "center",
-  },
-  businessType: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 8,
-  },
-  basicInfoContainer: {
-    backgroundColor: "#F8F9FA",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  basicInfoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    paddingVertical: 4,
-  },
-  basicInfoText: {
-    fontSize: 15,
-    color: "#333333",
-    marginLeft: 12,
-    flex: 1,
-    flexWrap: "wrap",
-  },
-  actionButtonsContainer: {
-    gap: 16,
-  },
-  primaryActionButton: {
-    backgroundColor: "#003366",
-    paddingVertical: 14,
-    borderRadius: 12,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  primaryActionText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-    marginLeft: 8,
-  },
-  secondaryActionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  secondaryActionButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 4,
-    backgroundColor: "#F8F8F8",
-  },
-  secondaryActionText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#333333",
-    marginTop: 4,
-  },
+  }
 });
 
 export default HomeScreen;
