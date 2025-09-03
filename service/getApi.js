@@ -84,7 +84,7 @@ export const fetchCompaniesWithAge = async () => {
 export const fetchPublications = async (onPageFetched) => {
   try {
     // Fetch the first page (3 items for fast UI load)
-    const firstResponse = await fetch(`${API_BASE_URL}/api/news?page=1&limit=3`,
+    const firstResponse = await fetch(`${API_BASE_URL}/api/news?page=1&limit=10`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -141,7 +141,7 @@ export const fetchPublications = async (onPageFetched) => {
             company_name: item.company_name || "",
             logo: item.company_logo || "",
             company_type: item.company_type || "",
-            publications: item.news,
+            publications: item.news || [],
             email: item.email || "",
             address: item.address || "",
             phone: item.phone,
@@ -196,7 +196,7 @@ export const fetchPromotions = async (onPageFetched) => {
 
     // Step 1: Fetch the first page (5 items for fast load)
     const firstResponse = await fetch(
-      `${API_BASE_URL}/api/ads?page=1&limit=5`,
+      `${API_BASE_URL}/api/ads?page=1&limit=10`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },

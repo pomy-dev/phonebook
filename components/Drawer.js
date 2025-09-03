@@ -197,6 +197,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
         </Animated.View>
 
         <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Preferences</Text>
+        
         <View style={styles.drawerItem}>
           <Icons.Ionicons
             name={isDarkMode ? 'moon' : 'sunny'}
@@ -213,6 +214,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
             style={styles.switch}
           />
         </View>
+
         <View style={styles.drawerItem}>
           <Icons.Ionicons
             name={notificationsEnabled ? "notifications" : "notifications-off"}
@@ -229,6 +231,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
             style={styles.switch}
           />
         </View>
+
         <View style={styles.drawerItem}>
           <Icons.Ionicons
             name={isOnline ? 'wifi' : 'cloud-offline'}
@@ -236,9 +239,11 @@ const CustomDrawerContent = ({ states, navigation }) => {
             color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
             style={styles.icon}
           />
+          
           <Text style={[styles.itemText, isDarkMode && styles.darkText]}>
             {isOnline ? 'Online' : 'Offline'}
           </Text>
+          
           <Switch
             value={isOnline}
             onValueChange={toggleOnlineMode}
