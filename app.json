@@ -16,6 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.pomy.phonebook",
       "infoPlist": {
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "This app needs your location to show directions to the business."
       },
@@ -30,7 +33,10 @@
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "com.google.android.c2dm.permission.RECEIVE"
       ],
       "edgeToEdgeEnabled": true,
       "package": "com.pld.phonebook",
@@ -43,7 +49,19 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/pics/notification.png",
+          "color": "#003366",
+          "sounds": [],
+          "mode": "production",
+          "defaultChannel": "default",
+          "enableBackgroundRemoteNotifications": false
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "03dcce6c-eb8e-4ede-8abe-12c1b2fcd575"

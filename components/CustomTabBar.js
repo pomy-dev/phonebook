@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from "react"
 import { View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Platform } from "react-native"
-import { Icons } from "../utils/Icons"
+import { Icons } from "../constants/Icons"
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get("window")
@@ -61,6 +61,8 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                         iconName = isFocused ? "business" : "business-outline"
                     } else if (route.name === "4IS") {
                         iconName = isFocused ? "heart" : "heart-outline"
+                    } else if (route.name === "Nots") {
+                        iconName = isFocused ? "notifications" : "notifications-outline"
                     }
 
                     // Animation values for each tab

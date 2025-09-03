@@ -14,10 +14,10 @@ import {
   Alert,
   RefreshControl
 } from "react-native";
-import { Icons } from '../utils/Icons'
+import { Icons } from '../constants/Icons'
 import { fetchAllCompaniesOffline } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CustomToast } from "../utils/customToast";
+import { CustomToast } from "../components/customToast";
 import { CustomModal } from "../components/customModal";
 import { useCallFunction } from '../components/customCallAlert'
 import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";

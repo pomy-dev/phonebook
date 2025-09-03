@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useContext } from "react"
 import {
   View,
   Text,
@@ -11,13 +11,15 @@ import {
   StyleSheet
 } from "react-native";
 import { BlurView } from "expo-blur"
-import { Icons } from '../utils/Icons';
+import { Icons } from '../constants/Icons';
+import { AppContext } from '../context/appContext';
 import { handleCall, handleWhatsapp, handleEmail, handleShareVia, handleLocation } from "../utils/callFunctions";
 
 export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose }) {
   const [showShareOptions, setShowShareOptions] = useState(false)
   const shareOptionsAnim = useRef(new Animated.Value(0)).current
   const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
+  const { theme } = useContext(AppContext);
 
   const handleShare = async () => {
     setShowShareOptions(!showShareOptions)
@@ -53,8 +55,8 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
     >
       <View style={styles.modalOverlay}>
         <View style={styles.upgradeModalContent}>
-          <View style={styles.upgradeModalHeader}>
-            <Text style={styles.upgradeModalTitle}>Business Information</Text>
+          <View style={[styles.upgradeModalHeader, { backgroundColor: theme.colors.primary }]}>
+            <Text style={[styles.upgradeModalTitle, { color: theme.colors.background }]}>Business Information</Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => onClose()}
@@ -174,7 +176,7 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
 
               <View style={styles.actionButtonsContainer}>
                 <TouchableOpacity
-                  style={styles.primaryActionButton}
+                  style={[styles.primaryActionButton, { backgroundColor: theme.colors.primary }]}
                   onPress={() => {
                     onClose();
                     if (
@@ -186,7 +188,7 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                   }}
                 >
                   <Icons.Ionicons name="call-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.primaryActionText}>Call Business</Text>
+                  <Text style={[styles.primaryActionText, { color: theme.colors.background }]}>Call Business</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -266,7 +268,6 @@ const styles = StyleSheet.create({
     maxHeight: 'auto'
   },
   upgradeModalHeader: {
-    backgroundColor: "#003366",
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -276,7 +277,6 @@ const styles = StyleSheet.create({
   upgradeModalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#FFFFFF",
     textAlign: "center",
   },
   closeButton: {
@@ -366,7 +366,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   primaryActionButton: {
-    backgroundColor: "#003366",
     paddingVertical: 14,
     borderRadius: 12,
     flexDirection: "row",
@@ -377,7 +376,6 @@ const styles = StyleSheet.create({
   primaryActionText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
     marginLeft: 8,
   },
   secondaryActionsRow: {

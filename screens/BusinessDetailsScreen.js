@@ -20,7 +20,7 @@ import {
   TextInput,
   ActivityIndicator// Added Clipboard for copy functionality
 } from "react-native"
-import { Icons } from "../utils/Icons"
+import { Icons } from "../constants/Icons"
 import { BlurView } from "expo-blur"
 import { handleShareVia } from "../utils/callFunctions";
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -621,7 +621,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   }
 
   const handleAdvert = () => {
-    navigation.navigate("BusinessArticles", {
+    navigation.navigate("BusinessArticle", {
       company: business,
       contentType: "Promotions",
     });

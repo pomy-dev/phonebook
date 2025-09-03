@@ -4,6 +4,7 @@ import HomeScreenDetails from "../screens/HomeDetailsScreen"
 import BusinessDetailsScreen from "../screens/BusinessDetailsScreen"
 import FeaturedScreen from "../screens/FeaturedScreen"
 import BusinessArticlesScreen from "../screens/BusinessArticlesScreen"
+import NotificationList from "../screens/NotificationList"
 
 
 
@@ -17,6 +18,7 @@ export default function HomeStackNavigator() {
       <HomeStack.Screen name="BusinessDetail" component={BusinessDetailsScreen} options={{ headerShown: false }} />
       <HomeStack.Screen name="BusinessArticle" component={BusinessArticlesScreen} options={{ headerShown: false }} />
       <HomeStack.Screen name="Featured" component={FeaturedScreen} options={{ headerShown: false }} />
+      <HomeStack.Screen name="Notifications" component={NotificationList} options={{ headerShown: false }} />
     </HomeStack.Navigator>
   );
 }

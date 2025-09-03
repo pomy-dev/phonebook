@@ -84,7 +84,7 @@ export const fetchCompaniesWithAge = async () => {
 export const fetchPublications = async (onPageFetched) => {
   try {
     // Fetch the first page (3 items for fast UI load)
-    const firstResponse = await fetch(`${API_BASE_URL}/api/news?page=1&limit=3`,
+    const firstResponse = await fetch(`${API_BASE_URL}/api/news?page=1&limit=10`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -98,7 +98,7 @@ export const fetchPublications = async (onPageFetched) => {
     const firstData = await firstResponse.json();
     let allPublications = firstData.publications.map((item) => ({
       ...item,
-      _id: item._id,
+      id: item._id,
       company_name: item.company_name,
       logo: item.company_logo,
       company_type: item.company_type,
@@ -137,11 +137,11 @@ export const fetchPublications = async (onPageFetched) => {
           const pageData = await res.json();
           const newPublications = pageData.publications.map((item) => ({
             ...item,
-            _id: item._id,
+            id: item._id,
             company_name: item.company_name || "",
             logo: item.company_logo || "",
             company_type: item.company_type || "",
-            publications: item.news,
+            publications: item.news || [],
             email: item.email || "",
             address: item.address || "",
             phone: item.phone,
@@ -179,7 +179,7 @@ export const fetchPromotions = async (onPageFetched) => {
       if (validUntilDate < currentDate) return null;
 
       return {
-        _id: item._id || "",
+        id: item._id || "",
         company_name: item.company_name || "",
         logo: item.company_logo || "",
         company_type: item.company_type || "",
@@ -196,7 +196,7 @@ export const fetchPromotions = async (onPageFetched) => {
 
     // Step 1: Fetch the first page (5 items for fast load)
     const firstResponse = await fetch(
-      `${API_BASE_URL}/api/ads?page=1&limit=5`,
+      `${API_BASE_URL}/api/ads?page=1&limit=10`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -217,8 +217,6 @@ export const fetchPromotions = async (onPageFetched) => {
     let currentAds = firstData.promotions
       .map(mapPromotion)
       .filter((item) => item !== null); // Remove expired promotions
-
-    // console.log("Initial promotions:", JSON.stringify(currentAds, null, 2));
 
     // Trigger callback with initial data
     if (onPageFetched) {
@@ -284,12 +282,12 @@ export const fetchCompanyAds = async (companyId) => {
     if (!companyId) {
       return res.status(400).json({ message: "Company ID is required" });
     }
-    const response = await fetch(`${API_BASE_URL}/api/companyAds/:id/${companyId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/companyAds?companyId=${companyId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
-      throw new Error('Failed to fetch publications');
+      throw new Error('Failed to fetch promotions');
     }
     const fetchedPromotions = await response.json();
 
