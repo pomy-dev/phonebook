@@ -53,7 +53,7 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
           resizeMode="contain"
         />
         <View style={styles.companyInfo}>
-          <Text style={[styles.companyName, { color: colors.text }]}>
+          <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
             {item.company_name}
           </Text>
           <Text style={[styles.companyIndustry, { color: colors.border }]}>
