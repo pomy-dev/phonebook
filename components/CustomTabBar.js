@@ -1,13 +1,14 @@
 "use client"
 
 import { useRef, useEffect } from "react"
-import { View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Platform } from "react-native"
-import { Icons } from "../constants/Icons"
+import { View, TouchableOpacity, Text, StyleSheet, Dimensions, Animated, Platform, StatusBar } from "react-native"
+import { Icons } from "../constants/Icons";
+import { AppContext } from '../context/appContext';
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const { width } = Dimensions.get("window")
 
-export default function CustomTabBar({ state, descriptors, navigation, theme }) {
+export default function CustomTabBar({ state, descriptors, navigation, theme, isDarkMode }) {
     const tabWidth = width / state.routes.length
 
     // Animated value for the indicator position
@@ -25,6 +26,7 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
 
     return (
         <SafeAreaView edges={['bottom']}>
+            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} translucent={false} />
             <View
                 style={[
                     styles.tabBar,
@@ -42,12 +44,11 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                         styles.indicator,
                         {
                             width: tabWidth,
-                            backgroundColor: theme.colors.primary,
+                            backgroundColor: theme.colors.indicator,
                             transform: [{ translateX: indicatorPosition }],
                         },
                     ]}
                 />
-
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key]
                     const label = options.tabBarLabel || options.title || route.name
@@ -120,13 +121,13 @@ export default function CustomTabBar({ state, descriptors, navigation, theme }) 
                                     opacity: opacityAnim,
                                 }}
                             >
-                                <Icons.Ionicons name={iconName} size={24} color={isFocused ? theme.colors.primary : theme.colors.text} />
+                                <Icons.Ionicons name={iconName} size={24} color={isFocused ? theme.colors.indicator : theme.colors.text} />
                             </Animated.View>
                             <Text
                                 style={[
                                     styles.tabLabel,
                                     {
-                                        color: isFocused ? theme.colors.primary : theme.colors.text,
+                                        color: isFocused ? theme.colors.indicator : theme.colors.text,
                                         opacity: isFocused ? 1 : 0.7,
                                     },
                                 ]}

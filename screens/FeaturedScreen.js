@@ -14,9 +14,11 @@ import { Icons } from "../constants/Icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CustomToast } from "../components/customToast"
 import { useCallFunction } from '../components/customCallAlert'
+import { AppContext } from '../context/appContext';
 import { handleEmail, handleLocation, handleWhatsapp } from "../utils/callFunctions"
 
 const FeaturedScreen = ({ route, navigation }) => {
+  const { theme } = React.useContext(AppContext);
   const [favorites, setFavorites] = useState([])
   const [refreshing, setRefreshing] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
@@ -126,9 +128,9 @@ const FeaturedScreen = ({ route, navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#003366']} // Spinner color (Android only)
-            tintColor="#003366"  // Spinner color (iOS only)
-            progressBackgroundColor="#ffff" // Background of the spinner (Android)
+            colors={[theme.colors.primary]}
+            tintColor="transparent"
+            progressBackgroundColor={theme.colors.card}
           />
         }
       >

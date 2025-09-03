@@ -38,13 +38,13 @@ const HomeScreen = ({ navigation }) => {
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
   const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [featuredBusinesses, setFeaturedBusinesses] = useState([]);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
 
   const categories = ['All', 'Government', 'Emergency', 'More...'];
@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }) => {
 
   // Function to simulate mock notifications one by one
   const simulateNotifications = () => {
-    mockNotifications.forEach((company, index) => {
+    notifications.forEach((company, index) => {
       setTimeout(() => {
         scheduleNotification(
           `${company.company_name} - ${company.subscription_type}`,
@@ -91,7 +91,7 @@ const HomeScreen = ({ navigation }) => {
   // Example: load notifications automatically on mount
   useEffect(() => {
     simulateNotifications();
-  }, []);
+  }, [notificationsEnabled]);
 
   // Load favorites from AsyncStorage
   useEffect(() => {
@@ -223,7 +223,8 @@ const HomeScreen = ({ navigation }) => {
 
   const loadBusinesses = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      let directoryCompanies;
       let companyData;
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
@@ -240,31 +241,38 @@ const HomeScreen = ({ navigation }) => {
         }
       }
 
-      const featuredBusinesses = companyData.filter(
-        (company) => company.subscription_type === 'Gold'
-      );
-      const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
-
-      const nonGoldCompanies = companyData.filter(
-        (company) => company.subscription_type !== 'Gold'
+      directoryCompanies = companyData.filter(
+        (company) => company.directory?.trim() === selectedState?.trim()
       );
 
-      setAllBusinesses(nonGoldCompanies);
+      if (directoryCompanies) {
+        const featuredBusinesses = directoryCompanies.filter(
+          (company) => company.subscription_type === 'Gold'
+        );
+        const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
-      const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
-      const regularBusinesses = shuffledNonGold.slice(0, 5);
+        const nonGoldCompanies = directoryCompanies.filter(
+          (company) => company.subscription_type !== 'Gold'
+        );
 
-      setFeaturedBusinesses(shuffledFeatured);
-      setBusinesses(regularBusinesses);
-      setFilteredBusinesses(regularBusinesses);
-      filterBusinesses(nonGoldCompanies, activeCategory, searchQuery);
+        setAllBusinesses(nonGoldCompanies);
+
+        const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
+        const regularBusinesses = shuffledNonGold.slice(0, 5);
+
+        setFeaturedBusinesses(shuffledFeatured);
+        setBusinesses(regularBusinesses);
+        setFilteredBusinesses(regularBusinesses);
+        filterBusinesses(nonGoldCompanies, activeCategory, searchQuery);
+      }
+
     } catch (err) {
       console.log(err.message);
       if (notificationsEnabled) {
         CustomToast('Error', 'Failed to load businesses. Using cached data if available.');
       }
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -279,7 +287,7 @@ const HomeScreen = ({ navigation }) => {
 
   const handleRefresh = async () => {
     try {
-      setRefreshing(true);
+      setIsRefreshing(true);
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
         if (isConnected) {
@@ -329,7 +337,7 @@ const HomeScreen = ({ navigation }) => {
         CustomToast('Error', 'An error occurred. Using cached data.');
       }
     } finally {
-      setRefreshing(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -339,13 +347,12 @@ const HomeScreen = ({ navigation }) => {
 
   const hide = searchQuery.length > 0;
 
-  // The old return
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
       {/* Custom Loader */}
-      {(featuredBusinesses?.length === 0 && filteredBusinesses?.length === 0) && <CustomLoader />}
+      {isLoading && <CustomLoader />}
 
       {/* Upgrade Modal for Bronze Businesses */}
       <CustomModal
@@ -365,7 +372,7 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
-            source={selectedState === 'Business Eswatini' ? Images.bs_eswatini : Images.eptc}
+            source={selectedState === 'Business eSwatini' ? Images.bs_eswatini : Images.eptc}
             style={styles.image}
           />
           <View style={{ marginLeft: 10 }}>
@@ -408,16 +415,14 @@ const HomeScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
+              refreshing={isRefreshing}
               onRefresh={onRefresh}
               colors={[theme.colors.primary]}
-              tintColor={theme.colors.primary}
               progressBackgroundColor={theme.colors.card}
             />
-          }
-        >
+          }>
           {/* Featured Businesses */}
-          <View style={styles.sectionContainer}>
+          < View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Exclusive</Text>
               <TouchableOpacity
@@ -782,7 +787,8 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </View>
         </ScrollView >
-      )}
+      )
+      }
     </SafeAreaView >
   );
 

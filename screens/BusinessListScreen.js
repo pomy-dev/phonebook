@@ -19,10 +19,12 @@ import { fetchAllCompaniesOffline } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CustomToast } from "../components/customToast";
 import { CustomModal } from "../components/customModal";
-import { useCallFunction } from '../components/customCallAlert'
+import { useCallFunction } from '../components/customCallAlert';
+import { AppContext } from '../context/appContext';
 import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
 
 export default function BusinessList({ route, navigation }) {
+  const { theme } = React.useContext(AppContext);
   const { category } = route.params;
   const [businesses, setBusinesses] = useState([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
@@ -323,14 +325,13 @@ export default function BusinessList({ route, navigation }) {
               </Text>
             </View>
           }
-          refreshing={refreshing}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#003366']} // Spinner color (Android only)
-              tintColor="#003366"  // Spinner color (iOS only)
-              progressBackgroundColor="#ffff" // Background of the spinner (Android)
+              colors={[theme.colors.primary]}
+              tintColor="transparent"
+              progressBackgroundColor={theme.colors.card} // Background of the spinner (Android)
             />
           }
         />
