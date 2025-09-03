@@ -308,7 +308,7 @@ const PublicationScreen = () => {
             contentType={contentType}
           />
         )}
-        keyExtractor={(item) => item?.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={

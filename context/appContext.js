@@ -56,9 +56,9 @@ export const AppProvider = ({ children }) => {
   const toggleOnlineMode = () => setIsOnline(!isOnline);
 
   const theme = isDarkMode ? CustomDarkTheme : CustomLightTheme;
-  // Function to add a new notification
+ 
   const addNotification = (notification) => {
-    setNotifications((prev) => [notification, ...prev]); // Add new notification to the start
+    setNotifications((prev) => [notification, ...prev]);
   };
 
   return (

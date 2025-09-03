@@ -1,9 +1,11 @@
 import Animated, { useSharedValue, withRepeat, withTiming, useAnimatedStyle, Easing } from 'react-native-reanimated';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Icons } from '../constants/Icons';
+import { AppContext } from '../context/appContext';
 import React from 'react';
 
 export default function CustomLoader() {
+  const { theme, selectedState, isDarkMode } = React.useContext(AppContext);
   const rotation = useSharedValue(0);
 
   React.useEffect(() => {
@@ -23,7 +25,7 @@ export default function CustomLoader() {
   return (
     <View style={styles.fullScreenContainer}>
       <Animated.View style={animatedStyle}>
-        <Icons.EvilIcons name="spinner" size={50} color="#003366" />
+        <Icons.EvilIcons name="spinner" size={50} color={theme.colors.indicator} />
       </Animated.View>
     </View>
   );

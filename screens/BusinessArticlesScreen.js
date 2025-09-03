@@ -54,6 +54,59 @@ const BusinessArticlesScreen = () => {
   const Calls = [];
   Calls.push(safeCompany.phone.find((num) => num.phone_type === 'call'));
 
+  const checkNetworkAndFetch = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      if (!isOnline) {
+        Alert.alert(
+          "Internet Connection Is Off",
+          "Please turn on Wi-Fi of app.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Ok", onPress: () => { toggleOnlineMode } },
+          ]
+        );
+        return;
+      }
+
+      const stateConnection = await checkNetworkConnectivity();
+      setIsConnected(stateConnection);
+      if (!stateConnection) {
+        Alert.alert(
+          "No Internet Connection",
+          "Please turn on Wi-Fi or mobile data to view content.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
+      }
+
+      if (contentType === "Publications") {
+        if (!safeCompany.publications || safeCompany.publications.length === 0) {
+          const response = await fetchCompanyNews(safeCompany._id);
+          setData(response.publications.length > 0 ? response.publications : []);
+        } else {
+          setData(safeCompany.publications);
+        }
+      } else if (contentType === "Promotions") {
+        if (!safeCompany.promotions || safeCompany.promotions.length === 0) {
+          const response = await fetchCompanyAds(safeCompany._id);
+          setData(response.promotions.length > 0 ? response.promotions : []);
+        } else {
+          setData(safeCompany.promotions);
+        }
+      }
+    } catch (err) {
+      console.error(`Error fetching ${contentType.toLowerCase()}:`, err);
+      setError(`Failed to load ${contentType.toLowerCase()}.`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     checkNetworkAndFetch();
 
@@ -63,72 +116,6 @@ const BusinessArticlesScreen = () => {
 
     return () => unsubscribe();
   }, []);
-
-  const checkNetworkAndFetch = async () => {
-    try {
-      setIsLoading(true);
-      if (isOnline) {
-        const stateConnection = await checkNetworkConnectivity();
-        setIsConnected(stateConnection);
-        if (!stateConnection) {
-          Alert.alert(
-            "No Internet Connection",
-            "Please turn on Wi-Fi or mobile data to view content.",
-            [
-              { text: "Cancel", style: "cancel" },
-              { text: "Open Settings", onPress: () => Linking.openSettings() },
-            ]
-          );
-        }
-
-        if (contentType === "Publications") {
-          setError(null);
-          try {
-            if (!safeCompany.publications || safeCompany.publications.length === 0) {
-              const response = await fetchCompanyNews(safeCompany._id);
-              response.publications.length > 0 ? setData(response.publications) : setData([]);
-            } else {
-              setData(safeCompany.publications);
-            }
-          } catch (err) {
-            console.error('Error fetching publications:', err);
-            setError('Failed to load publications.', err);
-          }
-        }
-
-        if (contentType === "Promotions") {
-          setError(null);
-          try {
-            if (!safeCompany.promotions || safeCompany.promotions.length === 0) {
-              const response = await fetchCompanyAds(safeCompany._id);
-              response.promotions.length > 0 ? setData(response.promotions) : setData([]);
-            } else {
-              setData(safeCompany.promotions);
-            }
-          } catch (err) {
-            console.error('Error fetching promotions:', err);
-            setError('Failed to load promotions', err);
-          } finally {
-            setIsLoading(false);
-          }
-        }
-      } else {
-        Alert.alert(
-          "Internet Connection Is Off",
-          "Please turn on Wi-Fi of app.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Ok", onPress: () => { toggleOnlineMode() } },
-          ]
-        );
-      }
-    } catch (error) {
-      console.log("Error", error)
-      setError(error)
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const toggleItem = (itemId) => {
     setExpandedItems((prev) => ({
@@ -363,9 +350,14 @@ const BusinessArticlesScreen = () => {
                       </TouchableOpacity>
                     )}
                     {item.conclusion && (
-                      <Text style={[styles.articleParagraph, { color: "#7d7d7dff" }]}>
-                        {item.conclusion}
-                      </Text>
+                      <>
+                        <Text style={{ color: theme.colors.text, fontSize: 17, marginTop: 10 }}>
+                          Conclusion
+                        </Text>
+                        <Text style={[styles.articleParagraph, { color: "#7d7d7dff", marginTop: 7 }]}>
+                          {item.conclusion}
+                        </Text>
+                      </>
                     )}
                   </View>
                 )}
@@ -577,8 +569,7 @@ const styles = StyleSheet.create({
   articleParagraph: {
     fontSize: 14,
     fontWeight: "400",
-    lineHeight: 22,
-    marginTop: 8,
+    lineHeight: 22
   },
   youtubeButton: {
     flexDirection: "row",

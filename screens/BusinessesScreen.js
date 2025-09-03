@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
     View,
     Text,
@@ -11,13 +11,15 @@ import {
     Image,
     Alert,
     RefreshControl
-} from 'react-native'
-import { Icons } from '../constants/Icons'
-import { loadOfflineData } from '../service/getApi'
-import { CustomToast } from '../components/customToast'
-import { Images } from '../constants/Images'
+} from 'react-native';
+import { Icons } from '../constants/Icons';
+import { loadOfflineData } from '../service/getApi';
+import { CustomToast } from '../components/customToast';
+import { Images } from '../constants/Images';
+import { AppContext } from '../context/appContext';
 
 export default function BusinessScreen({ navigation }) {
+    const { theme, selectedState, isDarkMode } = React.useContext(AppContext);
     const [searchQuery, setSearchQuery] = useState("")
     const [loading, setLoading] = useState(false)
     const [businesses, setBusinesses] = useState([]);
@@ -185,22 +187,22 @@ export default function BusinessScreen({ navigation }) {
     }, []);
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
             {/* App Title */}
             <View style={styles.titleContainer}>
-                <Text style={styles.appTitle}>Directory</Text>
-                <Text style={styles.appSubTitle}>Industries</Text>
+                <Text style={[styles.appTitle, { color: theme.colors.text }]}>Directory</Text>
+                <Text style={[styles.appSubTitle, { color: theme.colors.text }]}>{selectedState}</Text>
             </View>
 
             {/* Search Bar */}
             <View style={styles.searchContainer}>
-                <View style={styles.searchWrapper}>
+                <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border }]}>
                     <Icons.Ionicons name="search-outline" size={20} color="#AAAAAA" style={styles.searchIcon} />
                     <TextInput
                         placeholder="Search categories"
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: theme.colors.text }]}
                         placeholderTextColor="#AAAAAA"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -215,16 +217,16 @@ export default function BusinessScreen({ navigation }) {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={['#003366']} // Spinner color (Android only)
-                        tintColor="#003366"  // Spinner color (iOS only)
-                        progressBackgroundColor="#ffff" // Background of the spinner (Android)
+                        colors={[theme.colors.primary]}
+                        tintColor="transparent"
+                        progressBackgroundColor={theme.colors.card}// Background of the spinner (Android)
                     />
                 }
             >
                 {/* Featured Categories */}
                 <View style={styles.sectionContainer}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Popular Categories</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Popular Categories</Text>
                     </View>
 
                     <ScrollView
@@ -248,7 +250,7 @@ export default function BusinessScreen({ navigation }) {
                                         <Icons.Ionicons name={category.icon} size={28} color="#FFFFFF" />
                                     </View>
                                 </View>
-                                <Text style={styles.featuredName}>{category.name}</Text>
+                                <Text style={[styles.featuredName, { color: theme.colors.text }]}>{category.name}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -257,7 +259,7 @@ export default function BusinessScreen({ navigation }) {
                 {/* All Categories */}
                 <View style={styles.allCategoriesContainer}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>All Categories</Text>
+                        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>All Categories</Text>
                     </View>
 
                     <View style={styles.categoriesList}>
@@ -273,8 +275,7 @@ export default function BusinessScreen({ navigation }) {
                                         <Icons.Ionicons name={category.icon} size={20} color="#FFFFFF" />
                                     </View>
                                     <View style={styles.categoryTextContainer}>
-                                        <Text style={styles.categoryText}>{category.name}</Text>
-                                        {/* <Text style={styles.categoryCount}>{category.count} businesses</Text> */}
+                                        <Text style={[styles.categoryText, { color: theme.colors.text }]}>{category.name}</Text>
                                     </View>
                                 </View>
                                 <View style={styles.chevronContainer}>
@@ -300,7 +301,6 @@ export default function BusinessScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     titleContainer: {
         flexDirection: "row",
@@ -313,13 +313,11 @@ const styles = StyleSheet.create({
     appTitle: {
         fontSize: 28,
         fontWeight: "bold",
-        color: "#333333",
         letterSpacing: -0.5,
     },
     appSubTitle: {
         fontSize: 18,
         fontWeight: "200",
-        color: "#7c7c7cff",
         letterSpacing: -0.5,
     },
     alphabetButton: {
@@ -377,7 +375,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 20,
         fontWeight: "700",
-        color: "#333333",
         letterSpacing: -0.3,
     },
     viewAllText: {
@@ -418,7 +415,6 @@ const styles = StyleSheet.create({
     featuredName: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#333333",
         textAlign: "center",
     },
     allCategoriesContainer: {

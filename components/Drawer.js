@@ -257,7 +257,6 @@ const CustomDrawerContent = ({ states, navigation }) => {
   );
 };
 
-// Styles remain unchanged
 const styles = StyleSheet.create({
   drawerContainer: {
     backgroundColor: "#F8FAFC",
