@@ -10,10 +10,12 @@ export const CustomLightTheme = {
     card: '#FFFFFF',
     sub_card: '#f0f0f0ff',
     text: '#333333',
+    sub_text: '#7d7d7dff',
     light: '#3a3a3aff',
     indicator: "#003366",
     border: '#e9e8e8ff',
     notification: '#FF4500',
+    highlight: 'rgba(0, 0, 0, 0.5)'
   },
 };
 
@@ -28,9 +30,11 @@ export const CustomDarkTheme = {
     card: '#415970ff',
     sub_card: '#415970ff',
     text: '#CCC',
+    sub_text: '#CCCC',
     light: '#FFFFFF',
     indicator: "#5a85b0ff",
     border: '#272727',
     notification: '#FF4500',
+    highlight: 'rgba(0, 0, 0, 0.2)'
   },
 };

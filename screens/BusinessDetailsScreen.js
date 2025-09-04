@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import {
   View,
   Text,
@@ -27,12 +27,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location';
 import { GOOGLE_MAPS_API_KEY } from "../config/env";
+import { AppContext } from "../context/appContext"
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { handleEmail, handleWhatsapp, handleWebsite } from "../utils/callFunctions"
 
 const { width, height } = Dimensions.get("window")
 const BOTTOM_SHEET_HEIGHT = height * 0.6
-
 
 // Function to decode Google Maps polyline
 const decodePolyline = (encoded) => {
@@ -70,6 +70,7 @@ const decodePolyline = (encoded) => {
 };
 
 const BusinessDetailScreen = ({ route, navigation }) => {
+  const { theme, isDarkMode } = React.useContext(AppContext);
   const insets = useSafeAreaInsets();
   const { business } = route.params;
   const HEADER_MAX_HEIGHT = 220 + insets.top
@@ -560,38 +561,38 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     }
   }
 
-  const toggleRatingDetails = () => {
-    setShowRatingDetails(!showRatingDetails)
-  }
+  // const toggleRatingDetails = () => {
+  //   setShowRatingDetails(!showRatingDetails)
+  // }
 
   const handleMapLoadError = () => {
     setLocationError('Failed to load map. Check your network connection.');
     setLoadingMap(false);
   }
 
-  const renderStars = (rating, size = 16, color = "#FFD700") => {
-    const stars = []
-    const fullStars = Math.floor(rating)
-    const halfStar = rating - fullStars >= 0.5
+  // const renderStars = (rating, size = 16, color = "#FFD700") => {
+  //   const stars = []
+  //   const fullStars = Math.floor(rating)
+  //   const halfStar = rating - fullStars >= 0.5
 
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(
-          <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
-        )
-      } else if (i === fullStars && halfStar) {
-        stars.push(
-          <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
-        )
-      } else {
-        stars.push(
-          <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
-        )
-      }
-    }
+  //   for (let i = 0; i < 5; i++) {
+  //     if (i < fullStars) {
+  //       stars.push(
+  //         <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
+  //       )
+  //     } else if (i === fullStars && halfStar) {
+  //       stars.push(
+  //         <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
+  //       )
+  //     } else {
+  //       stars.push(
+  //         <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
+  //       )
+  //     }
+  //   }
 
-    return stars
-  }
+  //   return stars
+  // }
 
   const renderGalleryItem = ({ item }) => (
     <TouchableOpacity style={styles.galleryItem} activeOpacity={0.9} onPress={() => handleImagePress(item)}>
@@ -629,12 +630,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
       <Animated.ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: theme.colors.card }]}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
         scrollEventThrottle={16}
       >
@@ -643,7 +644,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         <View style={styles.businessInfoContainer}>
 
           <View style={styles.businessInfoHeader}>
-            <View style={styles.logoContainer}>
+            <View style={[styles.logoContainer, { borderColor: theme.colors.secondary }]}>
               {business.logo ? (
                 <Image source={{ uri: business.logo }} style={styles.logo} resizeMode="contain" />
               ) : (
@@ -654,8 +655,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </View>
 
             <View style={styles.businessInfoContent}>
-              <Text style={styles.businessName} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
-              <Text style={styles.businessCategory} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
+              <Text style={[styles.businessName, { color: theme.colors.text }]} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
+              <Text style={[styles.businessCategory, { color: theme.colors.secondary }]} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
               {/* <TouchableOpacity
                 style={styles.ratingContainer}
                 onPress={toggleRatingDetails}
@@ -741,29 +742,29 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             <View style={styles.secondaryActionsRow}>
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                <Icons.Ionicons name="navigate" size={20} color="#003366" />
-                <Text style={styles.secondaryActionText}>Directions</Text>
+                <Icons.Ionicons name="navigate" size={20} color={theme.colors.indicator} />
+                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>Directions</Text>
               </TouchableOpacity>
 
               {hasWhatsApp && (
                 <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleWhatsapp(business.phone)} activeOpacity={0.7}>
-                  <Icons.Ionicons name="logo-whatsapp" size={20} color="#003366" />
-                  <Text style={styles.secondaryActionText}>WhatsApp</Text>
+                  <Icons.Ionicons name="logo-whatsapp" size={20} color={theme.colors.indicator} />
+                  <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>WhatsApp</Text>
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleNews()} activeOpacity={0.7}>
-                <Icons.FontAwesome6 name="newspaper" size={20} color="#003366" />
-                <Text style={styles.secondaryActionText}>News</Text>
+                <Icons.FontAwesome6 name="newspaper" size={20} color={theme.colors.indicator} />
+                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>News</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleAdvert()} activeOpacity={0.7}>
                 <Icons.Entypo
                   name='price-tag'
                   size={20}
-                  color={isFavorite ? "#003366" : "#003366"}
+                  color={theme.colors.indicator}
                 />
-                <Text style={styles.secondaryActionText}>
+                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>
                   adverts
                 </Text>
               </TouchableOpacity>
@@ -771,6 +772,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
         </View>
+
+        {/* the above code is where i ended updating */}
 
         <ScrollView
           horizontal
@@ -1547,7 +1550,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#ffff",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -1556,7 +1559,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
   },
   logo: {
     width: 65,
@@ -1584,12 +1586,10 @@ const styles = StyleSheet.create({
   businessName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333333",
     marginBottom: 4,
   },
   businessCategory: {
     fontSize: 14,
-    color: "#666666",
     marginBottom: 8,
   },
   ratingContainer: {
@@ -1650,7 +1650,6 @@ const styles = StyleSheet.create({
   primaryActionText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginLeft: 8,
   },
   secondaryActionsRow: {
@@ -1664,7 +1663,6 @@ const styles = StyleSheet.create({
   },
   secondaryActionText: {
     fontSize: 12,
-    color: '#666666',
     marginTop: 6,
   },
   tabScrollContainer: {

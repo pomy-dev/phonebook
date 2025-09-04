@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -21,10 +21,12 @@ import { CustomToast } from "../components/customToast";
 import { CustomModal } from "../components/customModal";
 import { useCallFunction } from '../components/customCallAlert';
 import { AppContext } from '../context/appContext';
+import CustomLoader from "../components/customLoader";
+import CustomCard from "../components/customCard";
 import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
 
 export default function BusinessList({ route, navigation }) {
-  const { theme } = React.useContext(AppContext);
+  const { theme, isDarkMode } = React.useContext(AppContext);
   const { category } = route.params;
   const [businesses, setBusinesses] = useState([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
@@ -91,7 +93,7 @@ export default function BusinessList({ route, navigation }) {
   // Mock data - in a real app, this would come from your API based on the category
   useEffect(() => {
     async function loadCompanies() {
-      console.log(category);
+      // console.log(category);
       setLoading(true);
       const companyData = await fetchAllCompaniesOffline();
 
@@ -144,117 +146,18 @@ export default function BusinessList({ route, navigation }) {
   };
 
   const renderBusinessItem = ({ item }) => (
-    <TouchableOpacity
-      key={item._id}
-      style={styles.favoriteCard}
-      activeOpacity={0.8}
-      onPress={() => onBusinessPress(item)}
-    >
-      <View style={styles.favoriteHeader}>
-        <View style={styles.businessImageContainer}>
-          {item.logo ? (
-            <Image
-              source={{ uri: item.logo }}
-              style={styles.businessImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.businessInitialContainer}>
-              <Text style={styles.businessInitial}>
-                {item.company_name.charAt(0)}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.businessInfo}>
-          <Text
-            style={styles.businessName}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.company_name}
-          </Text>
-          <Text
-            style={styles.businessCategory}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.company_type}
-          </Text>
-          <Text
-            style={styles.businessAddress}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.address}
-          </Text>
-        </View>
-
-        {/* Favorite heart icon */}
-        <TouchableOpacity
-          style={styles.favoriteButton}
-          onPress={(e) => toggleFavorite(item, e)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icons.Ionicons
-            name={isInFavorites(item._id) ? "heart" : "heart-outline"}
-            size={22}
-            color={isInFavorites(item._id) ? "#003366" : "#AAAAAA"}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.divider} />
-
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={(e) => handleCall(item.phone, e)}
-        >
-          <Icons.Ionicons name="call-outline" size={18} color="#003366" />
-          <Text style={styles.actionButtonText}>Call</Text>
-        </TouchableOpacity>
-
-        {item.phone && item.phone.some((p) => p.phone_type == "whatsapp") && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleWhatsapp(item.phone);
-            }}
-          >
-            <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-            <Text style={styles.actionButtonText}>WhatsApp</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={(e) => handleEmail(item.email, e)}
-        >
-          <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
-          <Text style={styles.actionButtonText}>Email</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={(e) => handleLocation(item.address, e)}
-        >
-          <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
-          <Text style={styles.actionButtonText}>Map</Text>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.viewDetailsButton}
-        onPress={() => onBusinessPress(item)}
-      >
-        <Text style={styles.viewDetailsText}>View Details</Text>
-        <Icons.Ionicons name="chevron-forward" size={16} color="#003366" />
-      </TouchableOpacity>
-
-    </TouchableOpacity>
+    <CustomCard
+      business={item}
+      index={item._id}
+      theme={theme}
+      onBusinessPress={onBusinessPress}
+      toggleFavorite={toggleFavorite}
+      isInFavorites={isInFavorites}
+      handleCall={handleCall}
+      handleEmail={handleEmail}
+      handleWhatsapp={handleWhatsapp}
+      handleLocation={handleLocation}
+    />
   );
 
   const onRefresh = useCallback(() => {
@@ -265,8 +168,8 @@ export default function BusinessList({ route, navigation }) {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
       <AlertUI />
 
@@ -279,25 +182,25 @@ export default function BusinessList({ route, navigation }) {
 
       <View style={styles.titleContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icons.Ionicons name="arrow-back" size={24} color="#333333" />
+          <Icons.Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.appTitle}>{category}</Text>
+        <Text style={[styles.appTitle, { color: theme.colors.text }]}>{category}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchWrapper}>
+        <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border }]}>
           <Icons.Ionicons
             name="search-outline"
             size={20}
-            color="#AAAAAA"
+            color={theme.colors.text}
             style={styles.searchIcon}
           />
           <TextInput
             placeholder="Search businesses"
             style={styles.searchInput}
-            placeholderTextColor="#AAAAAA"
+            placeholderTextColor={theme.colors.text}
             value={searchQuery}
             onChangeText={setSearchQuery}
             numberOfLines={1}
@@ -306,9 +209,12 @@ export default function BusinessList({ route, navigation }) {
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading businesses...</Text>
-        </View>
+        <>
+          <CustomLoader />
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading businesses...</Text>
+          </View>
+        </>
       ) : (
         <FlatList
           data={filteredBusinesses}
@@ -342,9 +248,7 @@ export default function BusinessList({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-
+    flex: 1
   },
   titleContainer: {
     flexDirection: "row",
@@ -357,7 +261,6 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#333333",
     letterSpacing: -0.5,
   },
   searchContainer: {
@@ -367,7 +270,6 @@ const styles = StyleSheet.create({
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F8F8",
     borderRadius: 50,
     paddingHorizontal: 16,
     paddingVertical: 5,
