@@ -1,6 +1,6 @@
 // State flags
 import bs_eswatini from '../assets/pics/bsEswatini.png';
-import eptc from '../assets/pics/eptc.jpeg';
+import eptc from '../assets/pics/eptc.png';
 
 // companies
 import RES from '../assets/pics/res.png';

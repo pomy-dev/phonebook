@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import {
   View,
   Text,
@@ -27,12 +27,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Location from 'expo-location';
 import { GOOGLE_MAPS_API_KEY } from "../config/env";
+import { AppContext } from "../context/appContext"
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { handleEmail, handleWhatsapp, handleWebsite } from "../utils/callFunctions"
 
 const { width, height } = Dimensions.get("window")
 const BOTTOM_SHEET_HEIGHT = height * 0.6
-
 
 // Function to decode Google Maps polyline
 const decodePolyline = (encoded) => {
@@ -70,6 +70,7 @@ const decodePolyline = (encoded) => {
 };
 
 const BusinessDetailScreen = ({ route, navigation }) => {
+  const { theme, isDarkMode } = React.useContext(AppContext);
   const insets = useSafeAreaInsets();
   const { business } = route.params;
   const HEADER_MAX_HEIGHT = 220 + insets.top
@@ -117,9 +118,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const galleryRef = useRef(null)
 
   // Calculate average rating
-  const averageRating = business.reviews && business.reviews.length > 0
-    ? business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / business.reviews.length
-    : 0;
+  // const averageRating = business.reviews && business.reviews.length > 0
+  //   ? business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / business.reviews.length
+  //   : 0;
 
   // Check if business is in favorites and if it has WhatsApp
   useEffect(() => {
@@ -560,38 +561,38 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     }
   }
 
-  const toggleRatingDetails = () => {
-    setShowRatingDetails(!showRatingDetails)
-  }
+  // const toggleRatingDetails = () => {
+  //   setShowRatingDetails(!showRatingDetails)
+  // }
 
   const handleMapLoadError = () => {
     setLocationError('Failed to load map. Check your network connection.');
     setLoadingMap(false);
   }
 
-  const renderStars = (rating, size = 16, color = "#FFD700") => {
-    const stars = []
-    const fullStars = Math.floor(rating)
-    const halfStar = rating - fullStars >= 0.5
+  // const renderStars = (rating, size = 16, color = "#FFD700") => {
+  //   const stars = []
+  //   const fullStars = Math.floor(rating)
+  //   const halfStar = rating - fullStars >= 0.5
 
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(
-          <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
-        )
-      } else if (i === fullStars && halfStar) {
-        stars.push(
-          <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
-        )
-      } else {
-        stars.push(
-          <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
-        )
-      }
-    }
+  //   for (let i = 0; i < 5; i++) {
+  //     if (i < fullStars) {
+  //       stars.push(
+  //         <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
+  //       )
+  //     } else if (i === fullStars && halfStar) {
+  //       stars.push(
+  //         <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
+  //       )
+  //     } else {
+  //       stars.push(
+  //         <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
+  //       )
+  //     }
+  //   }
 
-    return stars
-  }
+  //   return stars
+  // }
 
   const renderGalleryItem = ({ item }) => (
     <TouchableOpacity style={styles.galleryItem} activeOpacity={0.9} onPress={() => handleImagePress(item)}>
@@ -628,8 +629,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <SafeAreaView style={[styles.container, , { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
       <Animated.ScrollView
         ref={scrollViewRef}
@@ -640,10 +641,10 @@ const BusinessDetailScreen = ({ route, navigation }) => {
       >
         <View style={{ height: HEADER_MAX_HEIGHT }} />
 
-        <View style={styles.businessInfoContainer}>
+        <View style={[styles.businessInfoContainer, { backgroundColor: theme.colors.card }]}>
 
           <View style={styles.businessInfoHeader}>
-            <View style={styles.logoContainer}>
+            <View style={[styles.logoContainer, { borderColor: theme.colors.secondary }]}>
               {business.logo ? (
                 <Image source={{ uri: business.logo }} style={styles.logo} resizeMode="contain" />
               ) : (
@@ -654,8 +655,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </View>
 
             <View style={styles.businessInfoContent}>
-              <Text style={styles.businessName} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
-              <Text style={styles.businessCategory} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
+              <Text style={[styles.businessName, { color: theme.colors.text }]} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
+              <Text style={[styles.businessCategory, { color: theme.colors.secondary }]} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
               {/* <TouchableOpacity
                 style={styles.ratingContainer}
                 onPress={toggleRatingDetails}
@@ -734,36 +735,36 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               onPress={handleCall}
               activeOpacity={0.8}
             >
-              <Icons.Ionicons name="call" size={18} color="#FFFFFF" />
-              <Text style={styles.primaryActionText}>Call Now</Text>
+              <Icons.Ionicons name="call" size={18} color={theme.colors.text} />
+              <Text style={[styles.primaryActionText, { color: theme.colors.text }]}>Call Now</Text>
             </TouchableOpacity>
 
             <View style={styles.secondaryActionsRow}>
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                <Icons.Ionicons name="navigate" size={20} color="#003366" />
-                <Text style={styles.secondaryActionText}>Directions</Text>
+                <Icons.Ionicons name="navigate" size={20} color={theme.colors.indicator} />
+                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>Directions</Text>
               </TouchableOpacity>
 
               {hasWhatsApp && (
                 <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleWhatsapp(business.phone)} activeOpacity={0.7}>
-                  <Icons.Ionicons name="logo-whatsapp" size={20} color="#003366" />
-                  <Text style={styles.secondaryActionText}>WhatsApp</Text>
+                  <Icons.Ionicons name="logo-whatsapp" size={20} color={theme.colors.indicator} />
+                  <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>WhatsApp</Text>
                 </TouchableOpacity>
               )}
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleNews()} activeOpacity={0.7}>
-                <Icons.FontAwesome6 name="newspaper" size={20} color="#003366" />
-                <Text style={styles.secondaryActionText}>News</Text>
+                <Icons.FontAwesome6 name="newspaper" size={20} color={theme.colors.indicator} />
+                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>News</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleAdvert()} activeOpacity={0.7}>
                 <Icons.Entypo
                   name='price-tag'
                   size={20}
-                  color={isFavorite ? "#003366" : "#003366"}
+                  color={theme.colors.indicator}
                 />
-                <Text style={styles.secondaryActionText}>
+                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>
                   adverts
                 </Text>
               </TouchableOpacity>
@@ -789,6 +790,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             />
             <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>About</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[styles.tabButton, activeTab === "services" && styles.activeTabButton]}
             onPress={() => handleTabPress("services")}
@@ -830,42 +832,42 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         <View style={styles.tabContent}>
           {activeTab === "about" && (
             <>
-              <View style={styles.section}>
+              <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
                 <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>About Us</Text>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>About Us</Text>
                   {isGold && (
-                    <View style={styles.subscriptionBadge}>
+                    <View style={[styles.subscriptionBadge, { backgroundColor: theme.colors.sub_card }]}>
                       <Icons.Ionicons name="star" size={12} color="#FFD700" />
-                      <Text style={styles.subscriptionText}>Gold Member</Text>
+                      <Text style={[styles.subscriptionText, { color: theme.colors.text }]}>Gold Member</Text>
                     </View>
                   )}
                   {isSilver && (
                     <View style={[styles.subscriptionBadge, { backgroundColor: '#E0E0E0' }]}>
-                      <Icons.Ionicons name="star-half" size={12} color="#A9A9A9" />
-                      <Text style={[styles.subscriptionText, { color: '#707070' }]}>Silver Member</Text>
+                      <Icons.Ionicons name="star-half" size={12} color={theme.colors.text} />
+                      <Text style={[styles.subscriptionText, { color: theme.colors.text }]}>Silver Member</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.aboutText}>{business.large_description || business.description}</Text>
+                <Text style={[styles.aboutText, { color: theme.colors.text }]}>{business.large_description || business.description}</Text>
               </View>
               {business.working_hours && (
-                <View style={styles.section}>
+                <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
                   <View style={styles.sectionHeaderRow}>
-                    <Text style={styles.sectionTitle}>Business Hours</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Business Hours</Text>
                   </View>
-                  <View style={styles.hoursContainer}>
+                  <View style={[styles.hoursContainer, { backgroundColor: '#F0F4FF' }]}>
                     {business.working_hours.map((hours, index) => (
-                      <View key={index} style={styles.hourRow}>
-                        <Text style={styles.dayText}>{hours.day}</Text>
-                        <Text style={styles.timeText}>{hours.time}</Text>
+                      <View key={index} style={[styles.hourRow]}>
+                        <Text style={[styles.dayText]}>{hours.day}</Text>
+                        <Text style={[styles.timeText]}>{hours.time}</Text>
                       </View>
                     ))}
                   </View>
                 </View>
               )}
 
-              <View style={styles.mapSection}>
-                <Text style={[styles.sectionTitle, { margin: 20 }]}>Location</Text>
+              <View style={[styles.mapSection, { backgroundColor: theme.colors.card }]}>
+                <Text style={[styles.sectionTitle, { margin: 20, color: theme.colors.text }]}>Location</Text>
                 <View style={styles.mapContainer}>
                   {locationError && (
                     <View style={{ paddingHorizontal: 20 }}>
@@ -929,31 +931,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </View>
               </View>
 
-              {/* <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Location</Text>
-                <View style={styles.mapContainer}>
-                  <View style={styles.mapErrorContainer}>
-                    <Image
-                      source={mapLocation}
-                      style={styles.mapImage}
-                    />
-                  </View>
-                  <View style={styles.addressContainer}>
-                    <Icons.Ionicons name="location" size={18} color="#003366" />
-                    <Text style={styles.addressText} numberOfLines={2} ellipsizeMode="tail">
-                      {business.address}
-                    </Text>
-                  </View>
-                  <TouchableOpacity style={styles.getDirectionsButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                    <Icons.Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
-                    <Text style={styles.getDirectionsText}>Get Directions</Text>
-                  </TouchableOpacity>
-                </View>
-              </View> */}
-
               {business.social_media && business.social_media.length > 0 && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Connect With Us</Text>
+                <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Connect With Us</Text>
                   <View style={styles.socialMediaContainer}>
                     {business.social_media.map((social, index) => (
                       <TouchableOpacity
@@ -991,8 +971,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </>
           )}
           {activeTab === "services" && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Our Services</Text>
+            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Our Services</Text>
               {business.services && business.services.length > 0 ? (
                 <FlatList
                   data={business.services}
@@ -1004,17 +984,17 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               ) : (
                 <View style={styles.noServicesContainer}>
                   <Icons.Ionicons name="briefcase-outline" size={48} color="#DDDDDD" />
-                  <Text style={styles.noServicesText}>No services listed</Text>
+                  <Text style={[styles.noServicesText, { color: theme.colors.text }]}>No services listed</Text>
                 </View>
               )}
-              <TouchableOpacity style={styles.contactForServicesButton} onPress={handleCall} activeOpacity={0.7}>
-                <Text style={styles.contactForServicesText}>Contact for More Information</Text>
+              <TouchableOpacity style={[styles.contactForServicesButton, { borderColor: theme.colors.indicator }]} onPress={handleCall} activeOpacity={0.7}>
+                <Text style={[styles.contactForServicesText, { color: theme.colors.indicator }]}>Contact for More Information</Text>
               </TouchableOpacity>
             </View>
           )}
           {activeTab === "gallery" && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Photo Gallery</Text>
+            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Photo Gallery</Text>
               {gallery.length > 0 ? (
                 <>
                   <FlatList
@@ -1028,11 +1008,11 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   />
                   {gallery.length > 4 && (
                     <TouchableOpacity
-                      style={styles.expandGalleryButton}
+                      style={[styles.expandGalleryButton, { borderColor: theme.colors.indicator }]}
                       onPress={() => setGalleryExpanded(!galleryExpanded)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.expandGalleryText}>
+                      <Text style={[styles.expandGalleryText, { color: theme.colors.indicator }]}>
                         {galleryExpanded ? "Show Less" : "View All Photos"}
                       </Text>
                     </TouchableOpacity>
@@ -1047,8 +1027,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </View>
           )}
           {activeTab === "contact" && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Contact Information</Text>
+            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact Information</Text>
               {business.phone &&
                 business.phone.map((phone, index) => (
                   <TouchableOpacity
@@ -1061,10 +1041,10 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                       <Icons.Ionicons name="call-outline" size={18} color="#003366" />
                     </View>
                     <View style={styles.contactDetails}>
-                      <Text style={styles.contactLabel}>
+                      <Text style={[styles.contactLabel, { color: theme.colors.text }]}>
                         {phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}
                       </Text>
-                      <Text style={styles.contactValue} numberOfLines={1} ellipsizeMode="tail">{phone.number}</Text>
+                      <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{phone.number}</Text>
                     </View>
                     <View style={styles.contactActionButton}>
                       <Text style={styles.contactActionText}>Call</Text>
@@ -1076,8 +1056,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   <Icons.Ionicons name="mail-outline" size={18} color="#003366" />
                 </View>
                 <View style={styles.contactDetails}>
-                  <Text style={styles.contactLabel}>Email</Text>
-                  <Text style={styles.contactValue} numberOfLines={1} ellipsizeMode="tail">{business.email}</Text>
+                  <Text style={[styles.contactLabel, { color: theme.colors.text }]}>Email</Text>
+                  <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{business.email}</Text>
                 </View>
                 <View style={styles.contactActionButton}>
                   <Text style={styles.contactActionText}>Email</Text>
@@ -1089,8 +1069,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     <Icons.Ionicons name="globe-outline" size={18} color="#003366" />
                   </View>
                   <View style={styles.contactDetails}>
-                    <Text style={styles.contactLabel}>Website</Text>
-                    <Text style={styles.contactValue} numberOfLines={1} ellipsizeMode="tail">
+                    <Text style={[styles.contactLabel, { color: theme.colors.text }]}>Website</Text>
+                    <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">
                       {business.website.replace(/^https?:\/\//, "")}
                     </Text>
                   </View>
@@ -1104,8 +1084,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   <Icons.Ionicons name="location-outline" size={18} color="#003366" />
                 </View>
                 <View style={styles.contactDetails}>
-                  <Text style={styles.contactLabel}>Address</Text>
-                  <Text style={styles.contactValue} numberOfLines={2} ellipsizeMode="tail">{business.address}</Text>
+                  <Text style={[styles.contactLabel, { color: theme.colors.text }]}>Address</Text>
+                  <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={2} ellipsizeMode="tail">{business.address}</Text>
                 </View>
                 <View style={styles.contactActionButton}>
                   <Text style={styles.contactActionText}>Map</Text>
@@ -1113,12 +1093,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               </TouchableOpacity>
               {business.working_hours && (
                 <View style={styles.contactHoursContainer}>
-                  <Text style={styles.contactSectionTitle}>Business Hours</Text>
-                  <View style={styles.hoursContainer}>
+                  <Text style={[styles.contactSectionTitle, { color: theme.colors.text }]}>Business Hours</Text>
+                  <View style={[styles.hoursContainer, { backgroundColor: '#F0F4FF' }]}>
                     {business.working_hours.map((hours, index) => (
                       <View key={index} style={styles.hourRow}>
-                        <Text style={styles.dayText}>{hours.day}</Text>
-                        <Text style={styles.timeText}>{hours.time}</Text>
+                        <Text style={[styles.dayText, { color: '#333333' }]}>{hours.day}</Text>
+                        <Text style={[styles.timeText, { color: '#333333' }]}>{hours.time}</Text>
                       </View>
                     ))}
                   </View>
@@ -1294,6 +1274,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               style={[
                 styles.bottomSheet,
                 {
+                  backgroundColor: theme.colors.card,
                   transform: [{ translateY: bottomSheetAnim }],
                 },
               ]}
@@ -1304,7 +1285,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               </View>
               {bottomSheetContent === "phone" && (
                 <>
-                  <Text style={styles.bottomSheetTitle}>Select Phone Number</Text>
+                  <Text style={[styles.bottomSheetTitle, { color: theme.colors.text }]}>Select Phone Number</Text>
                   {business.phone &&
                     business.phone.map((phone, index) => (
                       <TouchableOpacity
@@ -1317,10 +1298,10 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                           <Icons.Ionicons name="call-outline" size={20} color="#003366" />
                         </View>
                         <View style={styles.bottomSheetItemContent}>
-                          <Text style={styles.bottomSheetItemTitle}>
+                          <Text style={[styles.bottomSheetItemTitle, { color: theme.colors.text }]}>
                             {phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}
                           </Text>
-                          <Text style={styles.bottomSheetItemSubtitle}>{phone.number}</Text>
+                          <Text style={[styles.bottomSheetItemSubtitle, { color: theme.colors.text }]}>{phone.number}</Text>
                         </View>
                         <View style={styles.callButtonContainer}>
                           <Text style={styles.callButtonText}>Call</Text>
@@ -1431,7 +1412,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
   },
   header: {
     position: "absolute",
@@ -1526,8 +1506,6 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   businessInfoContainer: {
-    backgroundColor: "#FFFFFF",
-    // marginHorizontal: 5,
     marginTop: -15,
     borderRadius: 15,
     shadowColor: "#000",
@@ -1547,7 +1525,7 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#ffff",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -1556,7 +1534,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
   },
   logo: {
     width: 65,
@@ -1584,12 +1561,10 @@ const styles = StyleSheet.create({
   businessName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333333",
     marginBottom: 4,
   },
   businessCategory: {
     fontSize: 14,
-    color: "#666666",
     marginBottom: 8,
   },
   ratingContainer: {
@@ -1650,7 +1625,6 @@ const styles = StyleSheet.create({
   primaryActionText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF',
     marginLeft: 8,
   },
   secondaryActionsRow: {
@@ -1664,7 +1638,6 @@ const styles = StyleSheet.create({
   },
   secondaryActionText: {
     fontSize: 12,
-    color: '#666666',
     marginTop: 6,
   },
   tabScrollContainer: {
@@ -1697,7 +1670,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   section: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -1708,7 +1680,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   mapSection: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     // padding: 20,
     marginBottom: 16,
@@ -1727,13 +1698,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333333",
     marginBottom: 16,
   },
   subscriptionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF8E0',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1750,7 +1719,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   hoursContainer: {
-    backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 16,
   },
@@ -1761,12 +1729,10 @@ const styles = StyleSheet.create({
   },
   dayText: {
     fontSize: 14,
-    color: "#666666",
   },
   timeText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#333333",
   },
   mapContainer: {
     alignItems: 'center',
@@ -1909,7 +1875,6 @@ const styles = StyleSheet.create({
   },
   noServicesText: {
     fontSize: 16,
-    color: "#999999",
     marginTop: 16,
   },
   contactForServicesButton: {
@@ -1917,12 +1882,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#003366",
   },
   contactForServicesText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#003366",
   },
   galleryGrid: {
     marginHorizontal: -4,
@@ -1958,13 +1921,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#003366",
     marginTop: 16,
   },
   expandGalleryText: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#003366",
   },
   noImagesContainer: {
     alignItems: "center",
@@ -1999,12 +1960,10 @@ const styles = StyleSheet.create({
   },
   contactLabel: {
     fontSize: 14,
-    color: "#666666",
     marginBottom: 2,
   },
   contactValue: {
     fontSize: 15,
-    color: "#333333",
     fontWeight: "500",
   },
   contactActionButton: {
@@ -2024,7 +1983,6 @@ const styles = StyleSheet.create({
   contactSectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333333",
     marginBottom: 12,
   },
   footer: {
@@ -2062,7 +2020,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: Platform.OS === "ios" ? 34 : 16,
@@ -2087,7 +2044,6 @@ const styles = StyleSheet.create({
   bottomSheetTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333333",
     textAlign: "center",
     marginBottom: 16,
     paddingHorizontal: 20,
@@ -2114,7 +2070,6 @@ const styles = StyleSheet.create({
   bottomSheetItemTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#333333",
     marginBottom: 4,
   },
   bottomSheetItemSubtitle: {

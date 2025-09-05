@@ -138,7 +138,7 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
+      {/* <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} /> */}
 
       {!isAppReady ? (
         <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />

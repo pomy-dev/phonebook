@@ -30,6 +30,7 @@ import { AppContext } from '../context/appContext';
 import * as Notifications from 'expo-notifications';
 import { mockNotifications } from '../utils/mockNotifications'
 import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from '../utils/callFunctions';
+import CustomCard from '../components/customCard';
 
 const HomeScreen = ({ navigation }) => {
   const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, addNotification, notifications } = useContext(AppContext);
@@ -91,7 +92,7 @@ const HomeScreen = ({ navigation }) => {
   // Example: load notifications automatically on mount
   useEffect(() => {
     simulateNotifications();
-  }, [notificationsEnabled]);
+  }, [notifications, notificationsEnabled]);
 
   // Load favorites from AsyncStorage
   useEffect(() => {
@@ -126,32 +127,19 @@ const HomeScreen = ({ navigation }) => {
 
       if (isInFavorites(business._id)) {
         newFavorites = newFavorites.filter((fav) => fav._id !== business._id);
-        if (notificationsEnabled) {
-          scheduleNotification(
-            `${business.company_logo}`,
-            'Removed from Favorites',
-            `${business.company_name} has been removed from your favorites.`,
-            { url: 'Notifications', businessId: business._id }
-          );
+        notificationsEnabled &&
           CustomToast(
             'Removed from Favorites',
             `${business.company_name} has been removed from your favorites.`
           );
-        }
       } else {
         newFavorites.push(business);
-        if (notificationsEnabled) {
-          scheduleNotification(
-            `${business.company_logo}`,
-            'Added to Favorites',
-            `${business.company_name} has been added to your favorites.`,
-            { url: 'Notifications', businessId: business._id }
-          );
+        notificationsEnabled &&
           CustomToast(
             'Added to Favorites',
             `${business.company_name} has been added to your favorites.`
           );
-        }
+
       }
 
       setFavorites(newFavorites);
@@ -184,7 +172,7 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    loadBusinesses();
+    loadBusinesses(isRefreshing);
   }, [selectedState, isOnline]); // Add selectedState as a dependency to reload businesses when state changes
 
   useEffect(() => {
@@ -221,9 +209,9 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const loadBusinesses = async () => {
+  const loadBusinesses = async (isRefresh) => {
     try {
-      setIsLoading(true);
+      isRefresh ? setIsRefreshing(true) : setIsLoading(true);
       let directoryCompanies;
       let companyData;
       if (isOnline) {
@@ -272,7 +260,7 @@ const HomeScreen = ({ navigation }) => {
         CustomToast('Error', 'Failed to load businesses. Using cached data if available.');
       }
     } finally {
-      setIsLoading(false);
+      isRefresh ? setIsRefreshing(true) : setIsLoading(false);
     }
   };
 
@@ -303,39 +291,35 @@ const HomeScreen = ({ navigation }) => {
             setFeaturedBusinesses(featuredBusinesses);
             setBusinesses(nonGoldCompanies);
             setFilteredBusinesses(nonGoldCompanies);
-            if (notificationsEnabled) {
+            notificationsEnabled &&
               CustomToast('Refreshed 👍', 'Businesses refreshed successfully');
-            }
+
             setLastRefresh('Last refresh was just now');
           } catch (err) {
             console.log('API Error:', err.message);
-            await loadBusinesses();
+            await loadBusinesses(isRefreshing);
             setLastRefresh('Using cached data (network unavailable)');
-            if (notificationsEnabled) {
+            notificationsEnabled &&
               CustomToast('Network Error', 'Failed to fetch new data. Using cached data.');
-            }
           }
         } else {
-          await loadBusinesses();
+          await loadBusinesses(isRefreshing);
           setLastRefresh('Using cached data (offline mode)');
-          if (notificationsEnabled) {
+          notificationsEnabled &&
             CustomToast('Offline Mode', 'No network connection. Using cached data.');
-          }
         }
       } else {
-        await loadBusinesses();
+        await loadBusinesses(isRefreshing);
         setLastRefresh('Using cached data (offline mode)');
-        if (notificationsEnabled) {
+        notificationsEnabled &&
           CustomToast('Offline Mode', 'App is in offline mode. Using cached data.');
-        }
       }
     } catch (err) {
       console.log('General Error:', err.message);
-      await loadBusinesses();
+      await loadBusinesses(isRefreshing);
       setLastRefresh('Using cached data');
-      if (notificationsEnabled) {
+      notificationsEnabled &&
         CustomToast('Error', 'An error occurred. Using cached data.');
-      }
     } finally {
       setIsRefreshing(false);
     }
@@ -445,7 +429,7 @@ const HomeScreen = ({ navigation }) => {
                   onPress={() => onBusinessPress(item)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.featuredImageContainer}>
+                  <View style={[styles.featuredImageContainer, { backgroundColor: theme.colors.secondary }]}>
                     {item.logo ? (
                       <Image
                         source={{ uri: item.logo }}
@@ -453,8 +437,8 @@ const HomeScreen = ({ navigation }) => {
                         resizeMode="contain"
                       />
                     ) : (
-                      <View style={styles.placeholderContent}>
-                        <Text style={[styles.placeholderText, , { color: theme.colors.background }]}>
+                      <View style={[styles.placeholderContent, { backgroundColor: theme.colors.indicator }]}>
+                        <Text style={[styles.placeholderText, { color: theme.colors.background }]}>
                           {item.company_name.charAt(0)}
                         </Text>
                       </View>
@@ -508,131 +492,19 @@ const HomeScreen = ({ navigation }) => {
             <Text style={[styles.businessesTitle, { color: theme.colors.text }]}>Featured</Text>
             <View>
               {filteredBusinesses.length > 0 ? (
-                filteredBusinesses.map((item) => (
-                  <TouchableOpacity
-                    key={item._id}
-                    style={[styles.favoriteCard, , { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-                    activeOpacity={0.8}
-                    onPress={() => onBusinessPress(item)}
-                  >
-                    <View style={styles.favoriteHeader}>
-                      <View style={styles.businessImageContainer}>
-                        {item.logo ? (
-                          <Image
-                            source={{ uri: item.logo }}
-                            style={styles.businessImage}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={[styles.businessInitialContainer, { backgroundColor: theme.colors.primary }]}>
-                            <Text style={[styles.businessInitial, { color: theme.colors.background }]}>
-                              {item.company_name.charAt(0)}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <View style={styles.businessInfo}>
-                        <Text
-                          style={[styles.businessName, { color: theme.colors.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.company_name}
-                        </Text>
-                        <Text
-                          style={[styles.businessCategory, { color: theme.colors.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.company_type}
-                        </Text>
-                        <Text
-                          style={[styles.businessAddress, { color: theme.colors.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.address}
-                        </Text>
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.favoriteButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(item);
-                        }}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <Icons.Ionicons
-                          name={
-                            isInFavorites(item._id) ? "heart" : "heart-outline"
-                          }
-                          size={22}
-                          color={isInFavorites(item._id) ? theme.colors.primary : theme.colors.text}
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={[styles.divider, { backgroundColor: theme.colors.secondary }]} />
-
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleCall(item.phone, item.name);
-                        }}
-                      >
-                        <Icons.Ionicons name="call-outline" size={18} color={theme.colors.primary} />
-                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Call</Text>
-                      </TouchableOpacity>
-
-                      {item.phone &&
-                        item.phone.some((p) => p.phone_type === "whatsapp") && (
-                          <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleWhatsapp(item.phone);
-                            }}
-                          >
-                            <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                            <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>WhatsApp</Text>
-                          </TouchableOpacity>
-                        )}
-
-                      <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleEmail(item.email, e);
-                        }}
-                      >
-                        <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
-                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Email</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleLocation(item.address, e);
-                        }}
-                      >
-                        <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
-                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Map</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity
-                      style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
-                      onPress={() => onBusinessPress(item)}
-                    >
-                      <Text style={[styles.viewDetailsText, { color: "#FFFF" }]}>View Details</Text>
-                      <Icons.Ionicons name="chevron-forward" size={16} color='#FFFF' />
-                    </TouchableOpacity>
-                  </TouchableOpacity>
+                filteredBusinesses.map((item, index) => (
+                  <CustomCard
+                    business={item}
+                    index={index}
+                    theme={theme}
+                    onBusinessPress={onBusinessPress}
+                    toggleFavorite={toggleFavorite}
+                    isInFavorites={isInFavorites}
+                    handleCall={handleCall}
+                    handleEmail={handleEmail}
+                    handleWhatsapp={handleWhatsapp}
+                    handleLocation={handleLocation}
+                  />
                 ))
               ) : (
                 <View style={styles.noResultsContainer}>
@@ -652,130 +524,19 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.businessesContainer}>
             <View>
               {filteredBusinesses.length > 0 ? (
-                filteredBusinesses.map((item) => (
-                  <TouchableOpacity
-                    key={item._id}
-                    style={styles.favoriteCard}
-                    activeOpacity={0.8}
-                    onPress={() => onBusinessPress(item)}
-                  >
-                    <View style={styles.favoriteHeader}>
-                      <View style={styles.businessImageContainer}>
-                        {item.logo ? (
-                          <Image
-                            source={{ uri: item.logo }}
-                            style={styles.businessImage}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={[styles.businessInitialContainer, { backgroundColor: theme.colors.primary }]}>
-                            <Text style={[styles.businessInitial, { color: theme.colors.background }]}>
-                              {item.company_name.charAt(0)}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <View style={styles.businessInfo}>
-                        <Text
-                          style={[styles.businessName, { color: theme.colors.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.company_name}
-                        </Text>
-                        <Text
-                          style={[styles.businessCategory, { color: theme.colors.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.company_type}
-                        </Text>
-                        <Text
-                          style={[styles.businessAddress, { color: theme.colors.text }]}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.address}
-                        </Text>
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.favoriteButton}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(item);
-                        }}
-                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      >
-                        <Icons.Ionicons
-                          name={isInFavorites(item._id) ? 'heart' : 'heart-outline'}
-                          size={22}
-                          color={isInFavorites(item._id) ? theme.colors.primary : theme.colors.text}
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleCall(item.phone, item.name);
-                        }}
-                      >
-                        <Icons.Ionicons name="call-outline" size={18} color={theme.colors.primary} />
-                        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Call</Text>
-                      </TouchableOpacity>
-
-                      {item.phone && item.phone.some((p) => p.phone_type === 'whatsapp') && (
-                        <TouchableOpacity
-                          style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
-                          onPress={(e) => {
-                            e.stopPropagation();
-                            handleWhatsapp(item.phone, e);
-                          }}
-                        >
-                          <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                          <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>WhatsApp</Text>
-                        </TouchableOpacity>
-                      )}
-
-                      <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleEmail(item.email, e);
-                        }}
-                      >
-                        <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
-                        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Email</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: theme.colors.background }]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleLocation(item.address, e);
-                        }}
-                      >
-                        <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
-                        <Text style={[styles.actionButtonText, { color: theme.colors.text }]}>Map</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {item.subscription_type.toLowerCase() !== 'bronze' && (
-                      <TouchableOpacity
-                        style={[styles.viewDetailsButton, { backgroundColor: theme.colors.card }]}
-                        onPress={() => navigation.navigate('BusinessDetail', { business: item })}
-                      >
-                        <Text style={[styles.viewDetailsText, { color: theme.colors.primary }]}>View Details</Text>
-                        <Icons.Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
-                      </TouchableOpacity>
-                    )}
-                  </TouchableOpacity>
+                filteredBusinesses.map((item, index) => (
+                  <CustomCard
+                    business={item}
+                    index={index}
+                    theme={theme}
+                    onBusinessPress={onBusinessPress}
+                    toggleFavorite={toggleFavorite}
+                    isInFavorites={isInFavorites}
+                    handleCall={handleCall}
+                    handleEmail={handleEmail}
+                    handleWhatsapp={handleWhatsapp}
+                    handleLocation={handleLocation}
+                  />
                 ))
               ) : (
                 <View style={styles.noResultsContainer}>
@@ -795,64 +556,15 @@ const HomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  drawerContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-  },
-  darkDrawerContainer: {
-    backgroundColor: "#1C2526",
-  },
-  drawerHeader: {
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  drawerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333333",
-  },
-  drawerSection: {
-    marginVertical: 20,
-  },
-  drawerSectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333333",
-    marginBottom: 10,
-  },
-  drawerItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  activeDrawerItem: {
-    backgroundColor: "#F0F4FF",
-  },
-  drawerItemText: {
-    fontSize: 16,
-    color: "#333333",
-    marginLeft: 10,
+  // that has always been there
+  container: {
     flex: 1,
   },
-  drawerIcon: {
-    marginRight: 8,
-  },
-
   image: {
     width: 60,
     height: 40,
     borderRadius: 5,
     objectFit: 'contain'
-  },
-
-  // that has always been there
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
   },
   scrollContent: {
     paddingBottom: 30,
@@ -866,7 +578,6 @@ const styles = StyleSheet.create({
   },
   lastRefreshText: {
     fontSize: 12,
-    color: "#777777",
     marginLeft: 4,
   },
   titleContainer: {
@@ -880,20 +591,17 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 17,
     fontWeight: "400",
-    color: "#333333",
     letterSpacing: -0.5,
   },
   appSubTitle: {
     fontSize: 17,
     fontWeight: "200",
-    color: "#333333",
     letterSpacing: -0.5,
   },
   alphabetButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F8F8F8",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -909,7 +617,6 @@ const styles = StyleSheet.create({
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F8F8",
     borderRadius: 50,
     paddingHorizontal: 16,
     paddingVertical: 5,
@@ -919,7 +626,6 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     fontSize: 16,
-    color: "#333333",
     fontWeight: "400",
     flex: 1,
   },
@@ -936,12 +642,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#333333",
     letterSpacing: -0.3,
   },
   viewAllText: {
     fontSize: 14,
-    color: "#003366",
     fontWeight: "500",
   },
   featuredListContent: {
@@ -957,7 +661,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 10,
-    backgroundColor: "#F8F8F8",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 12,
@@ -978,23 +681,19 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#003366",
   },
   placeholderText: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#FFFFFF",
   },
   featuredName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333333",
     textAlign: "center",
     marginBottom: 2,
   },
   featuredCategory: {
     fontSize: 12,
-    color: "#999999",
     textAlign: "center",
   },
   categoriesContainer: {
@@ -1008,18 +707,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 10,
-    backgroundColor: "#F8F8F8",
-  },
-  activeCategoryButton: {
-    backgroundColor: "#003366",
   },
   categoryText: {
     fontSize: 14,
-    color: "#777777",
-    fontWeight: "500",
-  },
-  activeCategoryText: {
-    color: "#FFFFFF",
     fontWeight: "500",
   },
   businessesContainer: {
@@ -1028,79 +718,8 @@ const styles = StyleSheet.create({
   businessesTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#333333",
     marginBottom: 16,
     letterSpacing: -0.3,
-  },
-  favoriteCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-  },
-  favoriteHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    position: "relative",
-  },
-  businessImageContainer: {
-    marginRight: 16,
-  },
-  businessImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-  },
-  businessInitialContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: "#003366",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  businessInitial: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  businessInfo: {
-    flex: 1,
-    paddingRight: 30,
-  },
-  businessName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333333",
-    marginBottom: 4,
-  },
-  businessCategory: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 2,
-  },
-  businessAddress: {
-    fontSize: 13,
-    color: "#999999",
-  },
-  favoriteButton: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    padding: 4,
-    zIndex: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F0F0F0",
-    marginVertical: 16,
   },
   noResultsContainer: {
     alignItems: "center",
@@ -1110,68 +729,12 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666666",
     marginTop: 16,
   },
   noResultsSubtext: {
     fontSize: 14,
-    color: "#999999",
     marginTop: 4,
   },
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8F8",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    color: "#333333",
-    marginLeft: 6,
-    fontWeight: "500",
-  },
-  viewDetailsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    backgroundColor: "#F0F4FF",
-    borderRadius: 12,
-  },
-  viewDetailsText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#003366",
-    marginRight: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-  },
-  businessInitialContainer: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#003366",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  businessInitial: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  }
 });
 
 export default HomeScreen;
