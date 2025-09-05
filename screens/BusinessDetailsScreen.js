@@ -475,6 +475,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         android: `google.navigation:q=${businessLocation.latitude},${businessLocation.longitude}`,
       });
       Linking.openURL(url);
+      console.log('Opening directions');
     } else if (business.address) {
       const url = Platform.select({
         ios: `maps:0,0?q=${encodeURIComponent(business.address)}`,
@@ -632,6 +633,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     <SafeAreaView style={[styles.container, , { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
+      {/* Company Details Body */}
       <Animated.ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
@@ -1115,6 +1117,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
       </Animated.ScrollView >
 
+      {/* Header View */}
       <Animated.View style={[styles.header, { height: headerHeight }]}>
         <Animated.View
           style={[
@@ -1178,6 +1181,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
       </Animated.View>
 
+      {/* ShareOptions */}
       <Animated.View
         style={[
           styles.shareOptionsContainer,

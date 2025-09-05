@@ -230,7 +230,7 @@ const HomeScreen = ({ navigation }) => {
       }
 
       directoryCompanies = companyData.filter(
-        (company) => company.directory?.trim() === selectedState?.trim()
+        (company) => company.directory === selectedState?.trim()
       );
 
       if (directoryCompanies) {
