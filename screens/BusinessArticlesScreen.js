@@ -293,7 +293,7 @@ const BusinessArticlesScreen = () => {
           {data?.map((item) => (
             <View
               key={item?._id}
-              style={[styles.articleContainer, { backgroundColor: theme.colors.card }]}
+              style={[styles.articleContainer, { backgroundColor: theme.colors.sub_card }]}
             >
               {contentType === "Promotions" ? (
                 <Image
@@ -343,7 +343,7 @@ const BusinessArticlesScreen = () => {
                     </Text>
                     {item.video_url && (
                       <TouchableOpacity
-                        style={[styles.youtubeButton, { backgroundColor: theme.colors.card }]}
+                        style={[styles.youtubeButton, { backgroundColor: theme.colors.secondary }]}
                         onPress={() => Linking.openURL(item.video_url)}
                         accessibilityLabel="Watch video on YouTube"
                       >
@@ -437,7 +437,7 @@ const BusinessArticlesScreen = () => {
         <Animated.View
           style={[
             styles.shareOptionsContainer,
-            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 250 },
+            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 110 },
             {
               opacity: shareOptionsAnim,
               transform: [
@@ -452,7 +452,7 @@ const BusinessArticlesScreen = () => {
           ]}
           pointerEvents={showShareOptions ? "auto" : "none"}
         >
-          <BlurView intensity={80} style={styles.shareOptionsBlur}>
+          <BlurView intensity={80} style={[styles.shareOptionsBlur, { backgroundColor: theme.colors.background }]} tint={theme.colors.background}>
             <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
               <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
                 <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />

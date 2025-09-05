@@ -5,7 +5,7 @@ export const CustomLightTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: '#003366',
-    background: '#FFFFFF',
+    background: '#ffffff',
     secondary: '#f8f7f7ff',
     card: '#FFFFFF',
     sub_card: '#f0f0f0ff',

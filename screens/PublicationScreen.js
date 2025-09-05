@@ -9,6 +9,8 @@ import {
   ImageBackground,
   TextInput,
   Alert,
+  Linking,
+  StatusBar,
   RefreshControl
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -106,7 +108,8 @@ const PublicationScreen = () => {
   const { isDarkMode, theme, isOnline } = useContext(AppContext);
   const navigation = useNavigation();
   const route = useRoute();
-  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const contentType = route.params?.contentType || "Publications";
   const [isConnected, setIsConnected] = useState(true);
@@ -186,9 +189,42 @@ const PublicationScreen = () => {
     }
     setIsLoading(true);
     setError(null);
-    // load data
-    loadData()
+    loadData();
   };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (contentType === "Promotions") {
+        const companyPromotions = await fetchPromotions();
+        setPromotions(companyPromotions.promotions);
+      } else {
+        const companyPublications = await fetchPublications();
+        setPublications(companyPublications.publications);
+      }
+    } catch (err) {
+      console.log("Refresh Error:", err.message);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Move useCallback above early returns
+  const onRefresh = useCallback(() => {
+    if (isOnline) {
+      handleRefresh();
+    } else {
+      Alert.alert(
+        "Online Mode is Disabled",
+        "Please turn on Wi-Fi or mobile data to get content.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Ok", style: "ok" },
+        ]
+      );
+    }
+  }, [isOnline]);
 
   // Select data based on contentType
   const data = contentType === "Promotions" ? promotions : publications;
@@ -212,8 +248,13 @@ const PublicationScreen = () => {
         <Text style={[styles.noConnectionText, { color: theme.colors.text }]}>
           No Internet Connection
         </Text>
-        <TouchableOpacity style={[styles.retryButton, { backgroundColor: theme.colors.primary }]} onPress={retryConnection}>
-          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>Turn On Wi-Fi or Data</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+          onPress={retryConnection}
+        >
+          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>
+            Turn On Wi-Fi or Data
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -242,44 +283,17 @@ const PublicationScreen = () => {
         <Text style={[styles.noConnectionText, { color: theme.colors.text }]}>
           {error}
         </Text>
-        <TouchableOpacity style={[styles.retryButton, { backgroundColor: theme.colors.primary }]} onPress={retryConnection}>
-          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>Retry</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+          onPress={retryConnection}
+        >
+          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>
+            Retry
+          </Text>
         </TouchableOpacity>
       </View>
     );
   }
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      if (contentType === "Promotions") {
-        const companyPromotions = await fetchPromotions();
-        setPromotions(companyPromotions.promotions)
-      } else {
-        const companyPublications = await fetchPublications();
-        setPublications(companyPublications.publications)
-      }
-    } catch (err) {
-      console.log("Refresh Error:", err.message);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const onRefresh = useCallback(() => {
-    if (isOnline) {
-      handleRefresh();
-    } else {
-      Alert.alert(
-        "Online Mode is Disabled",
-        "Please turn on Wi-Fi or mobile data to get content.",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Ok", style: "ok" },
-        ]
-      );
-    }
-  }, [isOnline]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -328,7 +342,7 @@ const PublicationScreen = () => {
           />
         )}
         keyExtractor={(item, index) => `${item.id}-${index}`}
-        contentContainerStyle={[styles.listContainer, { backgroundColor: theme.colors.secondary }]}
+        contentContainerStyle={[styles.listContainer, { backgroundColor: theme.colors.background }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <Text style={[styles.emptyText, { color: theme.colors.text }]}>
