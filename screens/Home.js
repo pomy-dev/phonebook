@@ -92,7 +92,7 @@ const HomeScreen = ({ navigation }) => {
   // Example: load notifications automatically on mount
   useEffect(() => {
     simulateNotifications();
-  }, [notificationsEnabled]);
+  }, [notifications, notificationsEnabled]);
 
   // Load favorites from AsyncStorage
   useEffect(() => {
@@ -127,32 +127,19 @@ const HomeScreen = ({ navigation }) => {
 
       if (isInFavorites(business._id)) {
         newFavorites = newFavorites.filter((fav) => fav._id !== business._id);
-        if (notificationsEnabled) {
-          scheduleNotification(
-            `${business.company_logo}`,
-            'Removed from Favorites',
-            `${business.company_name} has been removed from your favorites.`,
-            { url: 'Notifications', businessId: business._id }
-          );
+        notificationsEnabled &&
           CustomToast(
             'Removed from Favorites',
             `${business.company_name} has been removed from your favorites.`
           );
-        }
       } else {
         newFavorites.push(business);
-        if (notificationsEnabled) {
-          scheduleNotification(
-            `${business.company_logo}`,
-            'Added to Favorites',
-            `${business.company_name} has been added to your favorites.`,
-            { url: 'Notifications', businessId: business._id }
-          );
+        notificationsEnabled &&
           CustomToast(
             'Added to Favorites',
             `${business.company_name} has been added to your favorites.`
           );
-        }
+
       }
 
       setFavorites(newFavorites);
@@ -185,7 +172,7 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    loadBusinesses();
+    loadBusinesses(isRefreshing);
   }, [selectedState, isOnline]); // Add selectedState as a dependency to reload businesses when state changes
 
   useEffect(() => {
@@ -222,9 +209,9 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const loadBusinesses = async () => {
+  const loadBusinesses = async (isRefresh) => {
     try {
-      setIsLoading(true);
+      isRefresh ? setIsRefreshing(true) : setIsLoading(true);
       let directoryCompanies;
       let companyData;
       if (isOnline) {
@@ -273,7 +260,7 @@ const HomeScreen = ({ navigation }) => {
         CustomToast('Error', 'Failed to load businesses. Using cached data if available.');
       }
     } finally {
-      setIsLoading(false);
+      isRefresh ? setIsRefreshing(true) : setIsLoading(false);
     }
   };
 
@@ -304,39 +291,35 @@ const HomeScreen = ({ navigation }) => {
             setFeaturedBusinesses(featuredBusinesses);
             setBusinesses(nonGoldCompanies);
             setFilteredBusinesses(nonGoldCompanies);
-            if (notificationsEnabled) {
+            notificationsEnabled &&
               CustomToast('Refreshed 👍', 'Businesses refreshed successfully');
-            }
+
             setLastRefresh('Last refresh was just now');
           } catch (err) {
             console.log('API Error:', err.message);
-            await loadBusinesses();
+            await loadBusinesses(isRefreshing);
             setLastRefresh('Using cached data (network unavailable)');
-            if (notificationsEnabled) {
+            notificationsEnabled &&
               CustomToast('Network Error', 'Failed to fetch new data. Using cached data.');
-            }
           }
         } else {
-          await loadBusinesses();
+          await loadBusinesses(isRefreshing);
           setLastRefresh('Using cached data (offline mode)');
-          if (notificationsEnabled) {
+          notificationsEnabled &&
             CustomToast('Offline Mode', 'No network connection. Using cached data.');
-          }
         }
       } else {
-        await loadBusinesses();
+        await loadBusinesses(isRefreshing);
         setLastRefresh('Using cached data (offline mode)');
-        if (notificationsEnabled) {
+        notificationsEnabled &&
           CustomToast('Offline Mode', 'App is in offline mode. Using cached data.');
-        }
       }
     } catch (err) {
       console.log('General Error:', err.message);
-      await loadBusinesses();
+      await loadBusinesses(isRefreshing);
       setLastRefresh('Using cached data');
-      if (notificationsEnabled) {
+      notificationsEnabled &&
         CustomToast('Error', 'An error occurred. Using cached data.');
-      }
     } finally {
       setIsRefreshing(false);
     }
