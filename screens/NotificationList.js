@@ -3,24 +3,16 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDim
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../context/appContext';
 import { Icons } from '../constants/Icons';
-import { mockNotifications } from '../utils/mockNotifications';
 
 const NotificationListScreen = () => {
-  const { theme } = React.useContext(AppContext);
+  const { theme, notifications } = useContext(AppContext);
   const route = useRoute();
   const listRef = useRef(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const { notifications } = useContext(AppContext);
   const selectedNotificationId = route.params?.notificationId;
   const [error, setError] = useState(null);
   const [layoutMode, setLayoutMode] = useState('list');
-
-  // Find company logo based on businessId
-  // const getCompanyLogo = (businessId) => {
-  //   const company = mockNotifications.find((c) => c._id === businessId);
-  //   return company ? company.logo : null;
-  // };
 
   const toggleLayout = () => {
     setLayoutMode((prev) => (prev === 'list' ? 'grid' : 'list'));

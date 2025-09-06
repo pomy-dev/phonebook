@@ -242,7 +242,7 @@ const HomeScreen = ({ navigation }) => {
             'Using mock data as app is in offline mode.',
             { url: 'Tabs' }
           );
-          CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
+          // CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
         }
       }
 
