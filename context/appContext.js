@@ -2,6 +2,7 @@
 import { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CustomDarkTheme, CustomLightTheme } from '../constants/colors';
+import { fetchNotifications } from '../service/getApi'; // <-- your API call
 
 export const AppContext = createContext();
 
@@ -12,7 +13,7 @@ export const AppProvider = ({ children }) => {
   const [isOnline, setIsOnline] = useState(true);
   const [notifications, setNotifications] = useState([]);
 
-  // Load persisted state
+  // Load persisted state + fetch fresh notifications
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -34,27 +35,22 @@ export const AppProvider = ({ children }) => {
     loadSettings();
   }, []);
 
-  // Persist theme changes
+  // Fetch new notifications when online
   useEffect(() => {
-    AsyncStorage.setItem('theme', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
+    const loadApiNotifications = async () => {
+      try {
+        if (isOnline && notificationsEnabled) {
+          const fresh = await fetchNotifications();
+          setNotifications(fresh); // overwrite with fresh ones
+        }
+      } catch (err) {
+        console.log('Error fetching notifications:', err);
+      }
+    };
+    loadApiNotifications();
+  }, [isOnline, notificationsEnabled]);
 
-  // Persist state selection
-  useEffect(() => {
-    AsyncStorage.setItem('selectedState', JSON.stringify(selectedState));
-  }, [selectedState]);
-
-  // Persist notificationsEnabled flag
-  useEffect(() => {
-    AsyncStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled));
-  }, [notificationsEnabled]);
-
-  // Persist online status
-  useEffect(() => {
-    AsyncStorage.setItem('isOnline', JSON.stringify(isOnline));
-  }, [isOnline]);
-
-  // Persist notifications array
+  // Persist notifications
   useEffect(() => {
     AsyncStorage.setItem('notifications', JSON.stringify(notifications));
   }, [notifications]);

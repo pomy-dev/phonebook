@@ -17,10 +17,10 @@ const NotificationListScreen = () => {
   const [layoutMode, setLayoutMode] = useState('list');
 
   // Find company logo based on businessId
-  const getCompanyLogo = (businessId) => {
-    const company = mockNotifications.find((c) => c._id === businessId);
-    return company ? company.logo : null;
-  };
+  // const getCompanyLogo = (businessId) => {
+  //   const company = mockNotifications.find((c) => c._id === businessId);
+  //   return company ? company.logo : null;
+  // };
 
   const toggleLayout = () => {
     setLayoutMode((prev) => (prev === 'list' ? 'grid' : 'list'));
@@ -41,49 +41,50 @@ const NotificationListScreen = () => {
         styles.notificationItem,
         layoutMode === 'grid' && [
           styles.gridItem,
-          { width: (width - 48) / 2 }, // 48 accounts for padding and margins
+          { width: (width - 48) / 2 },
         ],
-        { backgroundColor: selectedNotificationId === item.id ? theme.colors.primary : theme.colors.card },
+        { backgroundColor: selectedNotificationId === item._id ? theme.colors.primary : theme.colors.card },
       ]}
       onPress={() => {
-        if (item.data.url === 'BusinessDetail') {
-          navigation.navigate('Countries', {
-            screen: 'BusinessDetail',
-            params: { businessId: item.data.businessId },
-          });
-        }
+        navigation.navigate('Countries', {
+          screen: 'BusinessDetail',
+          params: { businessId: item._id },
+        });
       }}
     >
-      {item.data.businessId && (
+      {/* Logo */}
+      {item.company?.logo && (
         <View style={[styles.logoContainer, layoutMode === 'grid' && styles.gridLogoContainer]}>
           <Image
-            source={getCompanyLogo(item.data.businessId)}
-            style={[styles.companyLogo, { borderColor: theme.colors.card, borderWidth: 1 }, layoutMode === 'grid' && styles.gridCompanyLogo]}
+            source={{ uri: item.company.logo }}
+            style={[
+              styles.companyLogo,
+              { borderColor: theme.colors.card, borderWidth: 1 },
+              layoutMode === 'grid' && styles.gridCompanyLogo,
+            ]}
             resizeMode="contain"
           />
         </View>
       )}
+
+      {/* Text */}
       <View style={[styles.textContainer, layoutMode === 'grid' && styles.gridTextContainer]}>
-        <Text
-          style={[styles.notificationTitle, { color: theme.colors.text }]}
-          numberOfLines={layoutMode === 'grid' ? 2 : 1}
-          ellipsizeMode="tail"
-        >
-          {item.title}
+        <Text style={[styles.notificationTitle, { color: theme.colors.text }]} numberOfLines={2}>
+          {item.title} ({item.category})
         </Text>
-        <Text
-          style={[styles.notificationBody, { color: theme.colors.text }]}
-          numberOfLines={layoutMode === 'grid' ? 3 : 2}
-          ellipsizeMode="tail"
-        >
-          {item.body}
+        <Text style={[styles.notificationBody, { color: theme.colors.text }]} numberOfLines={3}>
+          {item.message}
+        </Text>
+        <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
+          {item.company?.company_name} • {item.company?.company_type}
         </Text>
         <Text style={[styles.notificationTime, { color: theme.colors.text }]}>
-          {new Date(item.timestamp).toLocaleString()}
+          {new Date(item.startDate).toLocaleString()}
         </Text>
       </View>
     </TouchableOpacity>
   );
+
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -199,6 +200,11 @@ const styles = StyleSheet.create({
   },
   notificationBody: {
     fontSize: 14,
+    marginBottom: 4,
+  },
+  companyInfo: {
+    fontSize: 13,
+    fontStyle: 'italic',
     marginBottom: 4,
   },
   notificationTime: {
