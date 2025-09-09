@@ -37,12 +37,7 @@ const NotificationListScreen = () => {
         ],
         { backgroundColor: selectedNotificationId === item._id ? theme.colors.primary : theme.colors.card },
       ]}
-      onPress={() => {
-        navigation.navigate('Countries', {
-          screen: 'BusinessDetail',
-          params: { businessId: item._id },
-        });
-      }}
+      onPress={() => { }}
     >
       {/* Logo */}
       {item.company?.logo && (
@@ -62,14 +57,44 @@ const NotificationListScreen = () => {
       {/* Text */}
       <View style={[styles.textContainer, layoutMode === 'grid' && styles.gridTextContainer]}>
         <Text style={[styles.notificationTitle, { color: theme.colors.text }]} numberOfLines={2}>
-          {item.title} ({item.category})
+          {item.title}
         </Text>
         <Text style={[styles.notificationBody, { color: theme.colors.text }]} numberOfLines={3}>
           {item.message}
         </Text>
-        <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
-          {item.company?.company_name} • {item.company?.company_type}
-        </Text>
+        <>
+          {item.category === 'warning'
+            ? (
+              <Icons.AntDesign name='warning' color={"#e49d22ff"} />
+            ) :
+            item.category === 'alert'
+              ? (
+                <Icons.Feather name='alert-circle' color={"#f34f4fff"} />
+              ) :
+              item.category === 'announcement'
+                ? (
+                  <Icons.MaterialIcons name='announcement' color={"#4fa1f3ff"} />
+                ) :
+                item.category === 'maintenance'
+                  ? (
+                    <Icons.MaterialCommunityIcons name='tools' color={"#e97735ff"} />
+                  ) :
+                  item.category === 'update'
+                    ? (
+                      <Icons.MaterialIcons name='update' color={"#3bf6e0ff"} />
+                    ) :
+                    item.category === 'reminder'
+                      ? (
+                        <Icons.MaterialIcons name='notifications-active' color={"#8e44adff"} />
+                      )
+                      : (
+                        <Icons.AntDesign name='infocirlceo' color={'#03ff20ff'} />
+                      )
+          }
+          <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
+            {item.company?.company_name} • {item.company?.company_type}
+          </Text>
+        </>
         <Text style={[styles.notificationTime, { color: theme.colors.text }]}>
           {new Date(item.startDate).toLocaleString()}
         </Text>
@@ -77,10 +102,8 @@ const NotificationListScreen = () => {
     </TouchableOpacity>
   );
 
-
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* {isLoading && <CustomLoader />} */}
       <View style={styles.headerContainer}>
         <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
         <TouchableOpacity onPress={toggleLayout} style={styles.toggleButton}>
@@ -104,19 +127,10 @@ const NotificationListScreen = () => {
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={(item, index) => `${item.id}-${index}`}
-          key={layoutMode} // Force re-render when layout changes
+          key={layoutMode}
           numColumns={layoutMode === 'grid' ? 2 : 1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
-        // refreshControl={
-        //   <RefreshControl
-        //     refreshing={refreshing}
-        //     onRefresh={onRefresh}
-        //     colors={[theme.colors.primary]}
-        //     tintColor="transparent"
-        //     progressBackgroundColor={theme.colors.card}
-        //   />
-        // }
         />
       )}
     </View>
