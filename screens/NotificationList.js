@@ -3,24 +3,16 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDim
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../context/appContext';
 import { Icons } from '../constants/Icons';
-import { mockNotifications } from '../utils/mockNotifications';
 
 const NotificationListScreen = () => {
-  const { theme } = React.useContext(AppContext);
+  const { theme, notifications } = useContext(AppContext);
   const route = useRoute();
   const listRef = useRef(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const { notifications } = useContext(AppContext);
   const selectedNotificationId = route.params?.notificationId;
   const [error, setError] = useState(null);
   const [layoutMode, setLayoutMode] = useState('list');
-
-  // Find company logo based on businessId
-  const getCompanyLogo = (businessId) => {
-    const company = mockNotifications.find((c) => c._id === businessId);
-    return company ? company.logo : null;
-  };
 
   const toggleLayout = () => {
     setLayoutMode((prev) => (prev === 'list' ? 'grid' : 'list'));
@@ -41,45 +33,70 @@ const NotificationListScreen = () => {
         styles.notificationItem,
         layoutMode === 'grid' && [
           styles.gridItem,
-          { width: (width - 48) / 2 }, // 48 accounts for padding and margins
+          { width: (width - 48) / 2 },
         ],
-        { backgroundColor: selectedNotificationId === item.id ? theme.colors.primary : theme.colors.card },
+        { backgroundColor: selectedNotificationId === item._id ? theme.colors.primary : theme.colors.card },
       ]}
-      onPress={() => {
-        if (item.data.url === 'BusinessDetail') {
-          navigation.navigate('Countries', {
-            screen: 'BusinessDetail',
-            params: { businessId: item.data.businessId },
-          });
-        }
-      }}
+      onPress={() => { }}
     >
-      {item.data.businessId && (
+      {/* Logo */}
+      {item.company?.logo && (
         <View style={[styles.logoContainer, layoutMode === 'grid' && styles.gridLogoContainer]}>
           <Image
-            source={getCompanyLogo(item.data.businessId)}
-            style={[styles.companyLogo, { borderColor: theme.colors.card, borderWidth: 1 }, layoutMode === 'grid' && styles.gridCompanyLogo]}
+            source={{ uri: item.company.logo }}
+            style={[
+              styles.companyLogo,
+              { borderColor: theme.colors.card, borderWidth: 1 },
+              layoutMode === 'grid' && styles.gridCompanyLogo,
+            ]}
             resizeMode="contain"
           />
         </View>
       )}
+
+      {/* Text */}
       <View style={[styles.textContainer, layoutMode === 'grid' && styles.gridTextContainer]}>
-        <Text
-          style={[styles.notificationTitle, { color: theme.colors.text }]}
-          numberOfLines={layoutMode === 'grid' ? 2 : 1}
-          ellipsizeMode="tail"
-        >
+        <Text style={[styles.notificationTitle, { color: theme.colors.text }]} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text
-          style={[styles.notificationBody, { color: theme.colors.text }]}
-          numberOfLines={layoutMode === 'grid' ? 3 : 2}
-          ellipsizeMode="tail"
-        >
-          {item.body}
+        <Text style={[styles.notificationBody, { color: theme.colors.text }]} numberOfLines={3}>
+          {item.message}
         </Text>
+        <>
+          {item.category === 'warning'
+            ? (
+              <Icons.AntDesign name='warning' color={"#e49d22ff"} />
+            ) :
+            item.category === 'alert'
+              ? (
+                <Icons.Feather name='alert-circle' color={"#f34f4fff"} />
+              ) :
+              item.category === 'announcement'
+                ? (
+                  <Icons.MaterialIcons name='announcement' color={"#4fa1f3ff"} />
+                ) :
+                item.category === 'maintenance'
+                  ? (
+                    <Icons.MaterialCommunityIcons name='tools' color={"#e97735ff"} />
+                  ) :
+                  item.category === 'update'
+                    ? (
+                      <Icons.MaterialIcons name='update' color={"#3bf6e0ff"} />
+                    ) :
+                    item.category === 'reminder'
+                      ? (
+                        <Icons.MaterialIcons name='notifications-active' color={"#8e44adff"} />
+                      )
+                      : (
+                        <Icons.AntDesign name='infocirlceo' color={'#03ff20ff'} />
+                      )
+          }
+          <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
+            {item.company?.company_name} • {item.company?.company_type}
+          </Text>
+        </>
         <Text style={[styles.notificationTime, { color: theme.colors.text }]}>
-          {new Date(item.timestamp).toLocaleString()}
+          {new Date(item.startDate).toLocaleString()}
         </Text>
       </View>
     </TouchableOpacity>
@@ -87,7 +104,6 @@ const NotificationListScreen = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* {isLoading && <CustomLoader />} */}
       <View style={styles.headerContainer}>
         <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
         <TouchableOpacity onPress={toggleLayout} style={styles.toggleButton}>
@@ -111,19 +127,10 @@ const NotificationListScreen = () => {
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={(item, index) => `${item.id}-${index}`}
-          key={layoutMode} // Force re-render when layout changes
+          key={layoutMode}
           numColumns={layoutMode === 'grid' ? 2 : 1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
-        // refreshControl={
-        //   <RefreshControl
-        //     refreshing={refreshing}
-        //     onRefresh={onRefresh}
-        //     colors={[theme.colors.primary]}
-        //     tintColor="transparent"
-        //     progressBackgroundColor={theme.colors.card}
-        //   />
-        // }
         />
       )}
     </View>
@@ -199,6 +206,11 @@ const styles = StyleSheet.create({
   },
   notificationBody: {
     fontSize: 14,
+    marginBottom: 4,
+  },
+  companyInfo: {
+    fontSize: 13,
+    fontStyle: 'italic',
     marginBottom: 4,
   },
   notificationTime: {

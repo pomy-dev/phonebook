@@ -101,7 +101,7 @@ const BusinessArticlesScreen = () => {
       }
     } catch (err) {
       console.error(`Error fetching ${contentType.toLowerCase()}:`, err);
-      setError(`Failed to load ${contentType.toLowerCase()}.`);
+      setError(`Failed to load ${contentType.toLowerCase()}`);
     } finally {
       setIsLoading(false);
     }
@@ -171,8 +171,8 @@ const BusinessArticlesScreen = () => {
 
   const companySocialMediaLinks = company.social_media?.map((link) => ({
     name: link.platform,
-    icon: link.platform === 'Facebook' ? "facebook" : link.platform === "Twitter" ? "twitter" : link.platform === "LinkedIn" ? "linkedin" : link.platform === "Instagram" ? "instagram" : "globe",
-    color: link.platform === 'Facebook' ? "#1877F2" : link.platform === "Twitter" ? "#1DA1F2" : link.platform === "LinkedIn" ? "#0077B5" : link.platform === "Instagram" ? "#C13584" : "#60A5FA",
+    icon: link.platform === 'Facebook' ? "logo-facebook" : link.platform === "Twitter" ? "logo-twitter" : link.platform === "X" ? "logo-twitter" : link.platform === "LinkedIn" ? "logo-linkedin" : link.platform === "Instagram" ? "logo-instagram" : link.platform === "YouTube" ? "logo-youtube" : link.platform === "TikTok" ? "logo-tiktok" : "globe-outline",
+    color: link.platform === 'Facebook' ? "#1877F2" : link.platform === "Twitter" ? "#1DA1F2" : link.platform === "X" ? "#1DA1F2" : link.platform === "LinkedIn" ? "#0077B5" : link.platform === "Instagram" ? "#C13584" : link.platform === "YouTube" ? "#f5254bff" : link.platform === "TikTok" ? "#812536ff" : "#60A5FA",
     url: link.link,
   })) || [];
 
@@ -411,7 +411,7 @@ const BusinessArticlesScreen = () => {
                   onPress={() => Linking.openURL(link.url)}
                   style={[styles.fabButton, { backgroundColor: link.color }]}
                 >
-                  <Icons.FontAwesome name={link.icon} size={20} color="#fff" />
+                  <Icons.Ionicons name={link.icon} size={20} color="#fff" />
                 </TouchableOpacity>
               </Animated.View>
             );
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: "absolute",
-    bottom: 60,
+    bottom: 50,
     right: 20,
     alignItems: "center",
     justifyContent: "center",
