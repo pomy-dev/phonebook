@@ -55,16 +55,6 @@ const HomeScreen = ({ navigation }) => {
   const scheduleNotification = async (title, body, data = {}) => {
     if (!notificationsEnabled) return;
     const notificationId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const notificationData = {
-      id: notificationId,
-      title,
-      body,
-      data,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Add to global notifications state
-    addNotification(notificationData);
 
     // Schedule notification
     await Notifications.scheduleNotificationAsync({
@@ -78,21 +68,34 @@ const HomeScreen = ({ navigation }) => {
   };
 
   // Function to simulate mock notifications one by one
-  const simulateNotifications = () => {
-    notifications.forEach((company, index) => {
+  const syncNotifications = () => {
+    console.log('is notifications enabled?', notificationsEnabled);
+    console.log('Notifications #', notifications.length);
+    if (!notificationsEnabled && notifications.length === 0) return;
+
+    notifications.forEach((notif, index) => {
       setTimeout(() => {
-        scheduleNotification(
-          `${company.company_name} - ${company.subscription_type}`,
-          `${company.company_type} company located at ${company.address}`,
-          { businessId: company._id }
-        );
-      }, index * 1000); // delay = 1 second * index
+        // Notification title & body
+        const title = `${notif.title}`;
+        const body = `${notif.message}`;
+
+        // Extra data for deep linking or later use
+        const data = {
+          notificationId: notif._id,
+          category: notif.category,
+          startDate: notif.startDate,
+          endDate: notif.endDate,
+        };
+
+        // Call your schedule function
+        scheduleNotification(title, body, data);
+      }, index * 1000); // stagger them 1s apart
     });
   };
 
   // Example: load notifications automatically on mount
   useEffect(() => {
-    simulateNotifications();
+    syncNotifications();
   }, [notifications, notificationsEnabled]);
 
   // Load favorites from AsyncStorage
@@ -226,12 +229,12 @@ const HomeScreen = ({ navigation }) => {
             'Using mock data as app is in offline mode.',
             { url: 'Tabs' }
           );
-          CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
+          // CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
         }
       }
 
       directoryCompanies = companyData.filter(
-        (company) => company.directory?.trim() === selectedState?.trim()
+        (company) => company.directory === selectedState?.trim()
       );
 
       if (directoryCompanies) {

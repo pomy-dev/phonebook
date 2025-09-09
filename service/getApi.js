@@ -389,6 +389,25 @@ export const fetchCompanyNews = async (companyId) => {
   }
 };
 
+export const fetchNotifications = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch notifications');
+    }
+    const notifications = await response.json();
+    return notifications;
+  } catch (err) {
+    console.error('Error fetching notifications:', err);
+    throw new Error(err.message);
+  }
+};
+
 // Helper function to load offline data
 export const loadOfflineData = async () => {
   try {

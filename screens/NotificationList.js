@@ -1,26 +1,20 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDimensions, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../context/appContext';
 import { Icons } from '../constants/Icons';
-import { mockNotifications } from '../utils/mockNotifications';
 
 const NotificationListScreen = () => {
-  const { theme } = React.useContext(AppContext);
+  const { theme, notifications } = useContext(AppContext);
   const route = useRoute();
   const listRef = useRef(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const { notifications } = useContext(AppContext);
   const selectedNotificationId = route.params?.notificationId;
   const [error, setError] = useState(null);
   const [layoutMode, setLayoutMode] = useState('list');
-
-  // Find company logo based on businessId
-  const getCompanyLogo = (businessId) => {
-    const company = mockNotifications.find((c) => c._id === businessId);
-    return company ? company.logo : null;
-  };
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const toggleLayout = () => {
     setLayoutMode((prev) => (prev === 'list' ? 'grid' : 'list'));
@@ -35,59 +29,118 @@ const NotificationListScreen = () => {
     }
   }, [selectedNotificationId, notifications]);
 
+  const handleNotificationPress = (item) => {
+    setSelectedNotification(item);
+    setModalVisible(true);
+  };
+
+  const renderCategoryIcon = (category) => {
+    switch (category) {
+      case 'warning':
+        return <Icons.AntDesign name='warning' color={"#e49d22ff"} />;
+      case 'alert':
+        return <Icons.Feather name='alert-circle' color={"#f34f4fff"} />;
+      case 'announcement':
+        return <Icons.MaterialIcons name='announcement' color={"#4fa1f3ff"} />;
+      case 'maintenance':
+        return <Icons.MaterialCommunityIcons name='tools' color={"#e97735ff"} />;
+      case 'update':
+        return <Icons.MaterialIcons name='update' color={"#3bf6e0ff"} />;
+      case 'reminder':
+        return <Icons.MaterialIcons name='notifications-active' color={"#8e44adff"} />;
+      default:
+        return <Icons.AntDesign name='infocirlceo' color={'#03ff20ff'} />;
+    }
+  };
+
   const renderNotification = ({ item }) => (
     <TouchableOpacity
       style={[
         styles.notificationItem,
         layoutMode === 'grid' && [
           styles.gridItem,
-          { width: (width - 48) / 2 }, // 48 accounts for padding and margins
+          { width: (width - 48) / 2 },
         ],
-        { backgroundColor: selectedNotificationId === item.id ? theme.colors.primary : theme.colors.card },
+        { backgroundColor: selectedNotificationId === item._id ? theme.colors.primary : theme.colors.card },
       ]}
-      onPress={() => {
-        if (item.data.url === 'BusinessDetail') {
-          navigation.navigate('Countries', {
-            screen: 'BusinessDetail',
-            params: { businessId: item.data.businessId },
-          });
-        }
-      }}
+      onPress={() => handleNotificationPress(item)}
     >
-      {item.data.businessId && (
+      {/* Logo */}
+      {item.company?.logo && (
         <View style={[styles.logoContainer, layoutMode === 'grid' && styles.gridLogoContainer]}>
           <Image
-            source={getCompanyLogo(item.data.businessId)}
-            style={[styles.companyLogo, { borderColor: theme.colors.card, borderWidth: 1 }, layoutMode === 'grid' && styles.gridCompanyLogo]}
+            source={{ uri: item.company.logo }}
+            style={[
+              styles.companyLogo,
+              { borderColor: theme.colors.card, borderWidth: 1 },
+              layoutMode === 'grid' && styles.gridCompanyLogo,
+            ]}
             resizeMode="contain"
           />
         </View>
       )}
+
+      {/* Text */}
       <View style={[styles.textContainer, layoutMode === 'grid' && styles.gridTextContainer]}>
-        <Text
-          style={[styles.notificationTitle, { color: theme.colors.text }]}
-          numberOfLines={layoutMode === 'grid' ? 2 : 1}
-          ellipsizeMode="tail"
-        >
+        <Text style={[styles.notificationTitle, { color: theme.colors.text }]} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text
-          style={[styles.notificationBody, { color: theme.colors.text }]}
-          numberOfLines={layoutMode === 'grid' ? 3 : 2}
-          ellipsizeMode="tail"
-        >
-          {item.body}
+        <Text style={[styles.notificationBody, { color: theme.colors.text }]} numberOfLines={3}>
+          {item.message}
+        </Text>
+        {renderCategoryIcon(item.category)}
+        <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
+          {item.company?.company_name} • {item.company?.company_type}
         </Text>
         <Text style={[styles.notificationTime, { color: theme.colors.text }]}>
-          {new Date(item.timestamp).toLocaleString()}
+          {new Date(item.startDate).toLocaleString()}
         </Text>
       </View>
     </TouchableOpacity>
   );
 
+  const renderModalContent = () => (
+    <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+      {/* Header with close button */}
+      <View style={[styles.modalHeader, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{selectedNotification?.title}</Text>
+        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+          <Icons.Ionicons name="close" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      <View style={styles.modalContent}>
+        {selectedNotification?.company?.logo && (
+          <View style={styles.modalLogoContainer}>
+            <Image
+              source={{ uri: selectedNotification.company.logo }}
+              style={styles.modalCompanyLogo}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+
+        <Text style={[styles.modalMessage, { color: theme.colors.text }]}>{selectedNotification?.message}</Text>
+
+        <View style={styles.modalCategoryContainer}>
+          {renderCategoryIcon(selectedNotification?.category)}
+          <Text style={[styles.modalCategoryText, { color: theme.colors.text }]}>Category: {selectedNotification?.category}</Text>
+        </View>
+
+        <Text style={[styles.modalCompanyInfo, { color: theme.colors.text }]}>
+          {selectedNotification?.company?.company_name} • {selectedNotification?.company?.company_type}
+        </Text>
+
+        <Text style={[styles.modalTime, { color: theme.colors.text }]}>
+          {new Date(selectedNotification?.startDate).toLocaleString()}
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* {isLoading && <CustomLoader />} */}
       <View style={styles.headerContainer}>
         <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
         <TouchableOpacity onPress={toggleLayout} style={styles.toggleButton}>
@@ -111,21 +164,40 @@ const NotificationListScreen = () => {
           data={notifications}
           renderItem={renderNotification}
           keyExtractor={(item, index) => `${item.id}-${index}`}
-          key={layoutMode} // Force re-render when layout changes
+          key={layoutMode}
           numColumns={layoutMode === 'grid' ? 2 : 1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
-        // refreshControl={
-        //   <RefreshControl
-        //     refreshing={refreshing}
-        //     onRefresh={onRefresh}
-        //     colors={[theme.colors.primary]}
-        //     tintColor="transparent"
-        //     progressBackgroundColor={theme.colors.card}
-        //   />
-        // }
         />
       )}
+
+      {/* Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalOverlayTouchable}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalSpacer} />
+          </TouchableOpacity>
+          <View style={[styles.modalWrapper, { width: width * 0.9 }]}>
+            {renderModalContent()}
+          </View>
+          <TouchableOpacity
+            style={styles.modalOverlayTouchable}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalSpacer} />
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -201,6 +273,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 4,
   },
+  companyInfo: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
   notificationTime: {
     fontSize: 12,
     opacity: 0.7,
@@ -214,6 +291,87 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 10,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOverlayTouchable: {
+    flex: 1,
+  },
+  modalSpacer: {
+    flex: 1,
+  },
+  modalWrapper: {
+    borderRadius: 12,
+    maxHeight: '80%',
+  },
+  modalContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CCCCCC',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalContent: {
+    padding: 16,
+  },
+  modalLogoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalCompanyLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+  },
+  modalMessage: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  modalCategoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalCategoryText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  modalCompanyInfo: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  modalTime: {
+    fontSize: 12,
+    opacity: 0.7,
   },
 });
 
