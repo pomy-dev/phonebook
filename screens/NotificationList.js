@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDimensions, Modal } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { AppContext } from '../context/appContext';
 import { Icons } from '../constants/Icons';
@@ -13,6 +13,8 @@ const NotificationListScreen = () => {
   const selectedNotificationId = route.params?.notificationId;
   const [error, setError] = useState(null);
   const [layoutMode, setLayoutMode] = useState('list');
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const toggleLayout = () => {
     setLayoutMode((prev) => (prev === 'list' ? 'grid' : 'list'));
@@ -27,6 +29,30 @@ const NotificationListScreen = () => {
     }
   }, [selectedNotificationId, notifications]);
 
+  const handleNotificationPress = (item) => {
+    setSelectedNotification(item);
+    setModalVisible(true);
+  };
+
+  const renderCategoryIcon = (category) => {
+    switch (category) {
+      case 'warning':
+        return <Icons.AntDesign name='warning' color={"#e49d22ff"} />;
+      case 'alert':
+        return <Icons.Feather name='alert-circle' color={"#f34f4fff"} />;
+      case 'announcement':
+        return <Icons.MaterialIcons name='announcement' color={"#4fa1f3ff"} />;
+      case 'maintenance':
+        return <Icons.MaterialCommunityIcons name='tools' color={"#e97735ff"} />;
+      case 'update':
+        return <Icons.MaterialIcons name='update' color={"#3bf6e0ff"} />;
+      case 'reminder':
+        return <Icons.MaterialIcons name='notifications-active' color={"#8e44adff"} />;
+      default:
+        return <Icons.AntDesign name='infocirlceo' color={'#03ff20ff'} />;
+    }
+  };
+
   const renderNotification = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -37,7 +63,7 @@ const NotificationListScreen = () => {
         ],
         { backgroundColor: selectedNotificationId === item._id ? theme.colors.primary : theme.colors.card },
       ]}
-      onPress={() => { }}
+      onPress={() => handleNotificationPress(item)}
     >
       {/* Logo */}
       {item.company?.logo && (
@@ -62,44 +88,55 @@ const NotificationListScreen = () => {
         <Text style={[styles.notificationBody, { color: theme.colors.text }]} numberOfLines={3}>
           {item.message}
         </Text>
-        <>
-          {item.category === 'warning'
-            ? (
-              <Icons.AntDesign name='warning' color={"#e49d22ff"} />
-            ) :
-            item.category === 'alert'
-              ? (
-                <Icons.Feather name='alert-circle' color={"#f34f4fff"} />
-              ) :
-              item.category === 'announcement'
-                ? (
-                  <Icons.MaterialIcons name='announcement' color={"#4fa1f3ff"} />
-                ) :
-                item.category === 'maintenance'
-                  ? (
-                    <Icons.MaterialCommunityIcons name='tools' color={"#e97735ff"} />
-                  ) :
-                  item.category === 'update'
-                    ? (
-                      <Icons.MaterialIcons name='update' color={"#3bf6e0ff"} />
-                    ) :
-                    item.category === 'reminder'
-                      ? (
-                        <Icons.MaterialIcons name='notifications-active' color={"#8e44adff"} />
-                      )
-                      : (
-                        <Icons.AntDesign name='infocirlceo' color={'#03ff20ff'} />
-                      )
-          }
-          <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
-            {item.company?.company_name} • {item.company?.company_type}
-          </Text>
-        </>
+        {renderCategoryIcon(item.category)}
+        <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
+          {item.company?.company_name} • {item.company?.company_type}
+        </Text>
         <Text style={[styles.notificationTime, { color: theme.colors.text }]}>
           {new Date(item.startDate).toLocaleString()}
         </Text>
       </View>
     </TouchableOpacity>
+  );
+
+  const renderModalContent = () => (
+    <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+      {/* Header with close button */}
+      <View style={[styles.modalHeader, { backgroundColor: theme.colors.card }]}>
+        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{selectedNotification?.title}</Text>
+        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+          <Icons.Ionicons name="close" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      <View style={styles.modalContent}>
+        {selectedNotification?.company?.logo && (
+          <View style={styles.modalLogoContainer}>
+            <Image
+              source={{ uri: selectedNotification.company.logo }}
+              style={styles.modalCompanyLogo}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+
+        <Text style={[styles.modalMessage, { color: theme.colors.text }]}>{selectedNotification?.message}</Text>
+
+        <View style={styles.modalCategoryContainer}>
+          {renderCategoryIcon(selectedNotification?.category)}
+          <Text style={[styles.modalCategoryText, { color: theme.colors.text }]}>Category: {selectedNotification?.category}</Text>
+        </View>
+
+        <Text style={[styles.modalCompanyInfo, { color: theme.colors.text }]}>
+          {selectedNotification?.company?.company_name} • {selectedNotification?.company?.company_type}
+        </Text>
+
+        <Text style={[styles.modalTime, { color: theme.colors.text }]}>
+          {new Date(selectedNotification?.startDate).toLocaleString()}
+        </Text>
+      </View>
+    </View>
   );
 
   return (
@@ -133,6 +170,34 @@ const NotificationListScreen = () => {
           contentContainerStyle={styles.list}
         />
       )}
+
+      {/* Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalOverlayTouchable}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalSpacer} />
+          </TouchableOpacity>
+          <View style={[styles.modalWrapper, { width: width * 0.9 }]}>
+            {renderModalContent()}
+          </View>
+          <TouchableOpacity
+            style={styles.modalOverlayTouchable}
+            activeOpacity={1}
+            onPress={() => setModalVisible(false)}
+          >
+            <View style={styles.modalSpacer} />
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -226,6 +291,87 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     marginBottom: 10,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOverlayTouchable: {
+    flex: 1,
+  },
+  modalSpacer: {
+    flex: 1,
+  },
+  modalWrapper: {
+    borderRadius: 12,
+    maxHeight: '80%',
+  },
+  modalContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#CCCCCC',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalContent: {
+    padding: 16,
+  },
+  modalLogoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalCompanyLogo: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+  },
+  modalMessage: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  modalCategoryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalCategoryText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  modalCompanyInfo: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  modalTime: {
+    fontSize: 12,
+    opacity: 0.7,
   },
 });
 
