@@ -4,7 +4,7 @@ import { API_BASE_URL } from "../config/env";
 export const fetchAllCompanies = async () => {
   try {
     let page = 1;
-    const limit = 20; // how many companies per request
+    const limit = 30; // how many companies per request
     let allCompanies = [];
     let totalPages = 1;
 
@@ -174,9 +174,18 @@ export const fetchPromotions = async (onPageFetched) => {
   try {
     // Map API promotion to UI-friendly format
     const mapPromotion = (item) => {
-      const validUntilDate = new Date(item.validUntil);
       const currentDate = new Date();
-      if (validUntilDate < currentDate) return null;
+
+      // Filter ads to include only those with validUntil >= currentDate
+      const validAds = item.ads.filter((adItem) => {
+        const adValidUntil = new Date(adItem.validUntil);
+        return adValidUntil >= currentDate;
+      });
+
+      // Only return the company object if it has at least one valid ad
+      if (validAds.length === 0) {
+        return null;
+      }
 
       return {
         id: item._id || "",
@@ -184,17 +193,14 @@ export const fetchPromotions = async (onPageFetched) => {
         logo: item.company_logo || "",
         company_type: item.company_type || "",
         email: item.email || "",
-        phone: item.phone,
+        phone: item.phone || [],
         address: item.address || "",
-        social_media: item.social_media,
-        promotions: item.ads.filter((adItem) => {
-          const adValidUntil = new Date(adItem.validUntil);
-          return adValidUntil >= currentDate;
-        }),
+        social_media: item.social_media || [],
+        promotions: validAds,
       };
     };
 
-    // Step 1: Fetch the first page (5 items for fast load)
+    // Step 1: Fetch the first page (10 items for fast load)
     const firstResponse = await fetch(
       `${API_BASE_URL}/api/ads?page=1&limit=10`,
       {
@@ -216,7 +222,7 @@ export const fetchPromotions = async (onPageFetched) => {
 
     let currentAds = firstData.promotions
       .map(mapPromotion)
-      .filter((item) => item !== null); // Remove expired promotions
+      .filter((item) => item !== null); // Remove companies with no valid ads
 
     // Trigger callback with initial data
     if (onPageFetched) {
@@ -252,9 +258,7 @@ export const fetchPromotions = async (onPageFetched) => {
 
           const newPromotions = pageData.promotions
             .map(mapPromotion)
-            .filter((item) => item !== null); // Remove expired promotions
-
-          // console.log(`Page ${currentPage} promotions:`, JSON.stringify(newPromotions, null, 2));
+            .filter((item) => item !== null); // Remove companies with no valid ads
 
           currentAds = [...currentAds, ...newPromotions];
 

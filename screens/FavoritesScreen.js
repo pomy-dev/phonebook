@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     StyleSheet,
     Text,
@@ -8,19 +8,19 @@ import {
     TouchableOpacity,
     Image,
     Alert,
-    Modal,
     ActivityIndicator,
     StatusBar,
     RefreshControl,
-    Linking
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icons } from '../constants/Icons';
 import { CustomModal } from '../components/customModal';
-import { useCallFunction } from '../components/customCallAlert'
+import { useCallFunction } from '../components/customCallAlert';
+import { AppContext } from '../context/appContext';
 import { handleBusinessPress, handleEmail, handleWhatsapp, handleLocation } from '../utils/callFunctions';
 
 export default function FavoritesScreen({ navigation }) {
+    const { theme, isDarkMode } = React.useContext(AppContext);
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -80,6 +80,10 @@ export default function FavoritesScreen({ navigation }) {
         setRefreshing(false);
     };
 
+    const onRefresh = useCallback(() => {
+        handleRefresh();
+    }, []);
+
     // Load favorites on component mount
     useEffect(() => {
         loadFavorites();
@@ -95,23 +99,24 @@ export default function FavoritesScreen({ navigation }) {
 
     // Render each favorite business item
     const renderFavoriteItem = ({ item }) => (
-        <TouchableOpacity onPress={() => onBusinessPress(item)}>
-            <View style={styles.favoriteCard}>
+        <TouchableOpacity
+            onPress={() => onBusinessPress(item)}>
+            <View style={[styles.favoriteCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
                 <View style={styles.favoriteHeader}>
                     <View style={styles.businessImageContainer}>
                         {item.logo ? (
                             <Image source={{ uri: item.logo }} style={styles.businessImage} resizeMode="cover" />
                         ) : (
-                            <View style={styles.businessInitialContainer}>
+                            <View style={[styles.businessInitialContainer, { color: theme.colors.background }]}>
                                 <Text style={styles.businessInitial}>{item.company_name.charAt(0)}</Text>
                             </View>
                         )}
                     </View>
 
                     <View style={styles.businessInfo}>
-                        <Text style={styles.businessName} numberOfLines={1} ellipsizeMode="tail">{item.company_name}</Text>
-                        <Text style={styles.businessCategory} numberOfLines={1} ellipsizeMode="tail">{item.company_type}</Text>
-                        <Text style={styles.businessAddress} numberOfLines={1} ellipsizeMode="tail">{item.address}</Text>
+                        <Text style={[styles.businessName, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{item.company_name}</Text>
+                        <Text style={[styles.businessCategory, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{item.company_type}</Text>
+                        <Text style={[styles.businessAddress, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{item.address}</Text>
                     </View>
 
                     <TouchableOpacity
@@ -131,53 +136,53 @@ export default function FavoritesScreen({ navigation }) {
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: theme.colors.secondary }]} />
 
                 <View style={styles.actionButtons}>
                     <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                         onPress={(e) => handleCall(item.phone, e)}
                     >
                         <Icons.Ionicons name="call-outline" size={18} color="#003366" />
-                        <Text style={styles.actionButtonText}>Call</Text>
+                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Call</Text>
                     </TouchableOpacity>
 
                     {item.phone && item.phone.some(p => p.phone_type === 'whatsApp') && (
                         <TouchableOpacity
-                            style={styles.actionButton}
+                            style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                             onPress={(e) => {
                                 e.stopPropagation();
                                 handleWhatsapp(item.phone);
                             }}
                         >
                             <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-                            <Text style={styles.actionButtonText}>WhatsApp</Text>
+                            <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>WhatsApp</Text>
                         </TouchableOpacity>
                     )}
 
                     <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, , { backgroundColor: theme.colors.secondary }]}
                         onPress={(e) => handleEmail(item.email, e)}
                     >
                         <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
-                        <Text style={styles.actionButtonText}>Email</Text>
+                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Email</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.actionButton}
+                        style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
                         onPress={(e) => handleLocation(item.address, e)}
                     >
                         <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
-                        <Text style={styles.actionButtonText}>Map</Text>
+                        <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Map</Text>
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
-                    style={styles.viewDetailsButton}
+                    style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
                     onPress={() => handleBusinessPress(item)}
                 >
-                    <Text style={styles.viewDetailsText}>View Details</Text>
-                    <Icons.Ionicons name="chevron-forward" size={16} color="#003366" />
+                    <Text style={[styles.viewDetailsText, { color: "#FFFF" }]}>View Details</Text>
+                    <Icons.Ionicons name="chevron-forward" size={16} color="#FFFF" />
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>
@@ -196,15 +201,15 @@ export default function FavoritesScreen({ navigation }) {
     const renderEmptyState = () => (
         <View style={styles.emptyContainer}>
             <Icons.Ionicons name="heart-outline" size={80} color="#DDDDDD" />
-            <Text style={styles.emptyTitle}>No Favorites Yet</Text>
-            <Text style={styles.emptySubtitle}>
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No Favorites Yet</Text>
+            <Text style={[styles.emptySubtitle, { color: theme.colors.secondary }]}>
                 Add businesses to your favorites for quick access
             </Text>
             <TouchableOpacity
                 style={styles.browseButton}
                 onPress={() => navigation.navigate("Home")}
             >
-                <Text style={styles.browseButtonText}>Browse Businesses</Text>
+                <Text style={[styles.browseButtonText, { color: theme.colors.text }]}>Browse Businesses</Text>
             </TouchableOpacity>
         </View>
     );
@@ -214,19 +219,19 @@ export default function FavoritesScreen({ navigation }) {
         <View style={styles.emptyContainer}>
             <Icons.Ionicons name="alert-circle-outline" size={80} color="#FF3B30" />
             <Text style={styles.errorTitle}>Something Went Wrong</Text>
-            <Text style={styles.emptySubtitle}>{error}</Text>
+            <Text style={[styles.emptySubtitle, { color: theme.colors.secondary }]}>{error}</Text>
             <TouchableOpacity
                 style={styles.retryButton}
                 onPress={loadFavorites}
             >
-                <Text style={styles.retryButtonText}>Try Again</Text>
+                <Text style={[styles.retryButtonText, { color: theme.colors.light }]}>Try Again</Text>
             </TouchableOpacity>
         </View>
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
             <AlertUI />
 
@@ -238,16 +243,16 @@ export default function FavoritesScreen({ navigation }) {
             />
 
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Favorites</Text>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Favorites</Text>
                 {favorites.length > 0 && (
-                    <Text style={styles.favoriteCount}>{favorites.length} {favorites.length === 1 ? 'business' : 'businesses'}</Text>
+                    <Text style={[styles.favoriteCount, { color: theme.colors.text }]}>{favorites.length} {favorites.length === 1 ? 'business' : 'businesses'}</Text>
                 )}
             </View>
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#003366" />
-                    <Text style={styles.loadingText}>Loading your favorites...</Text>
+                    <ActivityIndicator size="large" color={theme.colors.indicator} />
+                    <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading your favorites...</Text>
                 </View>
             ) : error ? (
                 renderErrorState()
@@ -259,8 +264,15 @@ export default function FavoritesScreen({ navigation }) {
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={renderEmptyState}
-                    refreshing={refreshing}
-                    onRefresh={handleRefresh}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[theme.colors.primary]}
+                            tintColor="transparent"
+                            progressBackgroundColor={theme.colors.card}
+                        />
+                    }
                 />
             )}
         </SafeAreaView>
@@ -270,7 +282,6 @@ export default function FavoritesScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
     },
     header: {
         paddingHorizontal: 24,
@@ -282,12 +293,10 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#333333',
         letterSpacing: -0.5,
     },
     favoriteCount: {
         fontSize: 14,
-        color: '#777777',
         marginTop: 2,
     },
     listContainer: {
@@ -363,7 +372,6 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: '#F0F0F0',
         marginVertical: 16,
     },
     actionButtons: {
@@ -375,7 +383,6 @@ const styles = StyleSheet.create({
     actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F8F8F8',
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 12,
@@ -383,7 +390,6 @@ const styles = StyleSheet.create({
     },
     actionButtonText: {
         fontSize: 13,
-        color: '#333333',
         marginLeft: 6,
         fontWeight: '500',
     },
@@ -392,7 +398,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 12,
-        backgroundColor: '#F0F4FF',
         borderRadius: 12,
     },
     viewDetailsText: {
@@ -411,7 +416,6 @@ const styles = StyleSheet.create({
     emptyTitle: {
         fontSize: 20,
         fontWeight: '600',
-        color: '#333333',
         marginTop: 24,
         marginBottom: 8,
     },
@@ -424,7 +428,6 @@ const styles = StyleSheet.create({
     },
     emptySubtitle: {
         fontSize: 16,
-        color: '#777777',
         textAlign: 'center',
         marginBottom: 32,
     },
@@ -437,7 +440,6 @@ const styles = StyleSheet.create({
     browseButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#FFFFFF',
     },
     retryButton: {
         backgroundColor: '#FF3B30',
@@ -457,7 +459,6 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         fontSize: 16,
-        color: '#777777',
         marginTop: 16,
     },
     modalOverlay: {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,15 +8,19 @@ import {
   StyleSheet,
   ImageBackground,
   TextInput,
-  Alert
+  Alert,
+  Linking,
+  StatusBar,
+  RefreshControl
 } from "react-native";
-import { useTheme, useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
 import { Icons } from "../constants/Icons";
 import CustomLoader from '../components/customLoader';
+import { AppContext } from "../context/appContext";
 import { fetchPromotions, fetchPublications } from "../service/getApi";
 
-const CompanyCard = ({ item, navigation, colors, contentType }) => {
+const CompanyCard = ({ item, navigation, theme, contentType }) => {
   const flatListRef = useRef(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const data = contentType === "Promotions" ? item.promotions : item.publications;
@@ -39,7 +43,7 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card }]}
+      style={[styles.card, { backgroundColor: theme.colors.card }]}
       onPress={() =>
         navigation.navigate("BusinessArticlesScreen", { company: item, contentType })
       }
@@ -53,10 +57,10 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
           resizeMode="contain"
         />
         <View style={styles.companyInfo}>
-          <Text style={[styles.companyName, { color: colors.text }]}>
+          <Text style={[styles.companyName, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">
             {item.company_name}
           </Text>
-          <Text style={[styles.companyIndustry, { color: colors.border }]}>
+          <Text style={[styles.companyIndustry, { color: theme.colors.border }]}>
             {item.company_type}
           </Text>
         </View>
@@ -72,9 +76,9 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
             imageStyle={styles.highlightImage}
             key={item._id}
           >
-            <View style={styles.highlightOverlay}>
-              <Text style={styles.highlightTeaser}>{item.teaser_message}</Text>
-              <Text style={styles.highlightDate}>
+            <View style={[styles.highlightOverlay, { backgroundColor: theme.colors.highlight }]}>
+              <Text style={[styles.highlightTeaser, { color: theme.colors.text }]}>{item.teaser_message}</Text>
+              <Text style={[styles.highlightDate, { color: theme.colors.text }]}>
                 {contentType === "Promotions"
                   ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
                     month: "short",
@@ -90,7 +94,7 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
             </View>
           </ImageBackground>
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -101,13 +105,14 @@ const CompanyCard = ({ item, navigation, colors, contentType }) => {
 };
 
 const PublicationScreen = () => {
-  const { colors } = useTheme();
+  const { isDarkMode, theme, isOnline } = useContext(AppContext);
   const navigation = useNavigation();
   const route = useRoute();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const contentType = route.params?.contentType || "Publications";
   const [isConnected, setIsConnected] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [promotions, setPromotions] = useState([]);
   const [publications, setPublications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -184,9 +189,42 @@ const PublicationScreen = () => {
     }
     setIsLoading(true);
     setError(null);
-    // load data
-    loadData()
+    loadData();
   };
+
+  // Handle refresh
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      if (contentType === "Promotions") {
+        const companyPromotions = await fetchPromotions();
+        setPromotions(companyPromotions.promotions);
+      } else {
+        const companyPublications = await fetchPublications();
+        setPublications(companyPublications.publications);
+      }
+    } catch (err) {
+      console.log("Refresh Error:", err.message);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Move useCallback above early returns
+  const onRefresh = useCallback(() => {
+    if (isOnline) {
+      handleRefresh();
+    } else {
+      Alert.alert(
+        "Online Mode is Disabled",
+        "Please turn on Wi-Fi or mobile data to get content.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Ok", style: "ok" },
+        ]
+      );
+    }
+  }, [isOnline]);
 
   // Select data based on contentType
   const data = contentType === "Promotions" ? promotions : publications;
@@ -200,18 +238,23 @@ const PublicationScreen = () => {
 
   if (!isConnected) {
     return (
-      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.noConnectionContainer, { backgroundColor: theme.colors.card }]}>
         <Icons.MaterialIcons
           name="signal-wifi-off"
           size={80}
-          color={colors.text}
+          color={theme.colors.text}
           style={styles.noConnectionIcon}
         />
-        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+        <Text style={[styles.noConnectionText, { color: theme.colors.text }]}>
           No Internet Connection
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={retryConnection}>
-          <Text style={styles.retryButtonText}>Turn On Wi-Fi or Data</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+          onPress={retryConnection}
+        >
+          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>
+            Turn On Wi-Fi or Data
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -219,9 +262,9 @@ const PublicationScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.noConnectionContainer, { backgroundColor: theme.colors.background }]}>
         <CustomLoader />
-        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+        <Text style={[styles.noConnectionText, { color: theme.colors.text }]}>
           Loading {contentType.toLowerCase()}...
         </Text>
       </View>
@@ -230,67 +273,57 @@ const PublicationScreen = () => {
 
   if (error) {
     return (
-      <View style={[styles.noConnectionContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.noConnectionContainer, { backgroundColor: theme.colors.background }]}>
         <Icons.MaterialIcons
           name="error-outline"
           size={80}
-          color={colors.text}
+          color={theme.colors.text}
           style={styles.noConnectionIcon}
         />
-        <Text style={[styles.noConnectionText, { color: colors.text }]}>
+        <Text style={[styles.noConnectionText, { color: theme.colors.text }]}>
           {error}
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={retryConnection}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+        <TouchableOpacity
+          style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+          onPress={retryConnection}
+        >
+          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>
+            Retry
+          </Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      if (contentType === "Promotions") {
-        const companyPromotions = await fetchPromotions();
-        setPromotions(companyPromotions.promotions)
-      } else {
-        const companyPublications = await fetchPublications();
-        setPublications(companyPublications.publications)
-      }
-    } catch (err) {
-      console.log("Refresh Error:", err.message);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
+
       <View style={styles.header}>
         <TouchableOpacity style={{ left: 10 }} onPress={() => navigation.goBack()}>
           <Icons.Ionicons
             name="arrow-back-outline"
             size={24}
-            color={colors.text}
+            color={theme.colors.text}
           />
         </TouchableOpacity>
-        <Text style={{ fontSize: 24, fontWeight: "700", left: "13%", color: colors.text }}>
+        <Text style={{ fontSize: 24, fontWeight: "700", left: "13%", color: theme.colors.text }}>
           {contentType === "Promotions" ? "Promotions/Adverts" : "Publications/Articles"}
         </Text>
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchWrapper}>
+        <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border }]}>
           <Icons.Ionicons
             name="search-outline"
             size={20}
-            color="#AAAAAA"
+            color={theme.colors.text}
             style={styles.searchIcon}
           />
           <TextInput
             placeholder="Filter by business..."
-            style={styles.searchInput}
-            placeholderTextColor="#AAAAAA"
+            style={[styles.searchInput, { color: theme.colors.text }]}
+            placeholderTextColor={theme.colors.text}
             value={searchQuery}
             onChangeText={setSearchQuery}
             numberOfLines={1}
@@ -304,20 +337,26 @@ const PublicationScreen = () => {
           <CompanyCard
             item={item}
             navigation={navigation}
-            colors={colors}
+            theme={theme}
             contentType={contentType}
           />
         )}
-        keyExtractor={(item) => item?.id}
-        contentContainerStyle={styles.listContainer}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
+        contentContainerStyle={[styles.listContainer, { backgroundColor: theme.colors.background }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={[styles.emptyText, { color: colors.text }]}>
+          <Text style={[styles.emptyText, { color: theme.colors.text }]}>
             No {contentType.toLowerCase()} available.
           </Text>
         }
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            progressBackgroundColor={theme.colors.card}
+          />
+        }
       />
     </View>
   );
@@ -362,7 +401,6 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingTop: 20,
     paddingBottom: 50,
-    backgroundColor: "#FFFFFF",
   },
   card: {
     borderRadius: 12,
@@ -408,17 +446,14 @@ const styles = StyleSheet.create({
   },
   highlightOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "space-between",
     padding: 12,
   },
   highlightTeaser: {
-    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "500",
   },
   highlightDate: {
-    color: "#E0E0E0",
     fontSize: 12,
     fontWeight: "400",
     textAlign: "right",
@@ -444,13 +479,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   retryButton: {
-    backgroundColor: "#003366",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
   },

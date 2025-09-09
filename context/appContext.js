@@ -19,11 +19,14 @@ export const AppProvider = ({ children }) => {
         const theme = await AsyncStorage.getItem('theme');
         const state = await AsyncStorage.getItem('selectedState');
         const online = await AsyncStorage.getItem('isOnline');
+        const notifEnabled = await AsyncStorage.getItem('notificationsEnabled');
+        const notifList = await AsyncStorage.getItem('notifications');
 
-        if (theme !== null) setIsDarkMode(JSON.parse(theme));
-        if (state !== null) setSelectedState(JSON.parse(state));
-        if (notifications !== null) setNotificationsEnabled(JSON.parse(notifications));
-        if (online !== null) setIsOnline(JSON.parse(online));
+        if (theme) setIsDarkMode(JSON.parse(theme));
+        if (state) setSelectedState(JSON.parse(state));
+        if (online) setIsOnline(JSON.parse(online));
+        if (notifEnabled) setNotificationsEnabled(JSON.parse(notifEnabled));
+        if (notifList) setNotifications(JSON.parse(notifList));
       } catch (error) {
         console.log('Error loading settings:', error);
       }
@@ -41,9 +44,9 @@ export const AppProvider = ({ children }) => {
     AsyncStorage.setItem('selectedState', JSON.stringify(selectedState));
   }, [selectedState]);
 
-  // Persist notifications
+  // Persist notificationsEnabled flag
   useEffect(() => {
-    AsyncStorage.setItem('notifications', JSON.stringify(notificationsEnabled));
+    AsyncStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled));
   }, [notificationsEnabled]);
 
   // Persist online status
@@ -51,14 +54,19 @@ export const AppProvider = ({ children }) => {
     AsyncStorage.setItem('isOnline', JSON.stringify(isOnline));
   }, [isOnline]);
 
+  // Persist notifications array
+  useEffect(() => {
+    AsyncStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
   const toggleNotifications = () => setNotificationsEnabled(!notificationsEnabled);
   const toggleOnlineMode = () => setIsOnline(!isOnline);
 
   const theme = isDarkMode ? CustomDarkTheme : CustomLightTheme;
-  // Function to add a new notification
+
   const addNotification = (notification) => {
-    setNotifications((prev) => [notification, ...prev]); // Add new notification to the start
+    setNotifications((prev) => [notification, ...prev]);
   };
 
   return (

@@ -25,7 +25,6 @@ Notifications.setNotificationHandler({
   }),
 });
 
-
 const Drawer = createDrawerNavigator();
 
 // Request notification permissions
@@ -117,15 +116,15 @@ function AppContent() {
         style={{
           height: 60,
           width: '90%',
-          backgroundColor: isDarkMode ? '#FFFFFF' : 'rgba(247, 245, 245, 0.99)',
+          backgroundColor: theme.colors.background,
           borderRadius: 10,
           padding: 10,
           justifyContent: 'center',
           borderWidth: 1,
-          borderLeftColor: '#003366',
-          borderTopColor: '#CCCCCC',
-          borderRightColor: '#CCCCCC',
-          borderBottomColor: '#CCCCCC',
+          borderLeftColor: theme.colors.indicator,
+          borderTopColor: theme.colors.secondary,
+          borderRightColor: theme.colors.secondary,
+          borderBottomColor: theme.colors.secondary,
           borderLeftWidth: 4,
           zIndex: 9999,
           elevation: 9999,
@@ -139,6 +138,8 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
+      {/* <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} /> */}
+
       {!isAppReady ? (
         <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
       ) : (
@@ -149,8 +150,8 @@ function AppContent() {
                 <CustomDrawerContent
                   {...props}
                   states={[
-                    { id: 'Business eSwatini', name: 'Business Eswatini', coatOfArmsIcon: Images.bs_eswatini, flagIcon: 'flag-outline' },
-                    { id: 'E.P.T.C', name: 'E.P.T.C', coatOfArmsIcon: Images.eptc, flagIcon: 'flag-outline' },
+                    { id: 'bs_eswatini', name: 'Business eSwatini', coatOfArmsIcon: Images.bs_eswatini, flagIcon: 'flag-outline' },
+                    { id: 'eptc', name: 'E.P.T.C', coatOfArmsIcon: Images.eptc, flagIcon: 'flag-outline' },
                   ]}
                   selectedState={selectedState}
                   setSelectedState={setSelectedState}
