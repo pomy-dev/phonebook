@@ -18,6 +18,7 @@ import {
   fetchAllCompanies,
   fetchAllCompaniesOffline,
   fetchCompaniesWithAge,
+  fetchAllNotifications,
 } from '../service/getApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkNetworkConnectivity } from '../service/checkNetwork';
@@ -179,7 +180,7 @@ const HomeScreen = ({ navigation }) => {
         handleRefresh();
       }
     };
-
+    fetchAllNotifications();
     initializeData();
   }, []);
 

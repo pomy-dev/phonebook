@@ -298,6 +298,30 @@ export const fetchCompanyAds = async (companyId) => {
   }
 }
 
+//fetching notifications
+export const fetchAllNotifications = async (companyId) => {
+  try {
+  
+    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch promotions22');
+    }
+    const fetchedNotifications = await response.json();
+
+    console.log('===================================')
+    console.log('===================================')
+    console.log(fetchedNotifications)
+
+    return fetchedNotifications;
+  } catch (err) {
+    console.error('Error fetching notifications:', err.message);
+    throw new Error(err.message)
+  }
+}
+
 export const fetchCompanyNews = async (companyId) => {
   try {
     if (!companyId) {
@@ -333,3 +357,6 @@ export const loadOfflineData = async () => {
     console.log("Offline Data Error:", err.message);
   }
 };
+
+
+
