@@ -3,6 +3,7 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import { Icons } from '../constants/Icons';
 import { AppContext } from '../context/appContext';
 import React from 'react';
+import { LoaderKitView } from 'react-native-loader-kit';
 
 export default function CustomLoader() {
   const { theme, selectedState, isDarkMode } = React.useContext(AppContext);
@@ -24,9 +25,15 @@ export default function CustomLoader() {
 
   return (
     <View style={styles.fullScreenContainer}>
-      <Animated.View style={animatedStyle}>
-        <Icons.EvilIcons name="spinner" size={50} color={theme.colors.indicator} />
-      </Animated.View>
+      <LoaderKitView
+        style={{ width: 50, height: 50 }}
+        name="BallSpinFadeLoader"
+        color={theme.colors.indicator}
+        animationSpeedMultiplier={1.0}
+      />
+      {/* <Animated.View style={animatedStyle}> */}
+      {/* <Icons.EvilIcons name="spinner" size={50} color={theme.colors.indicator} /> */}
+      {/* </Animated.View> */}
     </View>
   );
 }

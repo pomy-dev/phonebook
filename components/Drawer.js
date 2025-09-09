@@ -1,4 +1,3 @@
-// CustomDrawerContent.js
 import { useContext, useRef, useState } from 'react';
 import {
   View,
