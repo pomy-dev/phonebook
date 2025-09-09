@@ -336,7 +336,7 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
-      {/* Custom Loader */}
+      {/* Custom Loader    */}
       {isLoading && <CustomLoader />}
 
       {/* Upgrade Modal for Bronze Businesses */}
