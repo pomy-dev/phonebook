@@ -50,6 +50,28 @@ export const AppProvider = ({ children }) => {
     loadApiNotifications();
   }, [isOnline, notificationsEnabled]);
 
+  // =================================Persist values when they change===================================
+
+  // Persist theme
+  useEffect(() => {
+    AsyncStorage.setItem('theme', JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  // Persist selectedState
+  useEffect(() => {
+    AsyncStorage.setItem('selectedState', JSON.stringify(selectedState));
+  }, [selectedState]);
+
+  // Persist isOnline
+  useEffect(() => {
+    AsyncStorage.setItem('isOnline', JSON.stringify(isOnline));
+  }, [isOnline]);
+
+  // Persist notificationsEnabled
+  useEffect(() => {
+    AsyncStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled));
+  }, [notificationsEnabled]);
+
   // Persist notifications
   useEffect(() => {
     AsyncStorage.setItem('notifications', JSON.stringify(notifications));

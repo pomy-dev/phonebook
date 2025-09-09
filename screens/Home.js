@@ -52,18 +52,8 @@ const HomeScreen = ({ navigation }) => {
 
   // Function to schedule and store a notification
   const scheduleNotification = async (title, body, data = {}) => {
-    // if (!notificationsEnabled) return;
+    if (!notificationsEnabled) return;
     const notificationId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    // const notificationData = {
-    //   id: notificationId,
-    //   title,
-    //   body,
-    //   data,
-    //   timestamp: new Date().toISOString(),
-    // };
-
-    // Add to global notifications state
-    // addNotification(notificationData);
 
     // Schedule notification
     await Notifications.scheduleNotificationAsync({
@@ -85,16 +75,12 @@ const HomeScreen = ({ navigation }) => {
     notifications.forEach((notif, index) => {
       setTimeout(() => {
         // Notification title & body
-        const title = `${notif.title} (${notif.category})`;
+        const title = `${notif.title}`;
         const body = `${notif.message}`;
-        // const body = `${notif.message}\n ${notif.company.company_name} - ${notif.company.company_type}\nStarts: ${new Date(notif.startDate).toLocaleDateString()}`;
 
         // Extra data for deep linking or later use
         const data = {
           notificationId: notif._id,
-          // company_name: notif.company.company_name,
-          // logo: notif.company.logo,
-          // company_type: notif.company.company_type,
           category: notif.category,
           startDate: notif.startDate,
           endDate: notif.endDate,
