@@ -53,7 +53,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/pics/notification.png",
+          "icon": "./assets/adaptive-icon.png",
           "color": "#003366",
           "sounds": [],
           "mode": "production",

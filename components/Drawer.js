@@ -23,7 +23,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
   const fadeAnims = useRef(states.map(() => new Animated.Value(1))).current;
   const scaleAnims = useRef(states.map(() => new Animated.Value(1))).current;
   const [modalVisible, setModalVisible] = useState(false);
-  const [pickerValue, setPickerValue] = useState(selectedState || 'E.P.T.C');
+  const [pickerValue, setPickerValue] = useState(selectedState);
 
   const handlePressIn = (index) => {
     Animated.parallel([
@@ -55,7 +55,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
     ]).start();
   };
 
-  const selectedStateData = states.find((state) => state.name === (selectedState || 'E.P.T.C'));
+  const selectedStateData = states.find((state) => state.name === (selectedState));
   const emblemSource = selectedStateData ? selectedStateData.coatOfArmsIcon : Images.eptc;
 
   const renderPickerItem = ({ item }) => (
@@ -197,7 +197,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
         </Animated.View>
 
         <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Preferences</Text>
-        
+
         <View style={styles.drawerItem}>
           <Icons.Ionicons
             name={isDarkMode ? 'moon' : 'sunny'}
@@ -239,11 +239,11 @@ const CustomDrawerContent = ({ states, navigation }) => {
             color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
             style={styles.icon}
           />
-          
+
           <Text style={[styles.itemText, isDarkMode && styles.darkText]}>
             {isOnline ? 'Online' : 'Offline'}
           </Text>
-          
+
           <Switch
             value={isOnline}
             onValueChange={toggleOnlineMode}
