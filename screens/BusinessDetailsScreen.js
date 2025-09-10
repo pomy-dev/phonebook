@@ -737,8 +737,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               onPress={handleCall}
               activeOpacity={0.8}
             >
-              <Icons.Ionicons name="call" size={18} color={theme.colors.text} />
-              <Text style={[styles.primaryActionText, { color: theme.colors.text }]}>Call Now</Text>
+              <Icons.Ionicons name="call" size={18} color="#CCC" />
+              <Text style={[styles.primaryActionText, { color: "#CCC" }]}>Call Now</Text>
             </TouchableOpacity>
 
             <View style={styles.secondaryActionsRow}>
