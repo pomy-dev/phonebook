@@ -8,10 +8,11 @@ export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedState, setSelectedState] = useState('E.P.T.C');
+  const [selectedState, setSelectedState] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Load persisted state + fetch fresh notifications
   useEffect(() => {
@@ -19,6 +20,8 @@ export const AppProvider = ({ children }) => {
       try {
         const theme = await AsyncStorage.getItem('theme');
         const state = await AsyncStorage.getItem('selectedState');
+        state ? setSelectedState(JSON.parse(state)) : setSelectedState('E.P.T.C');
+
         const online = await AsyncStorage.getItem('isOnline');
         const notifEnabled = await AsyncStorage.getItem('notificationsEnabled');
         const notifList = await AsyncStorage.getItem('notifications');
@@ -28,8 +31,11 @@ export const AppProvider = ({ children }) => {
         if (online) setIsOnline(JSON.parse(online));
         if (notifEnabled) setNotificationsEnabled(JSON.parse(notifEnabled));
         if (notifList) setNotifications(JSON.parse(notifList));
+
       } catch (error) {
         console.log('Error loading settings:', error);
+      } finally {
+        setLoading(false);
       }
     };
     loadSettings();
@@ -86,6 +92,8 @@ export const AppProvider = ({ children }) => {
   const addNotification = (notification) => {
     setNotifications((prev) => [notification, ...prev]);
   };
+
+  if (loading) return null;
 
   return (
     <AppContext.Provider

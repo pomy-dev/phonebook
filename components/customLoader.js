@@ -1,32 +1,19 @@
-import Animated, { useSharedValue, withRepeat, withTiming, useAnimatedStyle, Easing } from 'react-native-reanimated';
 import { View, StyleSheet, Dimensions } from 'react-native';
-import { Icons } from '../constants/Icons';
 import { AppContext } from '../context/appContext';
 import React from 'react';
+import { LoaderKitView } from 'react-native-loader-kit';
 
 export default function CustomLoader() {
-  const { theme, selectedState, isDarkMode } = React.useContext(AppContext);
-  const rotation = useSharedValue(0);
-
-  React.useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, { duration: 1000, easing: Easing.linear }),
-      -1, // infinite
-      false // do not reverse
-    );
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ rotate: `${rotation.value}deg` }],
-    };
-  });
+  const { theme } = React.useContext(AppContext);
 
   return (
     <View style={styles.fullScreenContainer}>
-      <Animated.View style={animatedStyle}>
-        <Icons.EvilIcons name="spinner" size={50} color={theme.colors.indicator} />
-      </Animated.View>
+      <LoaderKitView
+        style={{ width: 50, height: 50 }}
+        name="BallSpinFadeLoader"
+        color={theme.colors.indicator}
+        animationSpeedMultiplier={1.0}
+      />
     </View>
   );
 }

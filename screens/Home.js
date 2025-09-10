@@ -9,6 +9,7 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
+  FlatList,
   StyleSheet,
   Alert,
   RefreshControl,
@@ -28,12 +29,11 @@ import { CustomModal } from '../components/customModal';
 import { useCallFunction } from '../components/customCallAlert';
 import { AppContext } from '../context/appContext';
 import * as Notifications from 'expo-notifications';
-import { mockNotifications } from '../utils/mockNotifications'
 import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from '../utils/callFunctions';
 import CustomCard from '../components/customCard';
 
 const HomeScreen = ({ navigation }) => {
-  const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, addNotification, notifications } = useContext(AppContext);
+  const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, notifications } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
@@ -175,7 +175,7 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    loadBusinesses(isRefreshing);
+    loadBusinesses(selectedState, isRefreshing);
   }, [selectedState, isOnline]); // Add selectedState as a dependency to reload businesses when state changes
 
   useEffect(() => {
@@ -212,50 +212,43 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const loadBusinesses = async (isRefresh) => {
+  const loadBusinesses = async (companyDirectory, isRefresh) => {
+    console.log('Loading businesses for directory:', companyDirectory);
     try {
       isRefresh ? setIsRefreshing(true) : setIsLoading(true);
-      let directoryCompanies;
       let companyData;
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
         companyData = isConnected ? await fetchAllCompanies() : await fetchAllCompaniesOffline();
       } else {
         companyData = await fetchAllCompaniesOffline();
-        if (notificationsEnabled) {
-          scheduleNotification(
-            'Offline Mode',
-            'Using mock data as app is in offline mode.',
-            { url: 'Tabs' }
-          );
-          // CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
-        }
+        notificationsEnabled &&
+          CustomToast('Offline Mode', 'Using cached data as app is in offline mode.')
       }
 
-      directoryCompanies = companyData.filter(
-        (company) => company.directory === selectedState?.trim()
+      const companies = companyData.filter(
+        (company) => company.directory === companyDirectory?.trim()
+      ) || [];
+
+      const featuredBusinesses = companies.filter(
+        (company) => company.subscription_type === 'Gold'
       );
 
-      if (directoryCompanies) {
-        const featuredBusinesses = directoryCompanies.filter(
-          (company) => company.subscription_type === 'Gold'
-        );
-        const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
+      const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
-        const nonGoldCompanies = directoryCompanies.filter(
-          (company) => company.subscription_type !== 'Gold'
-        );
+      const nonGoldCompanies = companies.filter(
+        (company) => company.subscription_type !== 'Gold'
+      );
 
-        setAllBusinesses(nonGoldCompanies);
+      setAllBusinesses(nonGoldCompanies);
 
-        const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
-        const regularBusinesses = shuffledNonGold.slice(0, 5);
+      const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
+      const regularBusinesses = shuffledNonGold.slice(0, 5);
 
-        setFeaturedBusinesses(shuffledFeatured);
-        setBusinesses(regularBusinesses);
-        setFilteredBusinesses(regularBusinesses);
-        filterBusinesses(nonGoldCompanies, activeCategory, searchQuery);
-      }
+      setFeaturedBusinesses(shuffledFeatured);
+      setBusinesses(regularBusinesses);
+      setFilteredBusinesses(regularBusinesses);
+      filterBusinesses(nonGoldCompanies, activeCategory, searchQuery);
 
     } catch (err) {
       console.log(err.message);
@@ -284,10 +277,14 @@ const HomeScreen = ({ navigation }) => {
         if (isConnected) {
           try {
             const companyData = await fetchAllCompanies();
-            const featuredBusinesses = companyData.filter(
+            const companies = companyData.filter(
+              (company) => company.directory === selectedState?.trim()
+            ) || [];
+
+            const featuredBusinesses = companies.filter(
               (company) => company.subscription_type === 'Gold'
             );
-            const nonGoldCompanies = companyData.filter(
+            const nonGoldCompanies = companies.filter(
               (company) => company.subscription_type !== 'Gold'
             );
 
@@ -300,26 +297,26 @@ const HomeScreen = ({ navigation }) => {
             setLastRefresh('Last refresh was just now');
           } catch (err) {
             console.log('API Error:', err.message);
-            await loadBusinesses(isRefreshing);
+            await loadBusinesses(selectedState, isRefreshing);
             setLastRefresh('Using cached data (network unavailable)');
             notificationsEnabled &&
               CustomToast('Network Error', 'Failed to fetch new data. Using cached data.');
           }
         } else {
-          await loadBusinesses(isRefreshing);
+          await loadBusinesses(selectedState, isRefreshing);
           setLastRefresh('Using cached data (offline mode)');
           notificationsEnabled &&
             CustomToast('Offline Mode', 'No network connection. Using cached data.');
         }
       } else {
-        await loadBusinesses(isRefreshing);
+        await loadBusinesses(selectedState, isRefreshing);
         setLastRefresh('Using cached data (offline mode)');
         notificationsEnabled &&
           CustomToast('Offline Mode', 'App is in offline mode. Using cached data.');
       }
     } catch (err) {
       console.log('General Error:', err.message);
-      await loadBusinesses(isRefreshing);
+      await loadBusinesses(selectedState, isRefreshing);
       setLastRefresh('Using cached data');
       notificationsEnabled &&
         CustomToast('Error', 'An error occurred. Using cached data.');
@@ -497,6 +494,7 @@ const HomeScreen = ({ navigation }) => {
               {filteredBusinesses.length > 0 ? (
                 filteredBusinesses.map((item, index) => (
                   <CustomCard
+                    key={item._id}
                     business={item}
                     index={index}
                     theme={theme}

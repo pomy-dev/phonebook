@@ -4,6 +4,7 @@ import {
   Text,
   StatusBar,
   TouchableOpacity,
+  FlatList,
   ScrollView,
   SafeAreaView,
   StyleSheet,
@@ -115,6 +116,21 @@ const FeaturedScreen = ({ route, navigation }) => {
     }, 1000);
   }, []);
 
+  const renderBusinessItem = ({ item }) => (
+    <CustomCard
+      business={item}
+      index={item._id}
+      theme={theme}
+      onBusinessPress={onBusinessPress}
+      toggleFavorite={toggleFavorite}
+      isInFavorites={isInFavorites}
+      handleCall={handleCall}
+      handleEmail={handleEmail}
+      handleWhatsapp={handleWhatsapp}
+      handleLocation={handleLocation}
+    />
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
@@ -132,8 +148,21 @@ const FeaturedScreen = ({ route, navigation }) => {
         <View style={styles.placeholder} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}
+      <FlatList
+        data={featuredBusinesses}
+        keyExtractor={(item, index) => `${item._id}-${index}`}
+        renderItem={renderBusinessItem}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.noResultsContainer}>
+            <Icons.Ionicons name="business-outline" size={48} color="#DDDDDD" />
+            <Text style={styles.noResultsText}>No businesses found</Text>
+            <Text style={styles.noResultsSubtext}>
+              Try a different search term
+            </Text>
+          </View>
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -143,22 +172,7 @@ const FeaturedScreen = ({ route, navigation }) => {
             progressBackgroundColor={theme.colors.card}
           />
         }
-      >
-        {featuredBusinesses.map((business) => (
-          <CustomCard
-            business={business}
-            index={index}
-            theme={theme}
-            onBusinessPress={onBusinessPress}
-            toggleFavorite={toggleFavorite}
-            isInFavorites={isInFavorites}
-            handleCall={handleCall}
-            handleEmail={handleEmail}
-            handleWhatsapp={handleWhatsapp}
-            handleLocation={handleLocation}
-          />
-        ))}
-      </ScrollView>
+      />
     </SafeAreaView>
   )
 }
@@ -182,6 +196,22 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "bold",
+  },
+  noResultsContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  noResultsText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666666",
+    marginTop: 16,
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: "#999999",
+    marginTop: 4,
   },
   placeholder: {
     width: 32,

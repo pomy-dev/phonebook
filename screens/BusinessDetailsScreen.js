@@ -658,7 +658,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
             <View style={styles.businessInfoContent}>
               <Text style={[styles.businessName, { color: theme.colors.text }]} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
-              <Text style={[styles.businessCategory, { color: theme.colors.secondary }]} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
+              <Text style={[styles.businessCategory, { color: theme.colors.sub_text }]} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
               {/* <TouchableOpacity
                 style={styles.ratingContainer}
                 onPress={toggleRatingDetails}

@@ -60,7 +60,7 @@ const CompanyCard = ({ item, navigation, theme, contentType }) => {
           <Text style={[styles.companyName, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">
             {item.company_name}
           </Text>
-          <Text style={[styles.companyIndustry, { color: theme.colors.border }]}>
+          <Text style={[styles.companyIndustry, { color: theme.colors.sub_text }]}>
             {item.company_type}
           </Text>
         </View>
@@ -77,8 +77,8 @@ const CompanyCard = ({ item, navigation, theme, contentType }) => {
             key={item._id}
           >
             <View style={[styles.highlightOverlay, { backgroundColor: theme.colors.highlight }]}>
-              <Text style={[styles.highlightTeaser, { color: theme.colors.text }]}>{item.teaser_message}</Text>
-              <Text style={[styles.highlightDate, { color: theme.colors.text }]}>
+              <Text style={[styles.highlightTeaser, { color: "#CCC" }]}>{item.teaser_message}</Text>
+              <Text style={[styles.highlightDate, { color: "#CCC" }]}>
                 {contentType === "Promotions"
                   ? `Valid until ${new Date(item.validUntil).toLocaleDateString("en-US", {
                     month: "short",
@@ -450,8 +450,8 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   highlightTeaser: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 17,
+    fontWeight: "700",
   },
   highlightDate: {
     fontSize: 12,
