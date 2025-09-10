@@ -84,7 +84,8 @@ export const fetchCompaniesWithAge = async () => {
 export const fetchPublications = async (onPageFetched) => {
   try {
     // Fetch the first page (3 items for fast UI load)
-    const firstResponse = await fetch(`${API_BASE_URL}/api/news?page=1&limit=10`,
+    const firstResponse = await fetch(
+      `${API_BASE_URL}/api/news?page=1&limit=10`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },
@@ -92,7 +93,9 @@ export const fetchPublications = async (onPageFetched) => {
     );
 
     if (!firstResponse.ok) {
-      throw new Error(`Network response was not ok: ${firstResponse.statusText}`);
+      throw new Error(
+        `Network response was not ok: ${firstResponse.statusText}`
+      );
     }
 
     const firstData = await firstResponse.json();
@@ -130,7 +133,9 @@ export const fetchPublications = async (onPageFetched) => {
           );
 
           if (!res.ok) {
-            console.warn(`Failed to fetch page ${currentPage}: ${res.statusText}`);
+            console.warn(
+              `Failed to fetch page ${currentPage}: ${res.statusText}`
+            );
             break;
           }
 
@@ -149,7 +154,10 @@ export const fetchPublications = async (onPageFetched) => {
           }));
 
           allPublications = [...allPublications, ...newPublications];
-          console.log(`Fetched page ${currentPage}, total publications:`, allPublications.length);
+          console.log(
+            `Fetched page ${currentPage}, total publications:`,
+            allPublications.length
+          );
 
           // Trigger callback with updated data
           if (onPageFetched) {
@@ -210,7 +218,9 @@ export const fetchPromotions = async (onPageFetched) => {
     );
 
     if (!firstResponse.ok) {
-      throw new Error(`Network response was not ok: ${firstResponse.statusText}`);
+      throw new Error(
+        `Network response was not ok: ${firstResponse.statusText}`
+      );
     }
 
     const firstData = await firstResponse.json();
@@ -245,14 +255,18 @@ export const fetchPromotions = async (onPageFetched) => {
           );
 
           if (!res.ok) {
-            console.warn(`Failed to fetch page ${currentPage}: ${res.statusText}`);
+            console.warn(
+              `Failed to fetch page ${currentPage}: ${res.statusText}`
+            );
             break;
           }
 
           const pageData = await res.json();
 
           if (!pageData.promotions || !Array.isArray(pageData.promotions)) {
-            console.warn(`Invalid API response for page ${currentPage}: promotions is not an array`);
+            console.warn(
+              `Invalid API response for page ${currentPage}: promotions is not an array`
+            );
             break;
           }
 
@@ -286,12 +300,15 @@ export const fetchCompanyAds = async (companyId) => {
     if (!companyId) {
       return res.status(400).json({ message: "Company ID is required" });
     }
-    const response = await fetch(`${API_BASE_URL}/api/companyAds?companyId=${companyId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/companyAds?companyId=${companyId}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
     if (!response.ok) {
-      throw new Error('Failed to fetch promotions');
+      throw new Error("Failed to fetch promotions");
     }
     const fetchedPromotions = await response.json();
 
@@ -308,13 +325,16 @@ export const fetchCompanyNews = async (companyId) => {
       return res.status(400).json({ message: "Company ID is required" });
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/companyNews?companyId=${companyId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/companyNews?companyId=${companyId}`,
+      {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch publications');
+      throw new Error("Failed to fetch publications");
     }
 
     const fetchedPublications = await response.json();
@@ -324,7 +344,7 @@ export const fetchCompanyNews = async (companyId) => {
     console.error('Error fetching publications:', err);
     // throw new Error(err.message)
   }
-}
+};
 
 export const fetchNotifications = async () => {
   try {

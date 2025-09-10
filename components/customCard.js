@@ -155,6 +155,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 12,
+    backgroundColor: "#FFFFFF",
   },
   businessInitialContainer: {
     width: 60,

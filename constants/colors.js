@@ -25,6 +25,7 @@ export const CustomDarkTheme = {
   colors: {
     ...DarkTheme.colors,
     primary: '#003366',
+    primary2: '#151775ff',
     background: '#1E293B',
     secondary: '#CCCC',
     card: '#415970ff',

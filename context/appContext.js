@@ -89,8 +89,17 @@ export const AppProvider = ({ children }) => {
 
   const theme = isDarkMode ? CustomDarkTheme : CustomLightTheme;
 
-  const addNotification = (notification) => {
-    setNotifications((prev) => [notification, ...prev]);
+   const addNotification = (notification) => {
+    setNotifications((prev) => {
+      // Check if the notification already exists
+      const exists = prev.some((item) => item._id === notification._id);
+      if (!exists) {
+        // If it doesn't exist, add it to the list
+        return [notification, ...prev];
+      }
+      // If it exists, return the previous state unchanged
+      return prev;
+    });
   };
 
   if (loading) return null;
