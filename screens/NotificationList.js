@@ -17,7 +17,6 @@ const NotificationListScreen = () => {
   const { theme, notifications } = useContext(AppContext);
   const route = useRoute();
   const listRef = useRef(null);
-  const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const selectedNotificationId = route.params?.notificationId || null;
   const [error, setError] = useState(null);
