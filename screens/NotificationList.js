@@ -1,8 +1,17 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, useWindowDimensions, Modal } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { AppContext } from '../context/appContext';
-import { Icons } from '../constants/Icons';
+import React, { useState, useEffect, useRef, useContext } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  useWindowDimensions,
+  Modal,
+} from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { AppContext } from "../context/appContext";
+import { Icons } from "../constants/Icons";
 
 const NotificationListScreen = () => {
   const { theme, notifications } = useContext(AppContext);
@@ -10,19 +19,22 @@ const NotificationListScreen = () => {
   const listRef = useRef(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const selectedNotificationId = route.params?.notificationId;
+  const selectedNotificationId = route.params?.notificationId || null;
   const [error, setError] = useState(null);
-  const [layoutMode, setLayoutMode] = useState('list');
+  const [layoutMode, setLayoutMode] = useState("list");
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   const toggleLayout = () => {
-    setLayoutMode((prev) => (prev === 'list' ? 'grid' : 'list'));
+    setLayoutMode((prev) => (prev === "list" ? "grid" : "list"));
   };
 
   useEffect(() => {
     if (selectedNotificationId && notifications.length > 0 && listRef.current) {
-      const index = notifications.findIndex((n) => n.id === selectedNotificationId);
+      const index = notifications.findIndex(
+        (n) =>
+          n.id === selectedNotificationId || n._id === selectedNotificationId
+      );
       if (index !== -1) {
         listRef.current.scrollToIndex({ index, animated: true });
       }
@@ -36,20 +48,27 @@ const NotificationListScreen = () => {
 
   const renderCategoryIcon = (category) => {
     switch (category) {
-      case 'warning':
-        return <Icons.AntDesign name='warning' color={"#e49d22ff"} />;
-      case 'alert':
-        return <Icons.Feather name='alert-circle' color={"#f34f4fff"} />;
-      case 'announcement':
-        return <Icons.MaterialIcons name='announcement' color={"#4fa1f3ff"} />;
-      case 'maintenance':
-        return <Icons.MaterialCommunityIcons name='tools' color={"#e97735ff"} />;
-      case 'update':
-        return <Icons.MaterialIcons name='update' color={"#3bf6e0ff"} />;
-      case 'reminder':
-        return <Icons.MaterialIcons name='notifications-active' color={"#8e44adff"} />;
+      case "warning":
+        return <Icons.AntDesign name="warning" color={"#e49d22ff"} />;
+      case "alert":
+        return <Icons.Feather name="alert-circle" color={"#f34f4fff"} />;
+      case "announcement":
+        return <Icons.MaterialIcons name="announcement" color={"#4fa1f3ff"} />;
+      case "maintenance":
+        return (
+          <Icons.MaterialCommunityIcons name="tools" color={"#e97735ff"} />
+        );
+      case "update":
+        return <Icons.MaterialIcons name="update" color={"#3bf6e0ff"} />;
+      case "reminder":
+        return (
+          <Icons.MaterialIcons
+            name="notifications-active"
+            color={"#8e44adff"}
+          />
+        );
       default:
-        return <Icons.AntDesign name='infocirlceo' color={'#03ff20ff'} />;
+        return <Icons.AntDesign name="infocirlceo" color={"#03ff20ff"} />;
     }
   };
 
@@ -57,23 +76,30 @@ const NotificationListScreen = () => {
     <TouchableOpacity
       style={[
         styles.notificationItem,
-        layoutMode === 'grid' && [
-          styles.gridItem,
-          { width: (width - 48) / 2 },
-        ],
-        { backgroundColor: selectedNotificationId === item._id ? theme.colors.primary : theme.colors.card },
+        layoutMode === "grid" && [styles.gridItem, { width: (width - 48) / 2 }],
+        {
+          backgroundColor:
+            selectedNotificationId === item._id
+              ? theme.colors.primary
+              : theme.colors.card,
+        },
       ]}
       onPress={() => handleNotificationPress(item)}
     >
       {/* Logo */}
       {item.company?.logo && (
-        <View style={[styles.logoContainer, layoutMode === 'grid' && styles.gridLogoContainer]}>
+        <View
+          style={[
+            styles.logoContainer,
+            layoutMode === "grid" && styles.gridLogoContainer,
+          ]}
+        >
           <Image
             source={{ uri: item.company.logo }}
             style={[
               styles.companyLogo,
               { borderColor: theme.colors.card, borderWidth: 1 },
-              layoutMode === 'grid' && styles.gridCompanyLogo,
+              layoutMode === "grid" && styles.gridCompanyLogo,
             ]}
             resizeMode="contain"
           />
@@ -81,18 +107,52 @@ const NotificationListScreen = () => {
       )}
 
       {/* Text */}
-      <View style={[styles.textContainer, layoutMode === 'grid' && styles.gridTextContainer]}>
-        <Text style={[styles.notificationTitle, { color: theme.colors.text }]} numberOfLines={2}>
+      <View
+        style={[
+          styles.textContainer,
+          layoutMode === "grid" && styles.gridTextContainer,
+        ]}
+      >
+        <Text
+          style={[
+            styles.notificationTitle,
+            {
+              color:
+                selectedNotificationId === item._id
+                  ? theme.colors.secondary
+                  : theme.colors.text,
+            },
+          ]}
+          numberOfLines={2}
+        >
           {item.title}
         </Text>
-        <Text style={[styles.notificationBody, { color: theme.colors.text }]} numberOfLines={3}>
+        <Text
+          style={[styles.notificationBody,  {
+              color:
+                selectedNotificationId === item._id
+                  ? theme.colors.secondary
+                  : theme.colors.text,
+            }]}
+          numberOfLines={3}
+        >
           {item.message}
         </Text>
         {renderCategoryIcon(item.category)}
-        <Text style={[styles.companyInfo, { color: theme.colors.text }]}>
+        <Text style={[styles.companyInfo,    {
+              color:
+                selectedNotificationId === item._id
+                  ? theme.colors.secondary
+                  : theme.colors.text,
+            },]}>
           {item.company?.company_name} • {item.company?.company_type}
         </Text>
-        <Text style={[styles.notificationTime, { color: theme.colors.text }]}>
+        <Text style={[styles.notificationTime,     {
+              color:
+                selectedNotificationId === item._id
+                  ? theme.colors.secondary
+                  : theme.colors.text,
+            },]}>
           {new Date(item.startDate).toLocaleString()}
         </Text>
       </View>
@@ -100,11 +160,23 @@ const NotificationListScreen = () => {
   );
 
   const renderModalContent = () => (
-    <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[
+        styles.modalContainer,
+        { backgroundColor: theme.colors.background },
+      ]}
+    >
       {/* Header with close button */}
-      <View style={[styles.modalHeader, { backgroundColor: theme.colors.card }]}>
-        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{selectedNotification?.title}</Text>
-        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
+      <View
+        style={[styles.modalHeader, { backgroundColor: theme.colors.card }]}
+      >
+        <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+          {selectedNotification?.title}
+        </Text>
+        <TouchableOpacity
+          onPress={() => setModalVisible(false)}
+          style={styles.closeButton}
+        >
           <Icons.Ionicons name="close" size={24} color={theme.colors.text} />
         </TouchableOpacity>
       </View>
@@ -121,15 +193,22 @@ const NotificationListScreen = () => {
           </View>
         )}
 
-        <Text style={[styles.modalMessage, { color: theme.colors.text }]}>{selectedNotification?.message}</Text>
+        <Text style={[styles.modalMessage, { color: theme.colors.text }]}>
+          {selectedNotification?.message}
+        </Text>
 
         <View style={styles.modalCategoryContainer}>
           {renderCategoryIcon(selectedNotification?.category)}
-          <Text style={[styles.modalCategoryText, { color: theme.colors.text }]}>Category: {selectedNotification?.category}</Text>
+          <Text
+            style={[styles.modalCategoryText, { color: theme.colors.text }]}
+          >
+            Category: {selectedNotification?.category}
+          </Text>
         </View>
 
         <Text style={[styles.modalCompanyInfo, { color: theme.colors.text }]}>
-          {selectedNotification?.company?.company_name} • {selectedNotification?.company?.company_type}
+          {selectedNotification?.company?.company_name} •{" "}
+          {selectedNotification?.company?.company_type}
         </Text>
 
         <Text style={[styles.modalTime, { color: theme.colors.text }]}>
@@ -140,32 +219,44 @@ const NotificationListScreen = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <View style={styles.headerContainer}>
-        <Text style={[styles.header, { color: theme.colors.text }]}>Notifications</Text>
+        <Text style={[styles.header, { color: theme.colors.text }]}>
+          Notifications
+        </Text>
         <TouchableOpacity onPress={toggleLayout} style={styles.toggleButton}>
           <Icons.Ionicons
-            name={layoutMode === 'list' ? 'grid-outline' : 'list-outline'}
+            name={layoutMode === "list" ? "grid-outline" : "list-outline"}
             size={24}
             color={theme.colors.text}
           />
         </TouchableOpacity>
       </View>
       {error && (
-        <Text style={[styles.errorText, { color: '#b34141' }]}>
-          {error}
-        </Text>
+        <Text style={[styles.errorText, { color: "#b34141" }]}>{error}</Text>
       )}
       {notifications.length === 0 ? (
-        <Text style={[styles.noNotifications, { color: theme.colors.text }]}>No notifications</Text>
+        <Text style={[styles.noNotifications, { color: theme.colors.text }]}>
+          No notifications
+        </Text>
       ) : (
         <FlatList
           ref={listRef}
           data={notifications}
           renderItem={renderNotification}
-          keyExtractor={(item, index) => `${item.id}-${index}`}
+          // keyExtractor={(item, index) => `${item.id}-${index}`}
+          keyExtractor={(item) => item._id} // Ensure unique keys
+          getItemLayout={
+            (data, index) => ({
+              length: 80,
+              offset: 80 * index,
+              index,
+            }) // Replace 80 with your item height
+          }
           key={layoutMode}
-          numColumns={layoutMode === 'grid' ? 2 : 1}
+          numColumns={layoutMode === "grid" ? 2 : 1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
         />
@@ -208,35 +299,35 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
     paddingTop: 30,
   },
   header: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   toggleButton: {
     padding: 8,
   },
   noNotifications: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 20,
   },
   notificationItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
     borderRadius: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderColor: "#CCCCCC",
   },
   gridItem: {
     flex: 1,
-    flexDirection: 'column',
+    flexDirection: "column",
     marginHorizontal: 4,
     padding: 12,
   },
@@ -246,7 +337,7 @@ const styles = StyleSheet.create({
   gridLogoContainer: {
     marginRight: 0,
     marginBottom: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   companyLogo: {
     width: 40,
@@ -262,11 +353,11 @@ const styles = StyleSheet.create({
   },
   gridTextContainer: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   notificationTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   notificationBody: {
@@ -275,7 +366,7 @@ const styles = StyleSheet.create({
   },
   companyInfo: {
     fontSize: 13,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginBottom: 4,
   },
   notificationTime: {
@@ -288,16 +379,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 10,
     marginBottom: 10,
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalOverlayTouchable: {
     flex: 1,
@@ -307,28 +398,28 @@ const styles = StyleSheet.create({
   },
   modalWrapper: {
     borderRadius: 12,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
   modalContainer: {
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#CCCCCC',
+    borderBottomColor: "#CCCCCC",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     flex: 1,
   },
   closeButton: {
@@ -338,7 +429,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalLogoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 16,
   },
   modalCompanyLogo: {
@@ -346,7 +437,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#CCCCCC',
+    borderColor: "#CCCCCC",
   },
   modalMessage: {
     fontSize: 16,
@@ -354,18 +445,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   modalCategoryContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   modalCategoryText: {
     marginLeft: 8,
     fontSize: 14,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   modalCompanyInfo: {
     fontSize: 14,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginBottom: 8,
     opacity: 0.8,
   },

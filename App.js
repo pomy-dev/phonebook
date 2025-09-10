@@ -1,19 +1,22 @@
 // App.js
-import 'react-native-gesture-handler';
-import { useContext, useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { StatusBar } from 'expo-status-bar';
-import Toast from 'react-native-toast-message';
-import PublicationsStackNavigator from './navigator/PublicationsStack';
-import TabNavigator from './components/TabNavigator';
-import SplashScreen from './screens/SplashScreen';
-import CustomDrawerContent from './components/Drawer';
-import { Images } from './constants/Images';
-import { AppContext, AppProvider } from './context/appContext';
-import * as Notifications from 'expo-notifications';
+import "react-native-gesture-handler";
+import { useContext, useState, useEffect } from "react";
+import { View, Text } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  NavigationContainer,
+  useNavigationContainerRef,
+} from "@react-navigation/native";
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import { StatusBar } from "expo-status-bar";
+import Toast from "react-native-toast-message";
+import PublicationsStackNavigator from "./navigator/PublicationsStack";
+import TabNavigator from "./components/TabNavigator";
+import SplashScreen from "./screens/SplashScreen";
+import CustomDrawerContent from "./components/Drawer";
+import { Images } from "./constants/Images";
+import { AppContext, AppProvider } from "./context/appContext";
+import * as Notifications from "expo-notifications";
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -36,16 +39,16 @@ async function requestNotificationPermissions() {
       allowBadge: false,
     },
   });
-  if (status !== 'granted') {
-    console.log('Notification permissions not granted');
+  if (status !== "granted") {
+    console.log("Notification permissions not granted");
     return false;
   }
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
+      lightColor: "#FF231F7C",
       enableLights: true,
       enableVibrate: true,
     });
@@ -62,7 +65,18 @@ export default function App() {
 }
 
 function AppContent() {
-  const { isDarkMode, theme, selectedState, setSelectedState, notificationsEnabled, addNotification, isOnline, toggleTheme, toggleNotifications, toggleOnlineMode } = useContext(AppContext);
+  const {
+    isDarkMode,
+    theme,
+    selectedState,
+    setSelectedState,
+    notificationsEnabled,
+    addNotification,
+    isOnline,
+    toggleTheme,
+    toggleNotifications,
+    toggleOnlineMode,
+  } = useContext(AppContext);
   const [isAppReady, setIsAppReady] = useState(false);
   const navigationRef = useNavigationContainerRef();
 
@@ -74,21 +88,21 @@ function AppContent() {
     const handleNotification = (notification) => {
       if (!notificationsEnabled) return;
       const notificationData = {
-        id: notification.request.content.data?.notificationId || Date.now().toString(),
+        id:
+          notification.request.content.data?.notificationId ||
+          notification._id ||
+          Date.now().toString(),
         title: notification.request.content.title,
         body: notification.request.content.body,
         data: notification.request.content.data,
         timestamp: new Date().toISOString(),
       };
 
-      addNotification(notificationData);
+      // addNotification(notificationData);
 
-      navigationRef.navigate('Nots', {
-        screen: 'Notifications',
-        params: {
-          screen: 'Notifications',
-          params: { notificationId: notificationData.id }
-        },
+      navigationRef.navigate("Nots", {
+        screen: "Notifications",
+        params: { notificationId: notificationData.id }, // Directly pass notificationId
       });
     };
 
@@ -99,9 +113,11 @@ function AppContent() {
     });
 
     // Listen for notification taps while the app is running
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      handleNotification(response.notification);
-    });
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        handleNotification(response.notification);
+      }
+    );
 
     // Request permissions on mount
     requestNotificationPermissions();
@@ -117,11 +133,11 @@ function AppContent() {
       <View
         style={{
           height: 60,
-          width: '90%',
+          width: "90%",
           backgroundColor: theme.colors.background,
           borderRadius: 10,
           padding: 10,
-          justifyContent: 'center',
+          justifyContent: "center",
           borderWidth: 1,
           borderLeftColor: theme.colors.indicator,
           borderTopColor: theme.colors.secondary,
@@ -132,7 +148,9 @@ function AppContent() {
           elevation: 9999,
         }}
       >
-        <Text style={{ color: theme.colors.text, fontWeight: 'bold' }}>{text1}</Text>
+        <Text style={{ color: theme.colors.text, fontWeight: "bold" }}>
+          {text1}
+        </Text>
         <Text style={{ color: theme.colors.text }}>{text2}</Text>
       </View>
     ),
@@ -152,8 +170,18 @@ function AppContent() {
                 <CustomDrawerContent
                   {...props}
                   states={[
-                    { id: 'bs_eswatini', name: 'Business eSwatini', coatOfArmsIcon: Images.bs_eswatini, flagIcon: 'flag-outline' },
-                    { id: 'eptc', name: 'E.P.T.C', coatOfArmsIcon: Images.eptc, flagIcon: 'flag-outline' },
+                    {
+                      id: "bs_eswatini",
+                      name: "Business eSwatini",
+                      coatOfArmsIcon: Images.bs_eswatini,
+                      flagIcon: "flag-outline",
+                    },
+                    {
+                      id: "eptc",
+                      name: "E.P.T.C",
+                      coatOfArmsIcon: Images.eptc,
+                      flagIcon: "flag-outline",
+                    },
                   ]}
                   selectedState={selectedState}
                   setSelectedState={setSelectedState}
@@ -171,21 +199,25 @@ function AppContent() {
                 },
               }}
             >
-              <Drawer.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+              <Drawer.Screen
+                name="Tabs"
+                component={TabNavigator}
+                options={{ headerShown: false }}
+              />
               <Drawer.Screen
                 name="Publications"
                 component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
-                initialParams={{ selectedState, contentType: 'Publications' }}
+                initialParams={{ selectedState, contentType: "Publications" }}
               />
               <Drawer.Screen
                 name="Promotions"
                 component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
-                initialParams={{ selectedState, contentType: 'Promotions' }}
+                initialParams={{ selectedState, contentType: "Promotions" }}
               />
             </Drawer.Navigator>
-            <StatusBar style={isDarkMode ? 'light' : 'dark'} />
+            <StatusBar style={isDarkMode ? "light" : "dark"} />
           </NavigationContainer>
           <Toast config={toastConfig} />
         </>

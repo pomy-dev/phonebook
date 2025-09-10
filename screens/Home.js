@@ -18,7 +18,6 @@ import {
   fetchAllCompanies,
   fetchAllCompaniesOffline,
   fetchCompaniesWithAge,
-  fetchAllNotifications,
 } from '../service/getApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkNetworkConnectivity } from '../service/checkNetwork';
@@ -54,7 +53,7 @@ const HomeScreen = ({ navigation }) => {
   // Function to schedule and store a notification
   const scheduleNotification = async (title, body, data = {}) => {
     if (!notificationsEnabled) return;
-    const notificationId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const notificationId = data.notificationId ;
 
     // Schedule notification
     await Notifications.scheduleNotificationAsync({
@@ -70,7 +69,7 @@ const HomeScreen = ({ navigation }) => {
   // Function to simulate mock notifications one by one
   const syncNotifications = () => {
     console.log('is notifications enabled?', notificationsEnabled);
-    console.log('Notifications #', notifications.length);
+    console.log('Notifications #', notifications.length)
     if (!notificationsEnabled && notifications.length === 0) return;
 
     notifications.forEach((notif, index) => {
@@ -86,7 +85,6 @@ const HomeScreen = ({ navigation }) => {
           startDate: notif.startDate,
           endDate: notif.endDate,
         };
-
         // Call your schedule function
         scheduleNotification(title, body, data);
       }, index * 1000); // stagger them 1s apart
@@ -171,7 +169,6 @@ const HomeScreen = ({ navigation }) => {
         handleRefresh();
       }
     };
-    fetchAllNotifications();
     initializeData();
   }, []);
 
