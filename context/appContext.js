@@ -8,7 +8,7 @@ export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedState, setSelectedState] = useState(null);
+  const [selectedState, setSelectedState] = useState('E.P.T.C');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [notifications, setNotifications] = useState([]);

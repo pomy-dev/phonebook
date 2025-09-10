@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { AppContext } from "../context/appContext";
 
 export function useCallFunction() {
+  const { theme } = React.useContext(AppContext);
   const [visible, setVisible] = useState(false);
   const [options, setOptions] = useState([]);
   const [title, setTitle] = useState("");
@@ -40,9 +42,9 @@ export function useCallFunction() {
   const AlertUI = () => (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
       <View style={styles.overlay}>
-        <View style={styles.alertBox}>
-          <Text style={styles.title}>{title}</Text>
-          {message ? <Text style={styles.message}>{message}</Text> : null}
+        <View style={[styles.alertBox, { backgroundColor: theme.colors.card }]}>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+          {message ? <Text style={[styles.message, { color: theme.colors.text }]}>{message}</Text> : null}
 
           {options.map((opt, idx) => (
             <TouchableOpacity
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
   },
   alertBox: {
     width: "80%",
-    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
   },
@@ -81,7 +82,6 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 14,
-    color: "#555",
     marginBottom: 15,
   },
   optionButton: {
