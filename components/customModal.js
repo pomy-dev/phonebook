@@ -54,9 +54,9 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.upgradeModalContent}>
-          <View style={[styles.upgradeModalHeader, { backgroundColor: theme.colors.primary }]}>
-            <Text style={[styles.upgradeModalTitle, { color: theme.colors.background }]}>Business Information</Text>
+        <View style={[styles.upgradeModalContent, { backgroundColor: theme.colors.card }]}>
+          <View style={[styles.upgradeModalHeader, { backgroundColor: theme.colors.indicator }]}>
+            <Text style={[styles.upgradeModalTitle, { color: theme.colors.secondary }]}>Business Information</Text>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => onClose()}
@@ -85,13 +85,13 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                   )}
                 </View>
                 <View style={{ marginLeft: 10 }}>
-                  <Text style={[styles.upgradeBusinessName, { width: 160 }]}
+                  <Text style={[styles.upgradeBusinessName, { width: 160, color: theme.colors.text }]}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
                     {selectedBronzeBusiness.company_name}
                   </Text>
-                  <Text style={styles.businessType}>
+                  <Text style={[styles.businessType, { color: theme.colors.sub_text }]}>
                     {selectedBronzeBusiness.company_type}
                   </Text>
                 </View>
@@ -101,7 +101,7 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                 style={{ alignSelf: 'flex-end', marginBottom: 5 }}
                 onPress={handleShare}
               >
-                <Icons.Feather name="share-2" size={24} color={'#003366'} />
+                <Icons.Feather name="share-2" size={24} color={theme.colors.indicator} />
               </TouchableOpacity>
 
               <View style={styles.basicInfoContainer}>
@@ -187,8 +187,8 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                     }
                   }}
                 >
-                  <Icons.Ionicons name="call-outline" size={18} color="#FFFFFF" />
-                  <Text style={[styles.primaryActionText, { color: theme.colors.background }]}>Call Business</Text>
+                  <Icons.Ionicons name="call-outline" size={18} color="#CCC" />
+                  <Text style={[styles.primaryActionText, { color: theme.colors.text }]}>Call Business</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -262,7 +262,6 @@ const styles = StyleSheet.create({
   upgradeModalContent: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     overflow: "hidden",
     maxHeight: 'auto'
@@ -334,7 +333,6 @@ const styles = StyleSheet.create({
   upgradeBusinessName: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333333",
     marginBottom: 4,
     textAlign: "center",
   },

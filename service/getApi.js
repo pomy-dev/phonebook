@@ -298,7 +298,7 @@ export const fetchCompanyAds = async (companyId) => {
     return fetchedPromotions;
   } catch (err) {
     console.error('Error fetching promotions:', err);
-    throw new Error(err.message)
+    // throw new Error(err.message)
   }
 }
 
@@ -322,7 +322,7 @@ export const fetchCompanyNews = async (companyId) => {
     return fetchedPublications;
   } catch (err) {
     console.error('Error fetching publications:', err);
-    throw new Error(err.message)
+    // throw new Error(err.message)
   }
 }
 
