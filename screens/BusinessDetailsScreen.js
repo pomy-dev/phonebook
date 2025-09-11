@@ -475,13 +475,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         android: `google.navigation:q=${businessLocation.latitude},${businessLocation.longitude}`,
       });
       Linking.openURL(url);
-      console.log('Opening directions');
+      console.log('url 1:', url);
+      console.log('Opening businessLocation:', businessLocation);
     } else if (business.address) {
       const url = Platform.select({
         ios: `maps:0,0?q=${encodeURIComponent(business.address)}`,
         android: `geo:0,0?q=${encodeURIComponent(business.address)}`,
       });
       Linking.openURL(url);
+      console.log('url 2:', url);
     } else {
       Alert.alert('Error', 'Business location is not available.');
     }

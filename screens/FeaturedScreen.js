@@ -5,7 +5,7 @@ import {
   StatusBar,
   TouchableOpacity,
   FlatList,
-  ScrollView,
+  Image,
   SafeAreaView,
   StyleSheet,
   RefreshControl,
@@ -16,8 +16,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { CustomToast } from "../components/customToast"
 import { useCallFunction } from '../components/customCallAlert'
 import { AppContext } from '../context/appContext';
-import CustomCard from "../components/customCard"
-import { handleEmail, handleBusinessPress, handleLocation, handleWhatsapp } from "../utils/callFunctions"
+import { handleEmail, handleLocation, handleWhatsapp } from "../utils/callFunctions"
 
 const FeaturedScreen = ({ route, navigation }) => {
   const { theme, isDarkMode } = React.useContext(AppContext);
@@ -99,15 +98,6 @@ const FeaturedScreen = ({ route, navigation }) => {
     }
   };
 
-  const onBusinessPress = (business) => {
-    handleBusinessPress(
-      business,
-      navigation,
-      setSelectedBronzeBusiness,
-      setUpgradeModalVisible
-    );
-  };
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
 
@@ -118,23 +108,22 @@ const FeaturedScreen = ({ route, navigation }) => {
 
   const renderBusinessItem = ({ item }) => (
     <TouchableOpacity
-      // key={index}
       style={[styles.favoriteCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
       activeOpacity={0.8}
-      onPress={() => onBusinessPress(business)}
+      onPress={() => { navigation.navigate('BusinessDetail', { business: item }) }}
     >
       <View style={styles.favoriteHeader}>
         <View style={styles.businessImageContainer}>
-          {business.logo ? (
+          {item.logo ? (
             <Image
-              source={{ uri: business.logo }}
+              source={{ uri: item.logo }}
               style={styles.businessImage}
               resizeMode="cover"
             />
           ) : (
             <View style={[styles.businessInitialContainer, { backgroundColor: theme.colors.primary }]}>
               <Text style={[styles.businessInitial, { color: theme.colors.background }]}>
-                {business.company_name.charAt(0)}
+                {item.company_name.charAt(0)}
               </Text>
             </View>
           )}
@@ -146,21 +135,21 @@ const FeaturedScreen = ({ route, navigation }) => {
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {business.company_name}
+            {item.company_name}
           </Text>
           <Text
             style={[styles.businessCategory, { color: theme.colors.text }]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {business.company_type}
+            {item.company_type}
           </Text>
           <Text
             style={[styles.businessAddress, { color: theme.colors.text }]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {business.address}
+            {item.address}
           </Text>
         </View>
 
@@ -168,16 +157,16 @@ const FeaturedScreen = ({ route, navigation }) => {
           style={styles.favoriteButton}
           onPress={(e) => {
             e.stopPropagation();
-            toggleFavorite(business);
+            toggleFavorite(item);
           }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Icons.Ionicons
             name={
-              isInFavorites(business._id) ? "heart" : "heart-outline"
+              isInFavorites(item._id) ? "heart" : "heart-outline"
             }
             size={22}
-            color={isInFavorites(business._id) ? theme.colors.primary : theme.colors.text}
+            color={isInFavorites(item._id) ? theme.colors.primary : theme.colors.text}
           />
         </TouchableOpacity>
       </View>
@@ -189,20 +178,20 @@ const FeaturedScreen = ({ route, navigation }) => {
           style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
           onPress={(e) => {
             e.stopPropagation();
-            handleCall(business.phone, business.name);
+            handleCall(item.phone, item.name);
           }}
         >
           <Icons.Ionicons name="call-outline" size={18} color={theme.colors.primary} />
           <Text style={[styles.actionButtonText, { color: theme.colors.light }]}>Call</Text>
         </TouchableOpacity>
 
-        {business.phone &&
-          business.phone.some((p) => p.phone_type === "whatsapp") && (
+        {item.phone &&
+          item.phone.some((p) => p.phone_type === "whatsapp") && (
             <TouchableOpacity
               style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
               onPress={(e) => {
                 e.stopPropagation();
-                handleWhatsapp(business.phone);
+                handleWhatsapp(item.phone);
               }}
             >
               <Icons.Ionicons name="logo-whatsapp" size={18} color="#25D366" />
@@ -214,7 +203,7 @@ const FeaturedScreen = ({ route, navigation }) => {
           style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
           onPress={(e) => {
             e.stopPropagation();
-            handleEmail(business.email, e);
+            handleEmail(item.email, e);
           }}
         >
           <Icons.Ionicons name="mail-outline" size={18} color="#FF9500" />
@@ -225,7 +214,7 @@ const FeaturedScreen = ({ route, navigation }) => {
           style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
           onPress={(e) => {
             e.stopPropagation();
-            handleLocation(business.address, e);
+            handleLocation(item.address, e);
           }}
         >
           <Icons.Ionicons name="location-outline" size={18} color="#5856D6" />
@@ -235,25 +224,13 @@ const FeaturedScreen = ({ route, navigation }) => {
 
       <TouchableOpacity
         style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
-        onPress={() => onBusinessPress(business)}
+        onPress={() => { navigation.navigate('BusinessDetail', { business: item }) }}
       >
         <Text style={[styles.viewDetailsText, { color: "#FFFF" }]}>View Details</Text>
         <Icons.Ionicons name="chevron-forward" size={16} color='#FFFF' />
       </TouchableOpacity>
 
     </TouchableOpacity>
-    // <CustomCard
-    //   business={item}
-    //   index={item._id}
-    //   theme={theme}
-    //   onBusinessPress={onBusinessPress}
-    //   toggleFavorite={toggleFavorite}
-    //   isInFavorites={isInFavorites}
-    //   handleCall={handleCall}
-    //   handleEmail={handleEmail}
-    //   handleWhatsapp={handleWhatsapp}
-    //   handleLocation={handleLocation}
-    // />
   );
 
   return (
