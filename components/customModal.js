@@ -188,7 +188,7 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                   }}
                 >
                   <Icons.Ionicons name="call-outline" size={18} color="#CCC" />
-                  <Text style={[styles.primaryActionText, { color: theme.colors.text }]}>Call Business</Text>
+                  <Text style={[styles.primaryActionText, { color: "#CCC" }]}>Call Business</Text>
                 </TouchableOpacity>
               </View>
             </View>
