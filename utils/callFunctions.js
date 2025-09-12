@@ -18,16 +18,28 @@ export async function handleShareVia(method, business, selectedItem) {
   const email = business?.email || 'No email available';
   const address = business?.address || 'No address available';
 
-  const shareMessage = `Check out ${business?.company_name}!\n\n` +
-    `🪧-${selectedItem.title}\n` +
-    `📣-${selectedItem.tease_message || selectedItem.intro}\n` +
-    `ℹ️-${selectedItem.description || selectedItem.content}\n` +
-    `📆-${new Date(selectedItem.validUntil) || new Date(selectedItem.publish_date)}\n\n` +
-    `Address: ${address}\n` +
-    `Phone: ${phoneNumbers} \n` +
-    `WhatsApp: ${whatsAppNumbers} \n` +
-    `Email: ${email} \n` +
-    `Learn more: ${deepLink} `;
+  let shareMessage;
+
+  if (selectedItem !== null) {
+    shareMessage = `Check out ${business?.company_name}!\n\n` +
+      `🪧-${selectedItem.title}\n` +
+      `📣-${selectedItem.tease_message || selectedItem.intro}\n` +
+      `ℹ️-${selectedItem.description || selectedItem.content}\n` +
+      `📆-${new Date(selectedItem.validUntil) || new Date(selectedItem.publish_date)}\n\n` +
+      `Address: ${address}\n` +
+      `Phone: ${phoneNumbers}\n` +
+      `WhatsApp: ${whatsAppNumbers}\n` +
+      `Email: ${email}\n` +
+      `Learn more: ${deepLink} `;
+  } else {
+    shareMessage = `Check out ${business?.company_name}!\n\n` +
+      `Address: ${address}\n` +
+      `Phone: ${phoneNumbers}\n` +
+      `WhatsApp: ${whatsAppNumbers}\n` +
+      `Email: ${email}\n` +
+      `Learn more: ${deepLink}`;
+  }
+
 
   try {
     switch (method) {
@@ -236,7 +248,7 @@ export const getSynonyms = (term) => {
   }, [lowerTerm]);
 };
 
-export async function filterAllBusinesses(query = "") {
+export async function filterAllBusinesses(query = "", companyDirectory = "") {
   try {
     const data = await fetchAllCompaniesOffline();
     if (!data || data.length === 0) {
@@ -247,7 +259,12 @@ export async function filterAllBusinesses(query = "") {
     const queryTerms = query.toLowerCase().trim().split(/\s+/);
     const allSearchTerms = queryTerms.flatMap((term) => getSynonyms(term));
 
-    const filtered = data.filter((business) => {
+    // Filter businesses based on query terms and selected directory
+    directoryCompanies = companyDirectory
+      ? data.filter((company) => company.directory === companyDirectory.trim())
+      : data;
+
+    const filtered = directoryCompanies.filter((business) => {
       // Combine all searchable fields into a single string
       const searchableText = [
         business.company_name || "",

@@ -22,7 +22,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
   const fadeAnims = useRef(states.map(() => new Animated.Value(1))).current;
   const scaleAnims = useRef(states.map(() => new Animated.Value(1))).current;
   const [modalVisible, setModalVisible] = useState(false);
-  const [pickerValue, setPickerValue] = useState(selectedState);
+  const [pickerValue, setPickerValue] = useState(selectedState || 'E.P.T.C');
 
   const handlePressIn = (index) => {
     Animated.parallel([

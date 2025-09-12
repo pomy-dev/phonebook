@@ -16,7 +16,7 @@ import {
   Easing,
   Alert,
 } from "react-native";
-import { useTheme, useRoute, useNavigation } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
 import { Icons } from "../constants/Icons";
 import { BlurView } from "expo-blur";
@@ -26,10 +26,10 @@ import { fetchCompanyNews, fetchCompanyAds } from "../service/getApi";
 import CustomLoader from "../components/customLoader";
 import { AppContext } from '../context/appContext';
 import { checkNetworkConnectivity } from '../service/checkNetwork';
+import CustomShareVia from "../components/customShareVia";
 
 const BusinessArticlesScreen = () => {
-  const { isDarkMode, theme, isOnline, notificationsEnabled, toggleOnlineMode } = useContext(AppContext);
-  const { colors } = useTheme();
+  const { isDarkMode, theme, isOnline, toggleOnlineMode } = useContext(AppContext);
   const navigation = useNavigation();
   const route = useRoute();
   const [fabOpen, setFabOpen] = useState(false);
@@ -434,54 +434,13 @@ const BusinessArticlesScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <Animated.View
-          style={[
-            styles.shareOptionsContainer,
-            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 110 },
-            {
-              opacity: shareOptionsAnim,
-              transform: [
-                {
-                  translateY: shareOptionsAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                },
-              ],
-            },
-          ]}
-          pointerEvents={showShareOptions ? "auto" : "none"}
-        >
-          <BlurView intensity={80} style={[styles.shareOptionsBlur, { backgroundColor: theme.colors.background }]} tint={theme.colors.background}>
-            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
-              <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
-                <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
-              </View>
-              <Text style={[styles.shareOptionText, { color: theme.colors.text }]}>Message</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("email")} activeOpacity={0.7}>
-              <View style={[styles.shareOptionIcon, { backgroundColor: "#FF9500" }]}>
-                <Icons.Ionicons name="mail-outline" size={20} color="#FFFFFF" />
-              </View>
-              <Text style={[styles.shareOptionText, { color: theme.colors.text }]}>Email</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("copy")} activeOpacity={0.7}>
-              <View style={[styles.shareOptionIcon, { backgroundColor: "#5856D6" }]}>
-                <Icons.Ionicons name="copy-outline" size={20} color="#FFFFFF" />
-              </View>
-              <Text style={[styles.shareOptionText, { color: theme.colors.text }]}>Copy</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("more")} activeOpacity={0.7}>
-              <View style={[styles.shareOptionIcon, { backgroundColor: "#8E8E93" }]}>
-                <Icons.Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
-              </View>
-              <Text style={[styles.shareOptionText, { color: theme.colors.text }]}>More</Text>
-            </TouchableOpacity>
-          </BlurView>
-        </Animated.View>
+        <CustomShareVia
+          STATUSBAR_HEIGHT={STATUSBAR_HEIGHT}
+          shareOptionsAnim={shareOptionsAnim}
+          showShareOptions={showShareOptions}
+          theme={theme}
+          shareVia={shareVia}
+        />
       </View>
     </SafeAreaView>
   );
@@ -654,43 +613,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  shareOptionsContainer: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 100 : 90,
-    right: 16,
-    borderRadius: 16,
-    zIndex: 100,
-  },
-  shareOptionsBlur: {
-    flexDirection: "row",
-    borderRadius: 16,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  shareOption: {
-    alignItems: "center",
-    marginHorizontal: 8,
-  },
-  shareOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  shareOptionText: {
-    fontSize: 12,
-  },
+
 });
 
 export default BusinessArticlesScreen;

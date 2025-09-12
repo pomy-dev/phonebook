@@ -36,13 +36,14 @@ const HomeScreen = ({ navigation }) => {
   const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, notifications } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-  const [filteredBusinesses, setFilteredBusinesses] = useState([]);
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
   const [selectedBronzeBusiness, setSelectedBronzeBusiness] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [featuredBusinesses, setFeaturedBusinesses] = useState([]);
+  const [filteredBusinesses, setFilteredBusinesses] = useState([]);
+  const [searchedBusinesses, setSearchedBusinesses] = useState([]);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -53,7 +54,7 @@ const HomeScreen = ({ navigation }) => {
   // Function to schedule and store a notification
   const scheduleNotification = async (title, body, data = {}) => {
     if (!notificationsEnabled) return;
-    const notificationId = data.notificationId ;
+    const notificationId = data.notificationId;
 
     // Schedule notification
     await Notifications.scheduleNotificationAsync({
@@ -185,12 +186,13 @@ const HomeScreen = ({ navigation }) => {
   }, [searchQuery]);
 
   const filterALLBs = async (query = searchQuery) => {
+    setSearchedBusinesses([]);
     try {
-      const filtered = await filterAllBusinesses(query);
-      setFilteredBusinesses(filtered);
+      const filtered = await filterAllBusinesses(query, selectedDirectory);
+      setSearchedBusinesses(filtered);
     } catch (error) {
       console.log('Error in filterALLBs:', error);
-      setFilteredBusinesses([]);
+      setSearchedBusinesses([]);
     }
   };
 
@@ -224,13 +226,19 @@ const HomeScreen = ({ navigation }) => {
           CustomToast('Offline Mode', 'Using cached data as app is in offline mode.')
       }
 
+      console.log(`Fetched ${companyData.length} companies from API or cache.`);
+
       const companies = companyData.filter(
         (company) => company.directory === companyDirectory?.trim()
       ) || [];
 
+      console.log(`Filtered to ${companies.length} companies in directory: ${companyDirectory}`);
+
       const featuredBusinesses = companies.filter(
         (company) => company.subscription_type === 'Gold'
       );
+
+      console.log(`Found ${featuredBusinesses.length} featured (Gold) businesses.`);
 
       const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
@@ -239,6 +247,8 @@ const HomeScreen = ({ navigation }) => {
       );
 
       setAllBusinesses(nonGoldCompanies);
+
+      console.log(`Found ${nonGoldCompanies.length} non-Gold businesses.`);
 
       const shuffledNonGold = nonGoldCompanies.sort(() => Math.random() - 0.5);
       const regularBusinesses = shuffledNonGold.slice(0, 5);
@@ -273,6 +283,7 @@ const HomeScreen = ({ navigation }) => {
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
         if (isConnected) {
+          console.log('Selected State on Refresh:', selectedState);
           try {
             const companyData = await fetchAllCompanies();
             const companies = companyData.filter(
@@ -409,7 +420,8 @@ const HomeScreen = ({ navigation }) => {
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Exclusive</Text>
               <TouchableOpacity
                 onPress={() =>
-                  navigation.navigate("Featured", { featuredBusinesses })
+                  console.log('No. Featured businesses:', featuredBusinesses.length)
+                  // navigation.navigate("Featured", { featuredBusinesses })
                 }
               >
                 <Text style={[styles.viewAllText, { color: theme.colors.text }]}>View all</Text>
@@ -522,9 +534,10 @@ const HomeScreen = ({ navigation }) => {
         >
           <View style={styles.businessesContainer}>
             <View>
-              {filteredBusinesses.length > 0 ? (
-                filteredBusinesses.map((item, index) => (
+              {searchedBusinesses.length > 0 ? (
+                searchedBusinesses.map((item, index) => (
                   <CustomCard
+                    key={item._id}
                     business={item}
                     index={index}
                     theme={theme}

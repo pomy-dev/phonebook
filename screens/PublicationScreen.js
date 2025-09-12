@@ -245,14 +245,16 @@ const PublicationScreen = () => {
           color={theme.colors.text}
           style={styles.noConnectionIcon}
         />
+
         <Text style={[styles.noConnectionText, { color: theme.colors.text }]}>
           No Internet Connection
         </Text>
+
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
           onPress={retryConnection}
         >
-          <Text style={[styles.retryButtonText, { color: theme.colors.text }]}>
+          <Text style={[styles.retryButtonText, { color: "#CCC" }]}>
             Turn On Wi-Fi or Data
           </Text>
         </TouchableOpacity>

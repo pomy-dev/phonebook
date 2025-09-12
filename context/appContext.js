@@ -8,7 +8,7 @@ export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedState, setSelectedState] = useState('E.P.T.C');
+  const [selectedState, setSelectedState] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
   const [notifications, setNotifications] = useState([]);
@@ -20,17 +20,18 @@ export const AppProvider = ({ children }) => {
       try {
         const theme = await AsyncStorage.getItem('theme');
         const state = await AsyncStorage.getItem('selectedState');
-        state ? setSelectedState(JSON.parse(state)) : setSelectedState('E.P.T.C');
+        // state ? setSelectedState(JSON.parse(state)) : setSelectedState('E.P.T.C');
 
         const online = await AsyncStorage.getItem('isOnline');
         const notifEnabled = await AsyncStorage.getItem('notificationsEnabled');
-        const notifList = await AsyncStorage.getItem('notifications');
+        // const notifList = await AsyncStorage.getItem('notifications');
 
-        if (theme) setIsDarkMode(JSON.parse(theme));
-        if (state) setSelectedState(JSON.parse(state));
-        if (online) setIsOnline(JSON.parse(online));
-        if (notifEnabled) setNotificationsEnabled(JSON.parse(notifEnabled));
-        if (notifList) setNotifications(JSON.parse(notifList));
+        theme && setIsDarkMode(JSON.parse(theme));
+        state ? setSelectedState(JSON.parse(state)) : setSelectedState('E.P.T.C');
+        console.log('Loaded selectedState from storage:', JSON.parse(state));
+        online && setIsOnline(JSON.parse(online));
+        notifEnabled && setNotificationsEnabled(JSON.parse(notifEnabled));
+        // notifList && setNotifications(JSON.parse(notifList));
 
       } catch (error) {
         console.log('Error loading settings:', error);
@@ -79,9 +80,9 @@ export const AppProvider = ({ children }) => {
   }, [notificationsEnabled]);
 
   // Persist notifications
-  useEffect(() => {
-    AsyncStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
+  // useEffect(() => {
+  //   AsyncStorage.setItem('notifications', JSON.stringify(notifications));
+  // }, [notifications]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
   const toggleNotifications = () => setNotificationsEnabled(!notificationsEnabled);
@@ -89,7 +90,7 @@ export const AppProvider = ({ children }) => {
 
   const theme = isDarkMode ? CustomDarkTheme : CustomLightTheme;
 
-   const addNotification = (notification) => {
+  const addNotification = (notification) => {
     setNotifications((prev) => {
       // Check if the notification already exists
       const exists = prev.some((item) => item._id === notification._id);

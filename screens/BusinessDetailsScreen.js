@@ -29,6 +29,7 @@ import * as Location from 'expo-location';
 import { GOOGLE_MAPS_API_KEY } from "../config/env";
 import { AppContext } from "../context/appContext"
 import MapView, { Marker, Polyline } from 'react-native-maps';
+import CustomShareVia from "../components/customShareVia"
 import { handleEmail, handleWhatsapp, handleWebsite } from "../utils/callFunctions"
 
 const { width, height } = Dimensions.get("window")
@@ -464,7 +465,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   }
 
   const shareVia = async (method) => {
-    await handleShareVia(method, business);
+    await handleShareVia(method, business, null);
     setShowShareOptions(false);
   }
 
@@ -1184,57 +1185,13 @@ const BusinessDetailScreen = ({ route, navigation }) => {
       </Animated.View>
 
       {/* ShareOptions */}
-      <Animated.View
-        style={[
-          styles.shareOptionsContainer,
-          Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 60 },
-          {
-            opacity: shareOptionsAnim,
-            transform: [
-              {
-                translateY: shareOptionsAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              },
-            ],
-          },
-        ]}
-        pointerEvents={showShareOptions ? "auto" : "none"}
-      >
-        <BlurView intensity={80} style={styles.shareOptionsBlur}>
-
-          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("message")} activeOpacity={0.7}>
-            <View style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}>
-              <Icons.Ionicons name="chatbox-outline" size={20} color="#FFFFFF" />
-            </View>
-            <Text style={styles.shareOptionText}>Message</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("email")} activeOpacity={0.7}>
-            <View style={[styles.shareOptionIcon, { backgroundColor: "#FF9500" }]}>
-              <Icons.Ionicons name="mail-outline" size={20} color="#FFFFFF" />
-            </View>
-            <Text style={styles.shareOptionText}>Email</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("copy")} activeOpacity={0.7}>
-            <View style={[styles.shareOptionIcon, { backgroundColor: "#5856D6" }]}>
-              <Icons.Ionicons name="copy-outline" size={20} color="#FFFFFF" />
-            </View>
-            <Text style={styles.shareOptionText}>Copy</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.shareOption} onPress={() => shareVia("more")} activeOpacity={0.7}>
-            <View style={[styles.shareOptionIcon, { backgroundColor: "#8E8E93" }]}>
-              <Icons.Ionicons name="ellipsis-horizontal" size={20} color="#FFFFFF" />
-            </View>
-            <Text style={styles.shareOptionText}>More</Text>
-          </TouchableOpacity>
-
-        </BlurView>
-
-      </Animated.View>
+      <CustomShareVia
+        STATUSBAR_HEIGHT={STATUSBAR_HEIGHT}
+        shareOptionsAnim={shareOptionsAnim}
+        showShareOptions={showShareOptions}
+        theme={theme}
+        shareVia={shareVia}
+      />
 
       {
         selectedImage !== null && (
@@ -2157,52 +2114,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-  },
-  shareOptionsContainer: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 100 : 90,
-    right: 16,
-    borderRadius: 16,
-    zIndex: 100,
-  },
-  shareOptionsBlur: {
-    flexDirection: "row",
-    backgroundColor: Platform.OS === "ios" ? "rgba(255, 255, 255, 0.7)" : "rgba(255, 255, 255, 0.95)",
-    borderRadius: 16,
-    padding: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  // shareOptionsOverlay: {
-  //   position: "absolute",
-  //   top: -100,
-  //   left: -100,
-  //   right: -100,
-  //   bottom: -100,
-  // },
-  shareOption: {
-    alignItems: "center",
-    marginHorizontal: 8,
-  },
-  shareOptionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  shareOptionText: {
-    fontSize: 12,
-    color: "#333333",
   },
   modalOverlay: {
     position: 'absolute',
