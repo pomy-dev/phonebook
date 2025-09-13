@@ -36,8 +36,7 @@ import {
 } from "../utils/callFunctions";
 import { checkNetworkConnectivity } from "../service/checkNetwork";
 import CustomLoader from "../components/customLoader";
-import { CustomToast } from '../components/customToast';
-
+import { CustomToast } from "../components/customToast";
 
 const { width, height } = Dimensions.get("window");
 const BOTTOM_SHEET_HEIGHT = height * 0.6;
@@ -78,7 +77,8 @@ const decodePolyline = (encoded) => {
 };
 
 const BusinessDetailScreen = ({ route, navigation }) => {
-  const { theme, isOnline, isDarkMode } = React.useContext(AppContext);
+  const { theme, selectedState, isOnline, isDarkMode } =
+    React.useContext(AppContext);
   const insets = useSafeAreaInsets();
   const { business } = route.params;
   const HEADER_MAX_HEIGHT = 220 + insets.top;
@@ -493,15 +493,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         android: `google.navigation:q=${businessLocation.latitude},${businessLocation.longitude}`,
       });
       Linking.openURL(url);
-      console.log('url 1:', url);
-      console.log('Opening businessLocation:', businessLocation);
+      console.log("url 1:", url);
+      console.log("Opening businessLocation:", businessLocation);
     } else if (business.address) {
       const url = Platform.select({
         ios: `maps:0,0?q=${encodeURIComponent(business.address)}`,
         android: `geo:0,0?q=${encodeURIComponent(business.address)}`,
       });
       Linking.openURL(url);
-      console.log('url 2:', url);
+      console.log("url 2:", url);
     } else {
       Alert.alert("Error", "Business location is not available.");
     }
@@ -648,18 +648,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   );
 
   const handleNews = async () => {
-    if (false) {
-      const isConnected = await checkNetworkConnectivity();
-      companyData = isConnected
-        ? navigation.navigate("BusinessArticle", {
-            company: business,
-            contentType: "Publications",
-          })
-        : CustomToast('Offline Mode', 'Using cached data as app is in offline mode.');
-    }
+    // Navigate to the BusinessArticle screen if connected
+    navigation.navigate("BusinessArticle", {
+      company: business,
+      contentType: "Publications",
+    });
   };
 
-  const handleAdvert = () => {
+  const handleAdvert = async () => {
+    // Navigate to the BusinessArticle screen if connected
     navigation.navigate("BusinessArticle", {
       company: business,
       contentType: "Promotions",
@@ -812,7 +809,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               activeOpacity={0.8}
             >
               <Icons.Ionicons name="call" size={18} color="#CCC" />
-              <Text style={[styles.primaryActionText, { color: "#CCC" }]}>Call Now</Text>
+              <Text style={[styles.primaryActionText, { color: "#CCC" }]}>
+                Call Now
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.secondaryActionsRow}>
@@ -2863,6 +2862,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  noConnectionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noConnectionIcon: {
+    marginBottom: 20,
+  },
+  noConnectionText: {
+    fontSize: 18,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  retryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
