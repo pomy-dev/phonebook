@@ -551,60 +551,6 @@ const BusinessArticlesScreen = () => {
               )}
             </ScrollView>
 
-            <View style={styles.fabContainer}>
-              {companySocialMediaLinks.map((link, index) => {
-                const translateY = animation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, -(70 * (index + 1))],
-                });
-                return (
-                  <Animated.View
-                    key={index}
-                    style={[
-                      styles.fabItem,
-                      { transform: [{ translateY }], opacity: animation },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      onPress={() => Linking.openURL(link.url)}
-                      style={[
-                        styles.fabButton,
-                        { backgroundColor: link.color },
-                      ]}
-                    >
-                      <Icons.Ionicons name={link.icon} size={20} color="#fff" />
-                    </TouchableOpacity>
-                  </Animated.View>
-                );
-              })}
-              <TouchableOpacity
-                style={[
-                  styles.mainFab,
-                  { backgroundColor: theme.colors.indicator },
-                ]}
-                onPress={toggleFab}
-              >
-                <Animated.View
-                  style={{
-                    transform: [
-                      {
-                        rotate: animation.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: ["0deg", "45deg"],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <Icons.Ionicons
-                    name="add"
-                    size={28}
-                    color={theme.colors.secondary}
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-            </View>
-
             <CustomShareVia
               STATUSBAR_HEIGHT={STATUSBAR_HEIGHT}
               shareOptionsAnim={shareOptionsAnim}
@@ -644,6 +590,61 @@ const BusinessArticlesScreen = () => {
             </TouchableOpacity>
           </View>
         )}
+
+        <View style={styles.fabContainer}>
+          {companySocialMediaLinks.map((link, index) => {
+            const translateY = animation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -(70 * (index + 1))],
+            });
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.fabItem,
+                  { transform: [{ translateY }], opacity: animation },
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(link.url)}
+                  style={[
+                    styles.fabButton,
+                    { backgroundColor: link.color },
+                  ]}
+                >
+                  <Icons.Ionicons name={link.icon} size={20} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+          <TouchableOpacity
+            style={[
+              styles.mainFab,
+              { backgroundColor: theme.colors.indicator },
+            ]}
+            onPress={toggleFab}
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: animation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ["0deg", "45deg"],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Icons.Ionicons
+                name="add"
+                size={28}
+                color={theme.colors.secondary}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+
       </View>
     </SafeAreaView>
   );
