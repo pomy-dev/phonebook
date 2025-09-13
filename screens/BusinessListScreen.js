@@ -26,7 +26,7 @@ import CustomCard from "../components/customCard";
 import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
 
 export default function BusinessList({ route, navigation }) {
-  const { theme, isDarkMode } = React.useContext(AppContext);
+  const { theme, isDarkMode, selectedState } = React.useContext(AppContext);
   const { category } = route.params;
   const [businesses, setBusinesses] = useState([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
@@ -97,7 +97,12 @@ export default function BusinessList({ route, navigation }) {
       setLoading(true);
       const companyData = await fetchAllCompaniesOffline();
 
-      setBusinesses(companyData);
+      // Filter companies based on selected state
+      const directoryCompanies = companyData.filter(
+        (company) => company.directory === selectedState?.trim()
+      ) || [];
+
+      setBusinesses(directoryCompanies);
       setLoading(false);
     }
     loadCompanies();
@@ -113,6 +118,8 @@ export default function BusinessList({ route, navigation }) {
           filteredArray.push(company);
         }
       });
+
+      // Further filter based on search query
       const filtered = filteredArray.filter(
         (business) =>
           business.company_name
@@ -132,6 +139,7 @@ export default function BusinessList({ route, navigation }) {
               .toLowerCase()
               .includes(searchQuery.toLowerCase().trim()))
       );
+
       setFilteredBusinesses(filtered);
     }
   }, [searchQuery, businesses]);
@@ -199,7 +207,7 @@ export default function BusinessList({ route, navigation }) {
           />
           <TextInput
             placeholder="Search businesses"
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.colors.text }]}
             placeholderTextColor={theme.colors.text}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -280,7 +288,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: "#333333",
     fontWeight: "400",
   },
   loadingContainer: {
@@ -296,113 +303,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     paddingBottom: 30,
-  },
-  // New card styles that match the FavoritesScreen
-  favoriteCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  favoriteHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    position: "relative",
-  },
-  businessImageContainer: {
-    marginRight: 16,
-  },
-  businessImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-  },
-  businessInitialContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: "#003366",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  businessInitial: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-  },
-  businessInfo: {
-    flex: 1,
-    paddingRight: 30, // Make room for the heart icon
-  },
-  businessName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333333",
-    marginBottom: 4,
-  },
-  businessCategory: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 2,
-  },
-  businessAddress: {
-    fontSize: 13,
-    color: "#999999",
-  },
-  favoriteButton: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    padding: 4,
-    zIndex: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F0F0F0",
-    marginVertical: 16,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    flexWrap: "wrap",
-  },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F8F8",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    color: "#333333",
-    marginLeft: 6,
-    fontWeight: "500",
-  },
-  viewDetailsButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    backgroundColor: "#F0F4FF",
-    borderRadius: 12,
-  },
-  viewDetailsText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#003366",
-    marginRight: 4,
   },
   noResultsContainer: {
     alignItems: "center",

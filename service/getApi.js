@@ -3,36 +3,27 @@ import { API_BASE_URL } from "../config/env";
 
 export const fetchAllCompanies = async () => {
   try {
-    let page = 1;
-    const limit = 30; // how many companies per request
     let allCompanies = [];
-    let totalPages = 1;
 
-    // Keep fetching until we’ve got all pages
-    do {
-      const response = await fetch(
-        `${API_BASE_URL}/api/companies?page=${page}&limit=${limit}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok " + response.statusText);
+    const response = await fetch(
+      `${API_BASE_URL}/api/companies`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
+    );
 
-      const data = await response.json();
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
 
-      // Only take paid companies
-      const paidCompanies = data.companies.filter((c) => c.paid === true);
-      allCompanies = [...allCompanies, ...paidCompanies];
+    const data = await response.json();
 
-      totalPages = data.totalPages;
-      page++;
-    } while (page <= totalPages);
+    // Only take paid companies
+    const paidCompanies = data.companies.filter((c) => c.paid === true);
+    allCompanies = [...allCompanies, ...paidCompanies];
 
     // Save all companies to AsyncStorage
     await AsyncStorage.setItem("companiesList", JSON.stringify(allCompanies));
@@ -308,7 +299,7 @@ export const fetchCompanyAds = async (companyId) => {
       }
     );
     if (!response.ok) {
-      throw new Error("Failed to fetch promotions");
+      throw new Error("Failed to fetch promotions OR company has no recent ads");
     }
     const fetchedPromotions = await response.json();
 
