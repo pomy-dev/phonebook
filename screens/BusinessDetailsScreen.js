@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,22 +18,28 @@ import {
   Alert,
   ScrollView,
   TextInput,
-  ActivityIndicator// Added Clipboard for copy functionality
-} from "react-native"
-import { Icons } from "../constants/Icons"
-import { BlurView } from "expo-blur"
+  ActivityIndicator, // Added Clipboard for copy functionality
+} from "react-native";
+import { Icons } from "../constants/Icons";
+import { BlurView } from "expo-blur";
 import { handleShareVia } from "../utils/callFunctions";
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Location from 'expo-location';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Location from "expo-location";
 import { GOOGLE_MAPS_API_KEY } from "../config/env";
-import { AppContext } from "../context/appContext"
-import MapView, { Marker, Polyline } from 'react-native-maps';
-import CustomShareVia from "../components/customShareVia"
-import { handleEmail, handleWhatsapp, handleWebsite } from "../utils/callFunctions"
+import { AppContext } from "../context/appContext";
+import MapView, { Marker, Polyline } from "react-native-maps";
+import {
+  handleEmail,
+  handleWhatsapp,
+  handleWebsite,
+} from "../utils/callFunctions";
+import { checkNetworkConnectivity } from "../service/checkNetwork";
+import CustomLoader from "../components/customLoader";
+import { CustomToast } from "../components/customToast";
 
-const { width, height } = Dimensions.get("window")
-const BOTTOM_SHEET_HEIGHT = height * 0.6
+const { width, height } = Dimensions.get("window");
+const BOTTOM_SHEET_HEIGHT = height * 0.6;
 
 // Function to decode Google Maps polyline
 const decodePolyline = (encoded) => {
@@ -52,7 +58,7 @@ const decodePolyline = (encoded) => {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlat = (result & 1) ? ~(result >> 1) : result >> 1;
+    let dlat = result & 1 ? ~(result >> 1) : result >> 1;
     lat += dlat;
 
     shift = 0;
@@ -62,7 +68,7 @@ const decodePolyline = (encoded) => {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlng = (result & 1) ? ~(result >> 1) : result >> 1;
+    let dlng = result & 1 ? ~(result >> 1) : result >> 1;
     lng += dlng;
 
     points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
@@ -71,34 +77,36 @@ const decodePolyline = (encoded) => {
 };
 
 const BusinessDetailScreen = ({ route, navigation }) => {
-  const { theme, isDarkMode } = React.useContext(AppContext);
+  const { theme, selectedState, isOnline, isDarkMode } =
+    React.useContext(AppContext);
   const insets = useSafeAreaInsets();
   const { business } = route.params;
-  const HEADER_MAX_HEIGHT = 220 + insets.top
-  const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 80 + insets.top : 60 + insets.top
-  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT
-  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0
+  const HEADER_MAX_HEIGHT = 220 + insets.top;
+  const HEADER_MIN_HEIGHT =
+    Platform.OS === "ios" ? 80 + insets.top : 60 + insets.top;
+  const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+  const STATUSBAR_HEIGHT = StatusBar.currentHeight || 0;
 
   // State variables
-  const [isFavorite, setIsFavorite] = useState(false)
-  const [activeTab, setActiveTab] = useState("about")
-  const [galleryExpanded, setGalleryExpanded] = useState(false)
-  const [selectedImage, setSelectedImage] = useState(null)
-  const [showBottomSheet, setShowBottomSheet] = useState(false)
-  const [bottomSheetContent, setBottomSheetContent] = useState("phone")
-  const [showShareOptions, setShowShareOptions] = useState(false)
-  const [loadingMap, setLoadingMap] = useState(true)
-  const [gallery, setGallery] = useState([])
-  const [showRatingDetails, setShowRatingDetails] = useState(false)
-  const [isGold, setIsGold] = useState(false)
-  const [isSilver, setIsSilver] = useState(false)
-  const [showReviewModal, setShowReviewModal] = useState(false)
-  const [reviewName, setReviewName] = useState('')
-  const [reviewText, setReviewText] = useState('')
-  const [reviewRating, setReviewRating] = useState(5)
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
-  const [hasWhatsApp, setHasWhatsApp] = useState(false)
-  const [mapError, setMapError] = useState(null)
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [activeTab, setActiveTab] = useState("about");
+  const [galleryExpanded, setGalleryExpanded] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [bottomSheetContent, setBottomSheetContent] = useState("phone");
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [loadingMap, setLoadingMap] = useState(true);
+  const [gallery, setGallery] = useState([]);
+  const [showRatingDetails, setShowRatingDetails] = useState(false);
+  const [isGold, setIsGold] = useState(false);
+  const [isSilver, setIsSilver] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewName, setReviewName] = useState("");
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [hasWhatsApp, setHasWhatsApp] = useState(false);
+  const [mapError, setMapError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [businessLocation, setBusinessLocation] = useState(null);
   const [directions, setDirections] = useState(null);
@@ -106,17 +114,17 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [mapRegion, setMapRegion] = useState(null);
 
   // Animation values
-  const scrollY = useRef(new Animated.Value(0)).current
-  const bottomSheetAnim = useRef(new Animated.Value(0)).current
-  const imageViewerAnim = useRef(new Animated.Value(0)).current
-  const shareOptionsAnim = useRef(new Animated.Value(0)).current
-  const mapLoadingAnim = useRef(new Animated.Value(0)).current
-  const callButtonScale = useRef(new Animated.Value(1)).current
-  const ratingDetailsAnim = useRef(new Animated.Value(0)).current
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const bottomSheetAnim = useRef(new Animated.Value(0)).current;
+  const imageViewerAnim = useRef(new Animated.Value(0)).current;
+  const shareOptionsAnim = useRef(new Animated.Value(0)).current;
+  const mapLoadingAnim = useRef(new Animated.Value(0)).current;
+  const callButtonScale = useRef(new Animated.Value(1)).current;
+  const ratingDetailsAnim = useRef(new Animated.Value(0)).current;
 
   // Refs
-  const scrollViewRef = useRef(null)
-  const galleryRef = useRef(null)
+  const scrollViewRef = useRef(null);
+  const galleryRef = useRef(null);
 
   // Calculate average rating
   // const averageRating = business.reviews && business.reviews.length > 0
@@ -127,31 +135,34 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   useEffect(() => {
     const checkFavoriteStatus = async () => {
       try {
-        const storedFavorites = await AsyncStorage.getItem('favorites')
+        const storedFavorites = await AsyncStorage.getItem("favorites");
         if (storedFavorites) {
-          const favorites = JSON.parse(storedFavorites)
-          const isInFavorites = favorites.some(fav => fav._id === business._id)
-          setIsFavorite(isInFavorites)
+          const favorites = JSON.parse(storedFavorites);
+          const isInFavorites = favorites.some(
+            (fav) => fav._id === business._id
+          );
+          setIsFavorite(isInFavorites);
         }
       } catch (error) {
-        console.log('Error checking favorite status:', error)
+        console.log("Error checking favorite status:", error);
       }
-    }
+    };
 
     const checkWhatsApp = () => {
       if (business.phone && business.phone.length > 0) {
-        const hasWhatsAppNumber = business.phone.some(phone =>
-          phone.phone_type === 'whatsapp' || phone.phone_type === 'whatsApp'
-        )
-        setHasWhatsApp(hasWhatsAppNumber)
+        const hasWhatsAppNumber = business.phone.some(
+          (phone) =>
+            phone.phone_type === "whatsapp" || phone.phone_type === "whatsApp"
+        );
+        setHasWhatsApp(hasWhatsAppNumber);
       } else {
-        setHasWhatsApp(false)
+        setHasWhatsApp(false);
       }
-    }
+    };
 
-    checkFavoriteStatus()
-    checkWhatsApp()
-    getImages()
+    checkFavoriteStatus();
+    checkWhatsApp();
+    getImages();
 
     const timer = setTimeout(() => {
       Animated.timing(mapLoadingAnim, {
@@ -159,9 +170,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         duration: 600,
         useNativeDriver: true,
       }).start(() => {
-        setLoadingMap(false)
-      })
-    }, 1500)
+        setLoadingMap(false);
+      });
+    }, 1500);
 
     const pulseAnimation = Animated.loop(
       Animated.sequence([
@@ -176,29 +187,29 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           useNativeDriver: true,
         }),
         Animated.delay(2000),
-      ]),
-    )
+      ])
+    );
 
-    pulseAnimation.start()
+    pulseAnimation.start();
 
     return () => {
-      clearTimeout(timer)
-      pulseAnimation.stop()
-    }
-  }, [business._id, business.phone])
+      clearTimeout(timer);
+      pulseAnimation.stop();
+    };
+  }, [business._id, business.phone]);
 
   function getImages() {
-    let images = business.gallery || []
-    let imagesList = []
+    let images = business.gallery || [];
+    let imagesList = [];
 
     if (images && images.length > 0) {
       images.forEach((image, index) => {
         imagesList.push({
           id: index + 1,
           image: image,
-        })
-      })
-      setGallery(imagesList)
+        });
+      });
+      setGallery(imagesList);
     }
   }
 
@@ -215,90 +226,92 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           duration: 150,
           useNativeDriver: true,
         }),
-      ]).start()
+      ]).start();
 
-      const newFavoriteStatus = !isFavorite
-      setIsFavorite(newFavoriteStatus)
+      const newFavoriteStatus = !isFavorite;
+      setIsFavorite(newFavoriteStatus);
 
-      const storedFavorites = await AsyncStorage.getItem('favorites')
-      let favorites = storedFavorites ? JSON.parse(storedFavorites) : []
+      const storedFavorites = await AsyncStorage.getItem("favorites");
+      let favorites = storedFavorites ? JSON.parse(storedFavorites) : [];
 
       if (newFavoriteStatus) {
-        if (!favorites.some(fav => fav._id === business._id)) {
-          favorites.push(business)
+        if (!favorites.some((fav) => fav._id === business._id)) {
+          favorites.push(business);
         }
       } else {
-        favorites = favorites.filter(fav => fav._id !== business._id)
+        favorites = favorites.filter((fav) => fav._id !== business._id);
       }
 
-      await AsyncStorage.setItem('favorites', JSON.stringify(favorites))
+      await AsyncStorage.setItem("favorites", JSON.stringify(favorites));
     } catch (error) {
-      console.log('Error updating favorites:', error)
+      console.log("Error updating favorites:", error);
     }
-  }
+  };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return gestureState.dy > 5
+        return gestureState.dy > 5;
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dy > 0) {
-          bottomSheetAnim.setValue(gestureState.dy)
+          bottomSheetAnim.setValue(gestureState.dy);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 100) {
-          closeBottomSheet()
+          closeBottomSheet();
         } else {
           Animated.spring(bottomSheetAnim, {
             toValue: 0,
             useNativeDriver: true,
             bounciness: 8,
-          }).start()
+          }).start();
         }
       },
-    }),
-  ).current
+    })
+  ).current;
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
     outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
     extrapolate: "clamp",
-  })
+  });
 
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
     outputRange: [1, 0.5, 0],
     extrapolate: "clamp",
-  })
+  });
 
   const headerTitleOpacity = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
     outputRange: [0, 0.5, 1],
     extrapolate: "clamp",
-  })
+  });
 
   const headerParallaxY = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
     outputRange: [0, -HEADER_SCROLL_DISTANCE / 3],
     extrapolate: "clamp",
-  })
+  });
 
   useEffect(() => {
     const getLocationsAndDirections = async () => {
       try {
         // Request location permissions
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setLocationError('Permission to access location was denied.');
-          console.log('Location permission denied');
+        if (status !== "granted") {
+          setLocationError("Permission to access location was denied.");
+          console.log("Location permission denied");
           return;
         }
 
         // Get user's current location
-        const userLoc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        const userLoc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.High,
+        });
         // console.log('User Location:', userLoc.coords);
         setUserLocation({
           latitude: userLoc.coords.latitude,
@@ -330,36 +343,40 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               const data = await response.json();
               // console.log('Directions API Response:', data);
 
-              if (data.status === 'OK') {
-                const points = decodePolyline(data.routes[0].overview_polyline.points);
+              if (data.status === "OK") {
+                const points = decodePolyline(
+                  data.routes[0].overview_polyline.points
+                );
                 setDirections(points);
 
                 // Adjust map region to fit both locations
                 setMapRegion({
                   latitude: (userLoc.coords.latitude + latitude) / 2,
                   longitude: (userLoc.coords.longitude + longitude) / 2,
-                  latitudeDelta: Math.abs(userLoc.coords.latitude - latitude) * 1.5,
-                  longitudeDelta: Math.abs(userLoc.coords.longitude - longitude) * 1.5,
+                  latitudeDelta:
+                    Math.abs(userLoc.coords.latitude - latitude) * 1.5,
+                  longitudeDelta:
+                    Math.abs(userLoc.coords.longitude - longitude) * 1.5,
                 });
               } else {
                 setLocationError(`Directions API error: ${data.status}`);
-                console.log('Directions API error:', data.status);
+                console.log("Directions API error:", data.status);
               }
             } else {
-              setLocationError('Business location could not be found.');
+              setLocationError("Business location could not be found.");
               // console.log('Geocoding failed: No results for business address');
             }
           } catch (error) {
-            setLocationError('Failed to geocode business address.');
-            console.error('Geocoding error:', error);
+            setLocationError("Failed to geocode business address.");
+            console.error("Geocoding error:", error);
           }
         } else {
-          setLocationError('Business address is not available.');
-          console.log('No business address provided');
+          setLocationError("Business address is not available.");
+          console.log("No business address provided");
         }
       } catch (error) {
-        setLocationError('Failed to load location data.');
-        console.error('Location error:', error);
+        setLocationError("Failed to load location data.");
+        console.error("Location error:", error);
       } finally {
         setLoadingMap(false);
       }
@@ -374,9 +391,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         toValue: 0,
         useNativeDriver: true,
         bounciness: 8,
-      }).start()
+      }).start();
     }
-  }, [showBottomSheet])
+  }, [showBottomSheet]);
 
   useEffect(() => {
     if (selectedImage !== null) {
@@ -384,15 +401,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
-      }).start()
+      }).start();
     } else {
       Animated.timing(imageViewerAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
-      }).start()
+      }).start();
     }
-  }, [selectedImage])
+  }, [selectedImage]);
 
   useEffect(() => {
     if (showShareOptions) {
@@ -400,15 +417,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         toValue: 1,
         useNativeDriver: true,
         friction: 8,
-      }).start()
+      }).start();
     } else {
       Animated.timing(shareOptionsAnim, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
-      }).start()
+      }).start();
     }
-  }, [showShareOptions])
+  }, [showShareOptions]);
 
   useEffect(() => {
     if (showRatingDetails) {
@@ -416,26 +433,26 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         toValue: 1,
         useNativeDriver: true,
         friction: 8,
-      }).start()
+      }).start();
     } else {
       Animated.timing(ratingDetailsAnim, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
-      }).start()
+      }).start();
     }
-  }, [showRatingDetails])
+  }, [showRatingDetails]);
 
   const openBottomSheet = (content) => {
-    setBottomSheetContent(content)
-    setShowBottomSheet(true)
-    bottomSheetAnim.setValue(BOTTOM_SHEET_HEIGHT)
+    setBottomSheetContent(content);
+    setShowBottomSheet(true);
+    bottomSheetAnim.setValue(BOTTOM_SHEET_HEIGHT);
     Animated.spring(bottomSheetAnim, {
       toValue: 0,
       useNativeDriver: true,
       bounciness: 8,
-    }).start()
-  }
+    }).start();
+  };
 
   const closeBottomSheet = () => {
     Animated.timing(bottomSheetAnim, {
@@ -443,31 +460,31 @@ const BusinessDetailScreen = ({ route, navigation }) => {
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
-      setShowBottomSheet(false)
-    })
-  }
+      setShowBottomSheet(false);
+    });
+  };
 
   const handleCall = () => {
     if (business.phone && business.phone.length === 1) {
-      Linking.openURL(`tel:${business.phone[0].number}`)
+      Linking.openURL(`tel:${business.phone[0].number}`);
     } else if (business.phone && business.phone.length > 1) {
-      openBottomSheet("phone")
+      openBottomSheet("phone");
     }
-  }
+  };
 
   const handleCallNumber = (number) => {
-    Linking.openURL(`tel:${number}`)
-    closeBottomSheet()
-  }
+    Linking.openURL(`tel:${number}`);
+    closeBottomSheet();
+  };
 
   const handleShare = async () => {
-    setShowShareOptions(!showShareOptions)
-  }
+    setShowShareOptions(!showShareOptions);
+  };
 
   const shareVia = async (method) => {
     await handleShareVia(method, business, null);
     setShowShareOptions(false);
-  }
+  };
 
   const handleGetDirections = () => {
     if (businessLocation) {
@@ -476,103 +493,109 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         android: `google.navigation:q=${businessLocation.latitude},${businessLocation.longitude}`,
       });
       Linking.openURL(url);
-      console.log('url 1:', url);
-      console.log('Opening businessLocation:', businessLocation);
+      console.log("url 1:", url);
+      console.log("Opening businessLocation:", businessLocation);
     } else if (business.address) {
       const url = Platform.select({
         ios: `maps:0,0?q=${encodeURIComponent(business.address)}`,
         android: `geo:0,0?q=${encodeURIComponent(business.address)}`,
       });
       Linking.openURL(url);
-      console.log('url 2:', url);
+      console.log("url 2:", url);
     } else {
-      Alert.alert('Error', 'Business location is not available.');
+      Alert.alert("Error", "Business location is not available.");
     }
   };
 
   const handleImagePress = (image) => {
-    setSelectedImage(image)
-  }
+    setSelectedImage(image);
+  };
 
   const closeImageViewer = () => {
-    setSelectedImage(null)
-  }
+    setSelectedImage(null);
+  };
 
   const handleSubmitReview = async () => {
     if (!reviewName.trim()) {
-      Alert.alert('Error', 'Please enter your name')
-      return
+      Alert.alert("Error", "Please enter your name");
+      return;
     }
 
     if (!reviewText.trim()) {
-      Alert.alert('Error', 'Please enter your review')
-      return
+      Alert.alert("Error", "Please enter your review");
+      return;
     }
 
     try {
-      setIsSubmittingReview(true)
+      setIsSubmittingReview(true);
       const newReview = {
         name: reviewName.trim(),
         rating: reviewRating,
         review: reviewText.trim(),
         date: new Date().toISOString(),
-      }
+      };
 
       try {
-        await fetch(`https://localhost:5000/api/companies/${business._id}/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newReview),
-        })
+        await fetch(
+          `https://localhost:5000/api/companies/${business._id}/reviews`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newReview),
+          }
+        );
 
-        setReviewName('')
-        setReviewText('')
-        setReviewRating(5)
-        setShowReviewModal(false)
+        setReviewName("");
+        setReviewText("");
+        setReviewRating(5);
+        setShowReviewModal(false);
 
         Alert.alert(
-          'Thank You!',
-          'Your review has been submitted successfully.',
-          [{ text: 'OK' }],
-        )
+          "Thank You!",
+          "Your review has been submitted successfully.",
+          [{ text: "OK" }]
+        );
       } catch (error) {
-        console.log('API Error:', error)
+        console.log("API Error:", error);
         setTimeout(() => {
-          setReviewName('')
-          setReviewText('')
-          setReviewRating(5)
-          setShowReviewModal(false)
+          setReviewName("");
+          setReviewText("");
+          setReviewRating(5);
+          setShowReviewModal(false);
 
           Alert.alert(
-            'Thank You!',
-            'Your review has been submitted successfully.',
-            [{ text: 'OK' }],
-          )
-        }, 1000)
+            "Thank You!",
+            "Your review has been submitted successfully.",
+            [{ text: "OK" }]
+          );
+        }, 1000);
       }
     } catch (error) {
-      console.log('Error submitting review:', error)
-      Alert.alert('Error', 'Failed to submit review. Please try again.')
+      console.log("Error submitting review:", error);
+      Alert.alert("Error", "Failed to submit review. Please try again.");
     } finally {
-      setIsSubmittingReview(false)
+      setIsSubmittingReview(false);
     }
-  }
+  };
 
   const handleTabPress = (tab) => {
-    setActiveTab(tab)
+    setActiveTab(tab);
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: HEADER_MAX_HEIGHT + 120, animated: true })
+      scrollViewRef.current.scrollTo({
+        y: HEADER_MAX_HEIGHT + 120,
+        animated: true,
+      });
     }
-  }
+  };
 
   // const toggleRatingDetails = () => {
   //   setShowRatingDetails(!showRatingDetails)
   // }
 
   const handleMapLoadError = () => {
-    setLocationError('Failed to load map. Check your network connection.');
+    setLocationError("Failed to load map. Check your network connection.");
     setLoadingMap(false);
-  }
+  };
 
   // const renderStars = (rating, size = 16, color = "#FFD700") => {
   //   const stars = []
@@ -599,13 +622,17 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   // }
 
   const renderGalleryItem = ({ item }) => (
-    <TouchableOpacity style={styles.galleryItem} activeOpacity={0.9} onPress={() => handleImagePress(item)}>
+    <TouchableOpacity
+      style={styles.galleryItem}
+      activeOpacity={0.9}
+      onPress={() => handleImagePress(item)}
+    >
       <Image source={{ uri: item.image }} style={styles.galleryImage} />
       <View style={styles.galleryItemOverlay}>
         <Icons.Ionicons name="expand-outline" size={20} color="#FFFFFF" />
       </View>
     </TouchableOpacity>
-  )
+  );
 
   const renderServiceItem = ({ item, index }) => (
     <View style={styles.serviceCard}>
@@ -613,55 +640,97 @@ const BusinessDetailScreen = ({ route, navigation }) => {
         <Icons.Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
       </View>
       <View style={styles.serviceContent}>
-        <Text style={styles.serviceName} numberOfLines={2} ellipsizeMode="tail">{item}</Text>
+        <Text style={styles.serviceName} numberOfLines={2} ellipsizeMode="tail">
+          {item}
+        </Text>
       </View>
     </View>
-  )
+  );
 
-  const handleNews = () => {
+  const handleNews = async () => {
+    // Navigate to the BusinessArticle screen if connected
     navigation.navigate("BusinessArticle", {
       company: business,
       contentType: "Publications",
     });
-  }
+  };
 
-  const handleAdvert = () => {
+  const handleAdvert = async () => {
+    // Navigate to the BusinessArticle screen if connected
     navigation.navigate("BusinessArticle", {
       company: business,
       contentType: "Promotions",
     });
-  }
+  };
 
   return (
-    <SafeAreaView style={[styles.container, , { backgroundColor: theme.colors.background }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
+    <SafeAreaView
+      style={[styles.container, , { backgroundColor: theme.colors.background }]}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={theme.colors.background}
+      />
 
       {/* Company Details Body */}
       <Animated.ScrollView
         ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
         scrollEventThrottle={16}
       >
         <View style={{ height: HEADER_MAX_HEIGHT }} />
 
-        <View style={[styles.businessInfoContainer, { backgroundColor: theme.colors.card }]}>
-
+        <View
+          style={[
+            styles.businessInfoContainer,
+            { backgroundColor: theme.colors.card },
+          ]}
+        >
           <View style={styles.businessInfoHeader}>
-            <View style={[styles.logoContainer, { borderColor: theme.colors.secondary }]}>
+            <View
+              style={[
+                styles.logoContainer,
+                { borderColor: theme.colors.secondary },
+              ]}
+            >
               {business.logo ? (
-                <Image source={{ uri: business.logo }} style={styles.logo} resizeMode="contain" />
+                <Image
+                  source={{ uri: business.logo }}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
               ) : (
                 <View style={styles.logoPlaceholder}>
-                  <Text style={styles.logoPlaceholderText}>{business.company_name.charAt(0)}</Text>
+                  <Text style={styles.logoPlaceholderText}>
+                    {business.company_name.charAt(0)}
+                  </Text>
                 </View>
               )}
             </View>
 
             <View style={styles.businessInfoContent}>
-              <Text style={[styles.businessName, { color: theme.colors.text }]} numberOfLines={2} ellipsizeMode="tail">{business.company_name}</Text>
-              <Text style={[styles.businessCategory, { color: theme.colors.sub_text }]} numberOfLines={1} ellipsizeMode="tail">{business.company_type}</Text>
+              <Text
+                style={[styles.businessName, { color: theme.colors.text }]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {business.company_name}
+              </Text>
+              <Text
+                style={[
+                  styles.businessCategory,
+                  { color: theme.colors.sub_text },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {business.company_type}
+              </Text>
               {/* <TouchableOpacity
                 style={styles.ratingContainer}
                 onPress={toggleRatingDetails}
@@ -734,46 +803,99 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.quickActionsContainer}>
-
             <TouchableOpacity
               style={styles.primaryActionButton}
               onPress={handleCall}
               activeOpacity={0.8}
             >
               <Icons.Ionicons name="call" size={18} color="#CCC" />
-              <Text style={[styles.primaryActionText, { color: "#CCC" }]}>Call Now</Text>
+              <Text style={[styles.primaryActionText, { color: "#CCC" }]}>
+                Call Now
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.secondaryActionsRow}>
-
-              <TouchableOpacity style={styles.secondaryActionButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                <Icons.Ionicons name="navigate" size={20} color={theme.colors.indicator} />
-                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>Directions</Text>
-              </TouchableOpacity>
-
-              {hasWhatsApp && (
-                <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleWhatsapp(business.phone)} activeOpacity={0.7}>
-                  <Icons.Ionicons name="logo-whatsapp" size={20} color={theme.colors.indicator} />
-                  <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>WhatsApp</Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleNews()} activeOpacity={0.7}>
-                <Icons.FontAwesome6 name="newspaper" size={20} color={theme.colors.indicator} />
-                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>News</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.secondaryActionButton} onPress={() => handleAdvert()} activeOpacity={0.7}>
-                <Icons.Entypo
-                  name='price-tag'
+              <TouchableOpacity
+                style={styles.secondaryActionButton}
+                onPress={handleGetDirections}
+                activeOpacity={0.7}
+              >
+                <Icons.Ionicons
+                  name="navigate"
                   size={20}
                   color={theme.colors.indicator}
                 />
-                <Text style={[styles.secondaryActionText, { color: theme.colors.light }]}>
-                  adverts
+                <Text
+                  style={[
+                    styles.secondaryActionText,
+                    { color: theme.colors.light },
+                  ]}
+                >
+                  Directions
                 </Text>
               </TouchableOpacity>
 
+              {hasWhatsApp && (
+                <TouchableOpacity
+                  style={styles.secondaryActionButton}
+                  onPress={() => handleWhatsapp(business.phone)}
+                  activeOpacity={0.7}
+                >
+                  <Icons.Ionicons
+                    name="logo-whatsapp"
+                    size={20}
+                    color={theme.colors.indicator}
+                  />
+                  <Text
+                    style={[
+                      styles.secondaryActionText,
+                      { color: theme.colors.light },
+                    ]}
+                  >
+                    WhatsApp
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.secondaryActionButton}
+                onPress={() => handleNews()}
+                activeOpacity={0.7}
+              >
+                <Icons.FontAwesome6
+                  name="newspaper"
+                  size={20}
+                  color={theme.colors.indicator}
+                />
+                <Text
+                  style={[
+                    styles.secondaryActionText,
+                    { color: theme.colors.light },
+                  ]}
+                >
+                  News
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.secondaryActionButton}
+                onPress={() => handleAdvert()}
+                activeOpacity={0.7}
+              >
+                <Icons.Entypo
+                  name="price-tag"
+                  size={20}
+                  color={theme.colors.indicator}
+                />
+                <Text
+                  style={[
+                    styles.secondaryActionText,
+                    { color: theme.colors.light },
+                  ]}
+                >
+                  adverts
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -784,32 +906,61 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           contentContainerStyle={styles.tabScrollContainer}
         >
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "about" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "about" && styles.activeTabButton,
+            ]}
             onPress={() => handleTabPress("about")}
             activeOpacity={0.7}
           >
             <Icons.Ionicons
-              name={activeTab === "about" ? "information-circle" : "information-circle-outline"}
+              name={
+                activeTab === "about"
+                  ? "information-circle"
+                  : "information-circle-outline"
+              }
               size={20}
               color={activeTab === "about" ? "#FFFFFF" : "#999999"}
             />
-            <Text style={[styles.tabText, activeTab === "about" && styles.activeTabText]}>About</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "about" && styles.activeTabText,
+              ]}
+            >
+              About
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "services" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "services" && styles.activeTabButton,
+            ]}
             onPress={() => handleTabPress("services")}
             activeOpacity={0.7}
           >
             <Icons.Ionicons
-              name={activeTab === "services" ? "briefcase" : "briefcase-outline"}
+              name={
+                activeTab === "services" ? "briefcase" : "briefcase-outline"
+              }
               size={20}
               color={activeTab === "services" ? "#FFFFFF" : "#999999"}
             />
-            <Text style={[styles.tabText, activeTab === "services" && styles.activeTabText]}>Services</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "services" && styles.activeTabText,
+              ]}
+            >
+              Services
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "gallery" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "gallery" && styles.activeTabButton,
+            ]}
             onPress={() => handleTabPress("gallery")}
             activeOpacity={0.7}
           >
@@ -818,10 +969,20 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               size={20}
               color={activeTab === "gallery" ? "#FFFFFF" : "#999999"}
             />
-            <Text style={[styles.tabText, activeTab === "gallery" && styles.activeTabText]}>Gallery</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "gallery" && styles.activeTabText,
+              ]}
+            >
+              Gallery
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === "contact" && styles.activeTabButton]}
+            style={[
+              styles.tabButton,
+              activeTab === "contact" && styles.activeTabButton,
+            ]}
             onPress={() => handleTabPress("contact")}
             activeOpacity={0.7}
           >
@@ -830,37 +991,97 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               size={20}
               color={activeTab === "contact" ? "#FFFFFF" : "#999999"}
             />
-            <Text style={[styles.tabText, activeTab === "contact" && styles.activeTabText]}>Contact</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "contact" && styles.activeTabText,
+              ]}
+            >
+              Contact
+            </Text>
           </TouchableOpacity>
         </ScrollView>
 
         <View style={styles.tabContent}>
           {activeTab === "about" && (
             <>
-              <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+              <View
+                style={[styles.section, { backgroundColor: theme.colors.card }]}
+              >
                 <View style={styles.sectionHeaderRow}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>About Us</Text>
+                  <Text
+                    style={[styles.sectionTitle, { color: theme.colors.text }]}
+                  >
+                    About Us
+                  </Text>
                   {isGold && (
-                    <View style={[styles.subscriptionBadge, { backgroundColor: theme.colors.sub_card }]}>
+                    <View
+                      style={[
+                        styles.subscriptionBadge,
+                        { backgroundColor: theme.colors.sub_card },
+                      ]}
+                    >
                       <Icons.Ionicons name="star" size={12} color="#FFD700" />
-                      <Text style={[styles.subscriptionText, { color: theme.colors.text }]}>Gold Member</Text>
+                      <Text
+                        style={[
+                          styles.subscriptionText,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        Gold Member
+                      </Text>
                     </View>
                   )}
                   {isSilver && (
-                    <View style={[styles.subscriptionBadge, { backgroundColor: '#E0E0E0' }]}>
-                      <Icons.Ionicons name="star-half" size={12} color={theme.colors.text} />
-                      <Text style={[styles.subscriptionText, { color: theme.colors.text }]}>Silver Member</Text>
+                    <View
+                      style={[
+                        styles.subscriptionBadge,
+                        { backgroundColor: "#E0E0E0" },
+                      ]}
+                    >
+                      <Icons.Ionicons
+                        name="star-half"
+                        size={12}
+                        color={theme.colors.text}
+                      />
+                      <Text
+                        style={[
+                          styles.subscriptionText,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        Silver Member
+                      </Text>
                     </View>
                   )}
                 </View>
-                <Text style={[styles.aboutText, { color: theme.colors.text }]}>{business.large_description || business.description}</Text>
+                <Text style={[styles.aboutText, { color: theme.colors.text }]}>
+                  {business.large_description || business.description}
+                </Text>
               </View>
               {business.working_hours && (
-                <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+                <View
+                  style={[
+                    styles.section,
+                    { backgroundColor: theme.colors.card },
+                  ]}
+                >
                   <View style={styles.sectionHeaderRow}>
-                    <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Business Hours</Text>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      Business Hours
+                    </Text>
                   </View>
-                  <View style={[styles.hoursContainer, { backgroundColor: '#F0F4FF' }]}>
+                  <View
+                    style={[
+                      styles.hoursContainer,
+                      { backgroundColor: "#F0F4FF" },
+                    ]}
+                  >
                     {business.working_hours.map((hours, index) => (
                       <View key={index} style={[styles.hourRow]}>
                         <Text style={[styles.dayText]}>{hours.day}</Text>
@@ -871,8 +1092,20 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </View>
               )}
 
-              <View style={[styles.mapSection, { backgroundColor: theme.colors.card }]}>
-                <Text style={[styles.sectionTitle, { margin: 20, color: theme.colors.text }]}>Location</Text>
+              <View
+                style={[
+                  styles.mapSection,
+                  { backgroundColor: theme.colors.card },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { margin: 20, color: theme.colors.text },
+                  ]}
+                >
+                  Location
+                </Text>
                 <View style={styles.mapContainer}>
                   {locationError && (
                     <View style={{ paddingHorizontal: 20 }}>
@@ -895,7 +1128,11 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                           title={business.company_name}
                           description={business.address}
                         >
-                          <Icons.Ionicons name="location" size={30} color="#FF0000" />
+                          <Icons.Ionicons
+                            name="location"
+                            size={30}
+                            color="#FF0000"
+                          />
                         </Marker>
                       )}
 
@@ -909,7 +1146,15 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     </MapView>
                   ) : (
                     <View style={styles.mapLoadingContainer}>
-                      <Icons.MaterialCommunityIcons name="access-point-network-off" style={{ height: 10, width: 8, padding: 10, color: '#ccccccb6' }} />
+                      <Icons.MaterialCommunityIcons
+                        name="access-point-network-off"
+                        style={{
+                          height: 10,
+                          width: 8,
+                          padding: 10,
+                          color: "#ccccccb6",
+                        }}
+                      />
                       <ActivityIndicator size="large" color="#003366" />
                       <Text style={styles.mapLoadingText}>Loading map...</Text>
                     </View>
@@ -918,18 +1163,33 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   {business.address && (
                     <View style={{ paddingHorizontal: 20 }}>
                       <View style={styles.addressContainer}>
-                        <Icons.Ionicons name="location" size={18} color="#003366" />
-                        <Text style={styles.addressText} numberOfLines={2} ellipsizeMode="tail">
+                        <Icons.Ionicons
+                          name="location"
+                          size={18}
+                          color="#003366"
+                        />
+                        <Text
+                          style={styles.addressText}
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
+                        >
                           {business.address}
                         </Text>
                       </View>
                     </View>
-
                   )}
 
                   <View style={{ paddingBottom: 20 }}>
-                    <TouchableOpacity style={styles.getDirectionsButton} onPress={handleGetDirections} activeOpacity={0.7}>
-                      <Icons.Ionicons name="navigate-outline" size={16} color="#FFFFFF" />
+                    <TouchableOpacity
+                      style={styles.getDirectionsButton}
+                      onPress={handleGetDirections}
+                      activeOpacity={0.7}
+                    >
+                      <Icons.Ionicons
+                        name="navigate-outline"
+                        size={16}
+                        color="#FFFFFF"
+                      />
                       <Text style={styles.getDirectionsText}>Google Maps</Text>
                     </TouchableOpacity>
                   </View>
@@ -937,8 +1197,17 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               </View>
 
               {business.social_media && business.social_media.length > 0 && (
-                <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Connect With Us</Text>
+                <View
+                  style={[
+                    styles.section,
+                    { backgroundColor: theme.colors.card },
+                  ]}
+                >
+                  <Text
+                    style={[styles.sectionTitle, { color: theme.colors.text }]}
+                  >
+                    Connect With Us
+                  </Text>
                   <View style={styles.socialMediaContainer}>
                     {business.social_media.map((social, index) => (
                       <TouchableOpacity
@@ -952,18 +1221,18 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                             social.platform === "Facebook"
                               ? "logo-facebook"
                               : social.platform === "Twitter"
-                                ? "logo-twitter"
-                                : social.platform === "Instagram"
-                                  ? "logo-instagram"
-                                  : social.platform === "X"
-                                    ? "logo-twitter"
-                                    : social.platform === "YouTube"
-                                      ? "logo-youtube"
-                                      : social.platform === "LinkedIn"
-                                        ? "logo-linkedin"
-                                        : social.platform === "TikTok"
-                                          ? "logo-tiktok"
-                                          : "globe-outline"
+                              ? "logo-twitter"
+                              : social.platform === "Instagram"
+                              ? "logo-instagram"
+                              : social.platform === "X"
+                              ? "logo-twitter"
+                              : social.platform === "YouTube"
+                              ? "logo-youtube"
+                              : social.platform === "LinkedIn"
+                              ? "logo-linkedin"
+                              : social.platform === "TikTok"
+                              ? "logo-tiktok"
+                              : "globe-outline"
                           }
                           size={24}
                           color="#FFFFFF"
@@ -976,8 +1245,12 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             </>
           )}
           {activeTab === "services" && (
-            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Our Services</Text>
+            <View
+              style={[styles.section, { backgroundColor: theme.colors.card }]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Our Services
+              </Text>
               {business.services && business.services.length > 0 ? (
                 <FlatList
                   data={business.services}
@@ -988,18 +1261,47 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 />
               ) : (
                 <View style={styles.noServicesContainer}>
-                  <Icons.Ionicons name="briefcase-outline" size={48} color="#DDDDDD" />
-                  <Text style={[styles.noServicesText, { color: theme.colors.text }]}>No services listed</Text>
+                  <Icons.Ionicons
+                    name="briefcase-outline"
+                    size={48}
+                    color="#DDDDDD"
+                  />
+                  <Text
+                    style={[
+                      styles.noServicesText,
+                      { color: theme.colors.text },
+                    ]}
+                  >
+                    No services listed
+                  </Text>
                 </View>
               )}
-              <TouchableOpacity style={[styles.contactForServicesButton, { borderColor: theme.colors.indicator }]} onPress={handleCall} activeOpacity={0.7}>
-                <Text style={[styles.contactForServicesText, { color: theme.colors.indicator }]}>Contact for More Information</Text>
+              <TouchableOpacity
+                style={[
+                  styles.contactForServicesButton,
+                  { borderColor: theme.colors.indicator },
+                ]}
+                onPress={handleCall}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.contactForServicesText,
+                    { color: theme.colors.indicator },
+                  ]}
+                >
+                  Contact for More Information
+                </Text>
               </TouchableOpacity>
             </View>
           )}
           {activeTab === "gallery" && (
-            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Photo Gallery</Text>
+            <View
+              style={[styles.section, { backgroundColor: theme.colors.card }]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Photo Gallery
+              </Text>
               {gallery.length > 0 ? (
                 <>
                   <FlatList
@@ -1013,11 +1315,19 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   />
                   {gallery.length > 4 && (
                     <TouchableOpacity
-                      style={[styles.expandGalleryButton, { borderColor: theme.colors.indicator }]}
+                      style={[
+                        styles.expandGalleryButton,
+                        { borderColor: theme.colors.indicator },
+                      ]}
                       onPress={() => setGalleryExpanded(!galleryExpanded)}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.expandGalleryText, { color: theme.colors.indicator }]}>
+                      <Text
+                        style={[
+                          styles.expandGalleryText,
+                          { color: theme.colors.indicator },
+                        ]}
+                      >
                         {galleryExpanded ? "Show Less" : "View All Photos"}
                       </Text>
                     </TouchableOpacity>
@@ -1025,15 +1335,23 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                 </>
               ) : (
                 <View style={styles.noImagesContainer}>
-                  <Icons.Ionicons name="images-outline" size={48} color="#DDDDDD" />
+                  <Icons.Ionicons
+                    name="images-outline"
+                    size={48}
+                    color="#DDDDDD"
+                  />
                   <Text style={styles.noImagesText}>No images available</Text>
                 </View>
               )}
             </View>
           )}
           {activeTab === "contact" && (
-            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact Information</Text>
+            <View
+              style={[styles.section, { backgroundColor: theme.colors.card }]}
+            >
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Contact Information
+              </Text>
               {business.phone &&
                 business.phone.map((phone, index) => (
                   <TouchableOpacity
@@ -1043,39 +1361,98 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                     activeOpacity={0.6}
                   >
                     <View style={styles.contactIconContainer}>
-                      <Icons.Ionicons name="call-outline" size={18} color="#003366" />
+                      <Icons.Ionicons
+                        name="call-outline"
+                        size={18}
+                        color="#003366"
+                      />
                     </View>
                     <View style={styles.contactDetails}>
-                      <Text style={[styles.contactLabel, { color: theme.colors.text }]}>
-                        {phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}
+                      <Text
+                        style={[
+                          styles.contactLabel,
+                          { color: theme.colors.text },
+                        ]}
+                      >
+                        {phone.phone_type.charAt(0).toUpperCase() +
+                          phone.phone_type.slice(1)}
                       </Text>
-                      <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{phone.number}</Text>
+                      <Text
+                        style={[
+                          styles.contactValue,
+                          { color: theme.colors.text },
+                        ]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {phone.number}
+                      </Text>
                     </View>
                     <View style={styles.contactActionButton}>
                       <Text style={styles.contactActionText}>Call</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
-              <TouchableOpacity style={styles.contactItem} onPress={(e) => handleEmail(business.email, e)} activeOpacity={0.6}>
+              <TouchableOpacity
+                style={styles.contactItem}
+                onPress={(e) => handleEmail(business.email, e)}
+                activeOpacity={0.6}
+              >
                 <View style={styles.contactIconContainer}>
-                  <Icons.Ionicons name="mail-outline" size={18} color="#003366" />
+                  <Icons.Ionicons
+                    name="mail-outline"
+                    size={18}
+                    color="#003366"
+                  />
                 </View>
                 <View style={styles.contactDetails}>
-                  <Text style={[styles.contactLabel, { color: theme.colors.text }]}>Email</Text>
-                  <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">{business.email}</Text>
+                  <Text
+                    style={[styles.contactLabel, { color: theme.colors.text }]}
+                  >
+                    Email
+                  </Text>
+                  <Text
+                    style={[styles.contactValue, { color: theme.colors.text }]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {business.email}
+                  </Text>
                 </View>
                 <View style={styles.contactActionButton}>
                   <Text style={styles.contactActionText}>Email</Text>
                 </View>
               </TouchableOpacity>
               {business.website && (
-                <TouchableOpacity style={styles.contactItem} onPress={() => handleWebsite(business.website)} activeOpacity={0.6}>
+                <TouchableOpacity
+                  style={styles.contactItem}
+                  onPress={() => handleWebsite(business.website)}
+                  activeOpacity={0.6}
+                >
                   <View style={styles.contactIconContainer}>
-                    <Icons.Ionicons name="globe-outline" size={18} color="#003366" />
+                    <Icons.Ionicons
+                      name="globe-outline"
+                      size={18}
+                      color="#003366"
+                    />
                   </View>
                   <View style={styles.contactDetails}>
-                    <Text style={[styles.contactLabel, { color: theme.colors.text }]}>Website</Text>
-                    <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                    <Text
+                      style={[
+                        styles.contactLabel,
+                        { color: theme.colors.text },
+                      ]}
+                    >
+                      Website
+                    </Text>
+                    <Text
+                      style={[
+                        styles.contactValue,
+                        { color: theme.colors.text },
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
                       {business.website.replace(/^https?:\/\//, "")}
                     </Text>
                   </View>
@@ -1084,13 +1461,31 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   </View>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.contactItem} onPress={handleGetDirections} activeOpacity={0.6}>
+              <TouchableOpacity
+                style={styles.contactItem}
+                onPress={handleGetDirections}
+                activeOpacity={0.6}
+              >
                 <View style={styles.contactIconContainer}>
-                  <Icons.Ionicons name="location-outline" size={18} color="#003366" />
+                  <Icons.Ionicons
+                    name="location-outline"
+                    size={18}
+                    color="#003366"
+                  />
                 </View>
                 <View style={styles.contactDetails}>
-                  <Text style={[styles.contactLabel, { color: theme.colors.text }]}>Address</Text>
-                  <Text style={[styles.contactValue, { color: theme.colors.text }]} numberOfLines={2} ellipsizeMode="tail">{business.address}</Text>
+                  <Text
+                    style={[styles.contactLabel, { color: theme.colors.text }]}
+                  >
+                    Address
+                  </Text>
+                  <Text
+                    style={[styles.contactValue, { color: theme.colors.text }]}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {business.address}
+                  </Text>
                 </View>
                 <View style={styles.contactActionButton}>
                   <Text style={styles.contactActionText}>Map</Text>
@@ -1098,12 +1493,28 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               </TouchableOpacity>
               {business.working_hours && (
                 <View style={styles.contactHoursContainer}>
-                  <Text style={[styles.contactSectionTitle, { color: theme.colors.text }]}>Business Hours</Text>
-                  <View style={[styles.hoursContainer, { backgroundColor: '#F0F4FF' }]}>
+                  <Text
+                    style={[
+                      styles.contactSectionTitle,
+                      { color: theme.colors.text },
+                    ]}
+                  >
+                    Business Hours
+                  </Text>
+                  <View
+                    style={[
+                      styles.hoursContainer,
+                      { backgroundColor: "#F0F4FF" },
+                    ]}
+                  >
                     {business.working_hours.map((hours, index) => (
                       <View key={index} style={styles.hourRow}>
-                        <Text style={[styles.dayText, { color: '#333333' }]}>{hours.day}</Text>
-                        <Text style={[styles.timeText, { color: '#333333' }]}>{hours.time}</Text>
+                        <Text style={[styles.dayText, { color: "#333333" }]}>
+                          {hours.day}
+                        </Text>
+                        <Text style={[styles.timeText, { color: "#333333" }]}>
+                          {hours.time}
+                        </Text>
                       </View>
                     ))}
                   </View>
@@ -1115,10 +1526,11 @@ const BusinessDetailScreen = ({ route, navigation }) => {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Listed in Phonebook</Text>
-          <Text style={styles.footerCopyright}>© {new Date().getFullYear()} All Rights Reserved</Text>
+          <Text style={styles.footerCopyright}>
+            © {new Date().getFullYear()} All Rights Reserved
+          </Text>
         </View>
-
-      </Animated.ScrollView >
+      </Animated.ScrollView>
 
       {/* Header View */}
       <Animated.View style={[styles.header, { height: headerHeight }]}>
@@ -1132,28 +1544,48 @@ const BusinessDetailScreen = ({ route, navigation }) => {
           ]}
         >
           {business.banner ? (
-            <Image source={{ uri: business.banner }} style={styles.headerBackgroundImage} />
+            <Image
+              source={{ uri: business.banner }}
+              style={styles.headerBackgroundImage}
+            />
           ) : (
-            <View style={[styles.headerBackgroundGradient, { backgroundColor: "#003366" }]} />
+            <View
+              style={[
+                styles.headerBackgroundGradient,
+                { backgroundColor: "#003366" },
+              ]}
+            />
           )}
           <View style={styles.headerOverlay} />
         </Animated.View>
 
         <TouchableOpacity
-          style={[styles.backButton, Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 }]}
+          style={[
+            styles.backButton,
+            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 },
+          ]}
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
         >
           <Icons.Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
-        <View style={[styles.headerActions, Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 }]}>
+        <View
+          style={[
+            styles.headerActions,
+            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 },
+          ]}
+        >
           <TouchableOpacity
             style={styles.headerActionButton}
             onPress={toggleFavorite}
             activeOpacity={0.7}
           >
-            <Animated.View style={{ transform: [{ scale: isFavorite ? callButtonScale : 1 }] }}>
+            <Animated.View
+              style={{
+                transform: [{ scale: isFavorite ? callButtonScale : 1 }],
+              }}
+            >
               <Icons.Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={24}
@@ -1167,210 +1599,344 @@ const BusinessDetailScreen = ({ route, navigation }) => {
             onPress={handleShare}
             activeOpacity={0.7}
           >
-            <Icons.Ionicons name="share-social-outline" size={24} color="#FFFFFF" />
+            <Icons.Ionicons
+              name="share-social-outline"
+              size={24}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
-
         </View>
 
-        <Animated.View style={[
-          styles.headerTitleContainer,
-          { opacity: headerTitleOpacity },
-          Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 }
-        ]}>
-          <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+        <Animated.View
+          style={[
+            styles.headerTitleContainer,
+            { opacity: headerTitleOpacity },
+            Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 10 },
+          ]}
+        >
+          <Text
+            style={styles.headerTitle}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {business.company_name}
           </Text>
         </Animated.View>
-
       </Animated.View>
 
       {/* ShareOptions */}
-      <CustomShareVia
-        STATUSBAR_HEIGHT={STATUSBAR_HEIGHT}
-        shareOptionsAnim={shareOptionsAnim}
-        showShareOptions={showShareOptions}
-        theme={theme}
-        shareVia={shareVia}
-      />
+      <Animated.View
+        style={[
+          styles.shareOptionsContainer,
+          Platform.OS === "android" && { top: STATUSBAR_HEIGHT + 60 },
+          {
+            opacity: shareOptionsAnim,
+            transform: [
+              {
+                translateY: shareOptionsAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+        pointerEvents={showShareOptions ? "auto" : "none"}
+      >
+        <BlurView intensity={80} style={styles.shareOptionsBlur}>
+          <TouchableOpacity
+            style={styles.shareOption}
+            onPress={() => shareVia("message")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.shareOptionIcon, { backgroundColor: "#4CD964" }]}
+            >
+              <Icons.Ionicons
+                name="chatbox-outline"
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+            <Text style={styles.shareOptionText}>Message</Text>
+          </TouchableOpacity>
 
-      {
-        selectedImage !== null && (
+          <TouchableOpacity
+            style={styles.shareOption}
+            onPress={() => shareVia("email")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.shareOptionIcon, { backgroundColor: "#FF9500" }]}
+            >
+              <Icons.Ionicons name="mail-outline" size={20} color="#FFFFFF" />
+            </View>
+            <Text style={styles.shareOptionText}>Email</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.shareOption}
+            onPress={() => shareVia("copy")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.shareOptionIcon, { backgroundColor: "#5856D6" }]}
+            >
+              <Icons.Ionicons name="copy-outline" size={20} color="#FFFFFF" />
+            </View>
+            <Text style={styles.shareOptionText}>Copy</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.shareOption}
+            onPress={() => shareVia("more")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[styles.shareOptionIcon, { backgroundColor: "#8E8E93" }]}
+            >
+              <Icons.Ionicons
+                name="ellipsis-horizontal"
+                size={20}
+                color="#FFFFFF"
+              />
+            </View>
+            <Text style={styles.shareOptionText}>More</Text>
+          </TouchableOpacity>
+        </BlurView>
+      </Animated.View>
+
+      {selectedImage !== null && (
+        <Animated.View
+          style={[
+            styles.imageViewerContainer,
+            {
+              opacity: imageViewerAnim,
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={styles.imageViewerOverlay}
+            activeOpacity={1}
+            onPress={closeImageViewer}
+          />
           <Animated.View
             style={[
-              styles.imageViewerContainer,
+              styles.imageViewerContent,
               {
-                opacity: imageViewerAnim,
+                transform: [
+                  {
+                    scale: imageViewerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.8, 1],
+                    }),
+                  },
+                ],
               },
             ]}
           >
-            <TouchableOpacity style={styles.imageViewerOverlay} activeOpacity={1} onPress={closeImageViewer} />
-            <Animated.View
-              style={[
-                styles.imageViewerContent,
-                {
-                  transform: [
-                    {
-                      scale: imageViewerAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.8, 1],
-                      }),
-                    },
-                  ],
-                },
-              ]}
-            >
-              <Image source={{ uri: selectedImage.image }} style={styles.imageViewerImage} resizeMode="contain" />
-              <View style={styles.imageViewerControls}>
-                <TouchableOpacity style={styles.imageViewerCloseButton} onPress={closeImageViewer}>
-                  <Icons.Ionicons name="close" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </Animated.View>
-        )
-      }
-      {
-        showBottomSheet && (
-          <View style={styles.bottomSheetContainer}>
-            <TouchableOpacity style={styles.bottomSheetOverlay} activeOpacity={1} onPress={closeBottomSheet} />
-            <Animated.View
-              style={[
-                styles.bottomSheet,
-                {
-                  backgroundColor: theme.colors.card,
-                  transform: [{ translateY: bottomSheetAnim }],
-                },
-              ]}
-              {...panResponder.panHandlers}
-            >
-              <View style={styles.bottomSheetHandleContainer}>
-                <View style={styles.bottomSheetHandle} />
-              </View>
-              {bottomSheetContent === "phone" && (
-                <>
-                  <Text style={[styles.bottomSheetTitle, { color: theme.colors.text }]}>Select Phone Number</Text>
-                  {business.phone &&
-                    business.phone.map((phone, index) => (
-                      <TouchableOpacity
-                        key={index}
-                        style={styles.bottomSheetItem}
-                        onPress={() => handleCallNumber(phone.number)}
-                        activeOpacity={0.6}
-                      >
-                        <View style={[styles.bottomSheetItemIcon, { backgroundColor: "#F0F4FF" }]}>
-                          <Icons.Ionicons name="call-outline" size={20} color="#003366" />
-                        </View>
-                        <View style={styles.bottomSheetItemContent}>
-                          <Text style={[styles.bottomSheetItemTitle, { color: theme.colors.text }]}>
-                            {phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)}
-                          </Text>
-                          <Text style={[styles.bottomSheetItemSubtitle, { color: theme.colors.text }]}>{phone.number}</Text>
-                        </View>
-                        <View style={styles.callButtonContainer}>
-                          <Text style={styles.callButtonText}>Call</Text>
-                          <Icons.Ionicons name="call" size={16} color="#003366" style={{ marginLeft: 4 }} />
-                        </View>
-                      </TouchableOpacity>
-                    ))}
-                </>
-              )}
+            <Image
+              source={{ uri: selectedImage.image }}
+              style={styles.imageViewerImage}
+              resizeMode="contain"
+            />
+            <View style={styles.imageViewerControls}>
               <TouchableOpacity
-                style={styles.bottomSheetCancelButton}
-                onPress={closeBottomSheet}
-                activeOpacity={0.7}
+                style={styles.imageViewerCloseButton}
+                onPress={closeImageViewer}
               >
-                <Text style={styles.bottomSheetCancelText}>Cancel</Text>
+                <Icons.Ionicons name="close" size={24} color="#FFFFFF" />
               </TouchableOpacity>
-            </Animated.View>
-          </View>
-        )
-      }
-      {
-        showReviewModal && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.reviewModalContainer}>
-              <View style={styles.reviewModalHeader}>
-                <Text style={styles.reviewModalTitle}>Write a Review</Text>
-                <TouchableOpacity
-                  style={styles.reviewModalCloseButton}
-                  onPress={() => setShowReviewModal(false)}
+            </View>
+          </Animated.View>
+        </Animated.View>
+      )}
+      {showBottomSheet && (
+        <View style={styles.bottomSheetContainer}>
+          <TouchableOpacity
+            style={styles.bottomSheetOverlay}
+            activeOpacity={1}
+            onPress={closeBottomSheet}
+          />
+          <Animated.View
+            style={[
+              styles.bottomSheet,
+              {
+                backgroundColor: theme.colors.card,
+                transform: [{ translateY: bottomSheetAnim }],
+              },
+            ]}
+            {...panResponder.panHandlers}
+          >
+            <View style={styles.bottomSheetHandleContainer}>
+              <View style={styles.bottomSheetHandle} />
+            </View>
+            {bottomSheetContent === "phone" && (
+              <>
+                <Text
+                  style={[
+                    styles.bottomSheetTitle,
+                    { color: theme.colors.text },
+                  ]}
                 >
-                  <Icons.Ionicons name="close" size={24} color="#333333" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.reviewModalContent}>
-                <Text style={styles.reviewModalLabel}>Your Name</Text>
-                <View style={styles.reviewModalInputContainer}>
-                  <Icons.Ionicons name="person-outline" size={20} color="#999999" style={styles.reviewModalInputIcon} />
-                  <TextInput
-                    style={styles.reviewModalInput}
-                    placeholder="Enter your name"
-                    value={reviewName}
-                    onChangeText={setReviewName}
-                    maxLength={50}
-                  />
-                </View>
-                <Text style={styles.reviewModalLabel}>Rating</Text>
-                <View style={styles.ratingSelectContainer}>
-                  {[1, 2, 3, 4, 5].map((star) => (
+                  Select Phone Number
+                </Text>
+                {business.phone &&
+                  business.phone.map((phone, index) => (
                     <TouchableOpacity
-                      key={star}
-                      onPress={() => setReviewRating(star)}
-                      style={styles.ratingStarButton}
+                      key={index}
+                      style={styles.bottomSheetItem}
+                      onPress={() => handleCallNumber(phone.number)}
+                      activeOpacity={0.6}
                     >
-                      <Icons.Ionicons
-                        name={reviewRating >= star ? "star" : "star-outline"}
-                        size={32}
-                        color="#FFD700"
-                      />
+                      <View
+                        style={[
+                          styles.bottomSheetItemIcon,
+                          { backgroundColor: "#F0F4FF" },
+                        ]}
+                      >
+                        <Icons.Ionicons
+                          name="call-outline"
+                          size={20}
+                          color="#003366"
+                        />
+                      </View>
+                      <View style={styles.bottomSheetItemContent}>
+                        <Text
+                          style={[
+                            styles.bottomSheetItemTitle,
+                            { color: theme.colors.text },
+                          ]}
+                        >
+                          {phone.phone_type.charAt(0).toUpperCase() +
+                            phone.phone_type.slice(1)}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.bottomSheetItemSubtitle,
+                            { color: theme.colors.text },
+                          ]}
+                        >
+                          {phone.number}
+                        </Text>
+                      </View>
+                      <View style={styles.callButtonContainer}>
+                        <Text style={styles.callButtonText}>Call</Text>
+                        <Icons.Ionicons
+                          name="call"
+                          size={16}
+                          color="#003366"
+                          style={{ marginLeft: 4 }}
+                        />
+                      </View>
                     </TouchableOpacity>
                   ))}
-                </View>
-                <Text style={styles.reviewModalLabel}>Your Review</Text>
-                <View style={styles.reviewTextInputContainer}>
-                  <TextInput
-                    style={styles.reviewTextInput}
-                    placeholder="Share your experience with this business..."
-                    value={reviewText}
-                    onChangeText={setReviewText}
-                    multiline
-                    numberOfLines={5}
-                    textAlignVertical="top"
-                    maxLength={500}
-                  />
-                </View>
-                <Text style={styles.charCount}>{reviewText.length}/500</Text>
-              </ScrollView>
-              <View style={styles.reviewModalFooter}>
-                <TouchableOpacity
-                  style={styles.cancelReviewButton}
-                  onPress={() => setShowReviewModal(false)}
-                  disabled={isSubmittingReview}
-                >
-                  <Text style={styles.cancelReviewButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.submitReviewButton,
-                    (!reviewName.trim() || !reviewText.trim()) && styles.submitReviewButtonDisabled
-                  ]}
-                  onPress={handleSubmitReview}
-                  disabled={!reviewName.trim() || !reviewText.trim() || isSubmittingReview}
-                >
-                  {isSubmittingReview ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.submitReviewButtonText}>Submit Review</Text>
-                  )}
-                </TouchableOpacity>
+              </>
+            )}
+            <TouchableOpacity
+              style={styles.bottomSheetCancelButton}
+              onPress={closeBottomSheet}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.bottomSheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      )}
+      {showReviewModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.reviewModalContainer}>
+            <View style={styles.reviewModalHeader}>
+              <Text style={styles.reviewModalTitle}>Write a Review</Text>
+              <TouchableOpacity
+                style={styles.reviewModalCloseButton}
+                onPress={() => setShowReviewModal(false)}
+              >
+                <Icons.Ionicons name="close" size={24} color="#333333" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.reviewModalContent}>
+              <Text style={styles.reviewModalLabel}>Your Name</Text>
+              <View style={styles.reviewModalInputContainer}>
+                <Icons.Ionicons
+                  name="person-outline"
+                  size={20}
+                  color="#999999"
+                  style={styles.reviewModalInputIcon}
+                />
+                <TextInput
+                  style={styles.reviewModalInput}
+                  placeholder="Enter your name"
+                  value={reviewName}
+                  onChangeText={setReviewName}
+                  maxLength={50}
+                />
               </View>
+              <Text style={styles.reviewModalLabel}>Rating</Text>
+              <View style={styles.ratingSelectContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity
+                    key={star}
+                    onPress={() => setReviewRating(star)}
+                    style={styles.ratingStarButton}
+                  >
+                    <Icons.Ionicons
+                      name={reviewRating >= star ? "star" : "star-outline"}
+                      size={32}
+                      color="#FFD700"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={styles.reviewModalLabel}>Your Review</Text>
+              <View style={styles.reviewTextInputContainer}>
+                <TextInput
+                  style={styles.reviewTextInput}
+                  placeholder="Share your experience with this business..."
+                  value={reviewText}
+                  onChangeText={setReviewText}
+                  multiline
+                  numberOfLines={5}
+                  textAlignVertical="top"
+                  maxLength={500}
+                />
+              </View>
+              <Text style={styles.charCount}>{reviewText.length}/500</Text>
+            </ScrollView>
+            <View style={styles.reviewModalFooter}>
+              <TouchableOpacity
+                style={styles.cancelReviewButton}
+                onPress={() => setShowReviewModal(false)}
+                disabled={isSubmittingReview}
+              >
+                <Text style={styles.cancelReviewButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.submitReviewButton,
+                  (!reviewName.trim() || !reviewText.trim()) &&
+                    styles.submitReviewButtonDisabled,
+                ]}
+                onPress={handleSubmitReview}
+                disabled={
+                  !reviewName.trim() || !reviewText.trim() || isSubmittingReview
+                }
+              >
+                {isSubmittingReview ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitReviewButtonText}>
+                    Submit Review
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
-        )
-      }
-    </SafeAreaView >
-  )
-}
+        </View>
+      )}
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -1382,7 +1948,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
-    backgroundColor: '#4d4b4bff',
+    backgroundColor: "#4d4b4bff",
     overflow: "hidden",
   },
   headerBackground: {
@@ -1461,7 +2027,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#c6c6c6ff",
     textAlign: "center",
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowColor: "rgba(0, 0, 0, 0.5)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
   },
@@ -1476,13 +2042,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   businessInfoHeader: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: "#F2F2F7",
   },
   logoContainer: {
     width: 70,
@@ -1519,7 +2085,7 @@ const styles = StyleSheet.create({
   businessInfoContent: {
     flex: 1,
     marginLeft: 16,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   businessName: {
     fontSize: 18,
@@ -1531,9 +2097,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   ratingText: {
     fontSize: 14,
@@ -1542,41 +2108,41 @@ const styles = StyleSheet.create({
   },
   ratingDetailsContainer: {
     marginTop: 12,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
     padding: 12,
     borderRadius: 8,
   },
   ratingBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 6,
   },
   ratingBarLabel: {
     width: 15,
     fontSize: 12,
-    color: '#666666',
+    color: "#666666",
     marginRight: 8,
   },
   ratingBarBackground: {
     flex: 1,
     height: 6,
-    backgroundColor: '#EEEEEE',
+    backgroundColor: "#EEEEEE",
     borderRadius: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   ratingBarFill: {
-    height: '100%',
-    backgroundColor: '#FFD700',
+    height: "100%",
+    backgroundColor: "#FFD700",
     borderRadius: 3,
   },
   quickActionsContainer: {
     padding: 16,
   },
   primaryActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#003366',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#003366",
     paddingVertical: 12,
     borderRadius: 8,
     shadowColor: "#000",
@@ -1587,17 +2153,17 @@ const styles = StyleSheet.create({
   },
   primaryActionText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginLeft: 8,
   },
   secondaryActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 16,
   },
   secondaryActionButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   secondaryActionText: {
     fontSize: 12,
@@ -1608,26 +2174,26 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   tabButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
     marginRight: 8,
     borderRadius: 20,
-    backgroundColor: '#F0F4FF',
+    backgroundColor: "#F0F4FF",
   },
   activeTabButton: {
-    backgroundColor: '#003366',
+    backgroundColor: "#003366",
   },
   tabText: {
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     marginLeft: 6,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   activeTabText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   tabContent: {
     paddingHorizontal: 16,
@@ -1653,9 +2219,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 16,
   },
   sectionTitle: {
@@ -1664,17 +2230,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   subscriptionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   subscriptionText: {
     fontSize: 12,
-    color: '#B8860B',
+    color: "#B8860B",
     marginLeft: 4,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   aboutText: {
     fontSize: 15,
@@ -1698,66 +2264,66 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   mapContainer: {
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
   map: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: 12,
     marginBottom: 16,
   },
   mapErrorContainer: {
-    backgroundColor: '#FFF8E0',
+    backgroundColor: "#FFF8E0",
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
   mapErrorText: {
     fontSize: 14,
-    color: '#B8860B',
-    textAlign: 'center',
+    color: "#B8860B",
+    textAlign: "center",
   },
   mapLoadingContainer: {
-    width: '100%',
+    width: "100%",
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
     borderRadius: 12,
     marginBottom: 16,
   },
   mapLoadingText: {
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     marginTop: 8,
   },
   addressContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#F8F9FA',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#F8F9FA",
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
-    width: '100%',
+    width: "100%",
   },
   addressText: {
     flex: 1,
     fontSize: 14,
-    color: '#333333',
+    color: "#333333",
     marginLeft: 8,
     lineHeight: 20,
   },
   getDirectionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#003366',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#003366",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1765,15 +2331,15 @@ const styles = StyleSheet.create({
   },
   getDirectionsText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
+    fontWeight: "500",
+    color: "#FFFFFF",
     marginLeft: 8,
   },
   socialMediaContainer: {
     flexDirection: "row",
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'center'
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
   },
   socialButton: {
     width: 50,
@@ -1930,15 +2496,15 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   contactActionButton: {
-    backgroundColor: '#F0F4FF',
+    backgroundColor: "#F0F4FF",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
   },
   contactActionText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#003366',
+    fontWeight: "500",
+    color: "#003366",
   },
   contactHoursContainer: {
     marginTop: 20,
@@ -1994,7 +2560,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   bottomSheetHandleContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 12,
     paddingBottom: 8,
   },
@@ -2040,17 +2606,17 @@ const styles = StyleSheet.create({
     color: "#666666",
   },
   callButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F4FF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F0F4FF",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
   },
   callButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#003366',
+    fontWeight: "500",
+    color: "#003366",
   },
   bottomSheetCancelButton: {
     padding: 16,
@@ -2087,7 +2653,7 @@ const styles = StyleSheet.create({
     height: width - 32,
     justifyContent: "center",
     alignItems: "center",
-    position: 'relative',
+    position: "relative",
   },
   imageViewerImage: {
     width: "100%",
@@ -2095,12 +2661,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   imageViewerControls: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     right: 0,
     left: 0,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     padding: 16,
   },
   imageViewerCloseButton: {
@@ -2115,42 +2681,91 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
+  shareOptionsContainer: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 100 : 90,
+    right: 16,
+    borderRadius: 16,
+    zIndex: 100,
+  },
+  shareOptionsBlur: {
+    flexDirection: "row",
+    backgroundColor:
+      Platform.OS === "ios"
+        ? "rgba(255, 255, 255, 0.7)"
+        : "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  // shareOptionsOverlay: {
+  //   position: "absolute",
+  //   top: -100,
+  //   left: -100,
+  //   right: -100,
+  //   bottom: -100,
+  // },
+  shareOption: {
+    alignItems: "center",
+    marginHorizontal: 8,
+  },
+  shareOptionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  shareOptionText: {
+    fontSize: 12,
+    color: "#333333",
+  },
   modalOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 2000,
   },
   reviewModalContainer: {
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    overflow: 'hidden',
-    maxHeight: '80%',
-    shadowColor: '#000',
+    overflow: "hidden",
+    maxHeight: "80%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
   },
   reviewModalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: "#F0F0F0",
   },
   reviewModalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
+    fontWeight: "bold",
+    color: "#333333",
   },
   reviewModalCloseButton: {
     padding: 4,
@@ -2161,19 +2776,19 @@ const styles = StyleSheet.create({
   },
   reviewModalLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
+    fontWeight: "600",
+    color: "#333333",
     marginBottom: 8,
     marginTop: 16,
   },
   reviewModalInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
   },
   reviewModalInputIcon: {
     marginRight: 8,
@@ -2182,12 +2797,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#333333',
+    color: "#333333",
   },
   ratingSelectContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginVertical: 16,
   },
   ratingStarButton: {
@@ -2195,59 +2810,82 @@ const styles = StyleSheet.create({
   },
   reviewTextInputContainer: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 8,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
     padding: 12,
   },
   reviewTextInput: {
     fontSize: 16,
-    color: '#333333',
+    color: "#333333",
     minHeight: 120,
   },
   charCount: {
     fontSize: 12,
-    color: '#999999',
-    textAlign: 'right',
+    color: "#999999",
+    textAlign: "right",
     marginTop: 4,
   },
   reviewModalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: "#F0F0F0",
   },
   cancelReviewButton: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     marginRight: 8,
   },
   cancelReviewButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#666666',
+    fontWeight: "600",
+    color: "#666666",
   },
   submitReviewButton: {
     flex: 1,
-    backgroundColor: '#003366',
+    backgroundColor: "#003366",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   submitReviewButtonDisabled: {
-    backgroundColor: '#CCCCCC',
+    backgroundColor: "#CCCCCC",
   },
   submitReviewButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
-})
+  noConnectionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noConnectionIcon: {
+    marginBottom: 20,
+  },
+  noConnectionText: {
+    fontSize: 18,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  retryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});
 
-export default BusinessDetailScreen
+export default BusinessDetailScreen;
