@@ -283,7 +283,7 @@ export async function filterAllBusinesses(query = "", companyDirectory = "") {
 
     // Show toast if no results are found
     if (filtered.length === 0 && query) {
-      CustomToast("No Results", "No businesses match your search. Try different keywords.");
+      console.log("No Results", "No businesses match your search. Try different keywords.");
     }
 
     return filtered;

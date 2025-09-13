@@ -26,7 +26,7 @@ import CustomCard from "../components/customCard";
 import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
 
 export default function BusinessList({ route, navigation }) {
-  const { theme, isDarkMode } = React.useContext(AppContext);
+  const { theme, isDarkMode, selectedState } = React.useContext(AppContext);
   const { category } = route.params;
   const [businesses, setBusinesses] = useState([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
@@ -97,7 +97,12 @@ export default function BusinessList({ route, navigation }) {
       setLoading(true);
       const companyData = await fetchAllCompaniesOffline();
 
-      setBusinesses(companyData);
+      // Filter companies based on selected state
+      const directoryCompanies = companyData.filter(
+        (company) => company.directory === selectedState?.trim()
+      ) || [];
+
+      setBusinesses(directoryCompanies);
       setLoading(false);
     }
     loadCompanies();
@@ -113,6 +118,8 @@ export default function BusinessList({ route, navigation }) {
           filteredArray.push(company);
         }
       });
+
+      // Further filter based on search query
       const filtered = filteredArray.filter(
         (business) =>
           business.company_name
@@ -132,6 +139,7 @@ export default function BusinessList({ route, navigation }) {
               .toLowerCase()
               .includes(searchQuery.toLowerCase().trim()))
       );
+
       setFilteredBusinesses(filtered);
     }
   }, [searchQuery, businesses]);

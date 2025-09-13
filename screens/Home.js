@@ -188,7 +188,7 @@ const HomeScreen = ({ navigation }) => {
   const filterALLBs = async (query = searchQuery) => {
     setSearchedBusinesses([]);
     try {
-      const filtered = await filterAllBusinesses(query, selectedDirectory);
+      const filtered = await filterAllBusinesses(query, selectedState);
       setSearchedBusinesses(filtered);
     } catch (error) {
       console.log('Error in filterALLBs:', error);
@@ -419,10 +419,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Exclusive</Text>
               <TouchableOpacity
-                onPress={() =>
-                  console.log('No. Featured businesses:', featuredBusinesses.length)
-                  // navigation.navigate("Featured", { featuredBusinesses })
-                }
+                onPress={() => navigation.navigate("Featured", { featuredBusinesses })}
               >
                 <Text style={[styles.viewAllText, { color: theme.colors.text }]}>View all</Text>
               </TouchableOpacity>

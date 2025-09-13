@@ -19,19 +19,21 @@ export const AppProvider = ({ children }) => {
     const loadSettings = async () => {
       try {
         const theme = await AsyncStorage.getItem('theme');
-        const state = await AsyncStorage.getItem('selectedState');
-        // state ? setSelectedState(JSON.parse(state)) : setSelectedState('E.P.T.C');
-
         const online = await AsyncStorage.getItem('isOnline');
+        const state = await AsyncStorage.getItem('selectedState');
         const notifEnabled = await AsyncStorage.getItem('notificationsEnabled');
-        // const notifList = await AsyncStorage.getItem('notifications');
 
-        theme && setIsDarkMode(JSON.parse(theme));
-        state ? setSelectedState(JSON.parse(state)) : setSelectedState('E.P.T.C');
-        console.log('Loaded selectedState from storage:', JSON.parse(state));
-        online && setIsOnline(JSON.parse(online));
-        notifEnabled && setNotificationsEnabled(JSON.parse(notifEnabled));
-        // notifList && setNotifications(JSON.parse(notifList));
+        if (state && state !== "" && state !== "undefined" && state !== "null") {
+          console.log('State from storage:', JSON.parse(state))
+          setSelectedState(JSON.parse(state))
+        } else {
+          console.log('No state found in storage, setting to E.P.T.C')
+          setSelectedState('E.P.T.C');
+        }
+        
+        if (theme !== null) setIsDarkMode(JSON.parse(theme));
+        if (online !== null) setIsOnline(JSON.parse(online));
+        if (notifEnabled !== null) setNotificationsEnabled(JSON.parse(notifEnabled));
 
       } catch (error) {
         console.log('Error loading settings:', error);
@@ -59,15 +61,17 @@ export const AppProvider = ({ children }) => {
 
   // =================================Persist values when they change===================================
 
+  // Persist selectedState
+  useEffect(() => {
+    if (selectedState) {
+      AsyncStorage.setItem('selectedState', JSON.stringify(selectedState));
+    }
+  }, [selectedState]);
+
   // Persist theme
   useEffect(() => {
     AsyncStorage.setItem('theme', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
-
-  // Persist selectedState
-  useEffect(() => {
-    AsyncStorage.setItem('selectedState', JSON.stringify(selectedState));
-  }, [selectedState]);
 
   // Persist isOnline
   useEffect(() => {
@@ -78,11 +82,6 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     AsyncStorage.setItem('notificationsEnabled', JSON.stringify(notificationsEnabled));
   }, [notificationsEnabled]);
-
-  // Persist notifications
-  // useEffect(() => {
-  //   AsyncStorage.setItem('notifications', JSON.stringify(notifications));
-  // }, [notifications]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
   const toggleNotifications = () => setNotificationsEnabled(!notificationsEnabled);
