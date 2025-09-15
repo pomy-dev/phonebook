@@ -263,10 +263,7 @@ const BusinessArticlesScreen = () => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background}
-      />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.colors.background} />
 
       {isLoading && <CustomLoader />}
 
@@ -570,7 +567,7 @@ const BusinessArticlesScreen = () => {
             <Icons.MaterialIcons
               name="signal-wifi-off"
               size={80}
-              color={theme.colors.text}
+              color="#CCC"
               style={styles.noConnectionIcon}
             />
             <Text

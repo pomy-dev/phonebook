@@ -242,7 +242,7 @@ const PublicationScreen = () => {
         <Icons.MaterialIcons
           name="signal-wifi-off"
           size={80}
-          color={theme.colors.text}
+          color="#CCC"
           style={styles.noConnectionIcon}
         />
 
