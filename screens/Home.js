@@ -363,6 +363,22 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.openDrawer()}>
           <Icons.Ionicons name="menu-outline" size={24} color={theme.colors.text} />
         </TouchableOpacity>
+
+        {/* profile button */}
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}
+          onPress={() => navigation.navigate('Profile')}>
+            
+          <Icons.Ionicons name="person-circle-outline" size={24} color={theme.colors.text} />
+          {/* my profile text */}
+          <Text style={{
+            color: theme.colors.text, marginLeft: 8,
+            fontSize: 14, fontWeight: "200",
+            letterSpacing: -0.5
+          }}>
+            My Profile
+          </Text>
+        </TouchableOpacity>
+
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
             source={selectedState === 'Business eSwatini' ? Images.bs_eswatini : Images.eptc}
