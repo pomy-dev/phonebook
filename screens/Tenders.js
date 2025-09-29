@@ -138,15 +138,25 @@ export default function TendersScreen({ navigation }) {
               <View style={styles.industryBadge}>
                 <Text style={styles.industryBadgeText}>{tender.industry}</Text>
               </View>
+
+              <View style={styles.shareLink}>
+                <TouchableOpacity onPress={() => Alert.alert('Saved', 'Tender saved for later')}>
+                  <Icons.MaterialIcons name="share" size={16} color="#ffffff" />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => Alert.alert('Saved', 'Tender saved for later')}>
+                  <Icons.MaterialIcons name="bookmark-border" size={16} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.tenderFooter}>
-              <Text style={styles.postedDate}>Posted {formatDate(tender.postedDate)}</Text>
+              <Text style={[styles.postedDate, { color: theme.colors.sub_text }]}>Posted {formatDate(tender.postedDate)}</Text>
               <TouchableOpacity
                 style={[styles.submitButton, { backgroundColor: theme.colors.indicator }]}
                 onPress={() => handleSubmitBid(tender)}
               >
-                <Text style={styles.submitButtonText}>Submit Bid</Text>
+                <Text style={styles.submitButtonText}>View</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -276,6 +286,19 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
   },
+  shareLink: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 60,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
   industryBadgeText: {
     color: '#ffffff',
     fontSize: 12,
@@ -292,7 +315,6 @@ const styles = StyleSheet.create({
   },
   postedDate: {
     fontSize: 12,
-    color: '#6b7280',
   },
   submitButton: {
     paddingHorizontal: 16,

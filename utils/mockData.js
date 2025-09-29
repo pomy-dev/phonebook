@@ -166,12 +166,14 @@ export const mockTenders = [
     id: '1',
     imageUrl: Images.tender1,
     industry: 'Technology',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-10',
   },
   {
     id: '2',
     imageUrl: Images.tender2,
     industry: 'Manufacturing',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-05',
   },
   {
@@ -184,6 +186,7 @@ export const mockTenders = [
     id: '4',
     imageUrl: Images.tender4,
     industry: 'Energy',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-08',
   },
   {
@@ -196,12 +199,14 @@ export const mockTenders = [
     id: '6',
     imageUrl: Images.tender6,
     industry: 'Glass & Ceramics',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-08',
   },
   {
     id: '7',
     imageUrl: Images.tender7,
     industry: 'Construction',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-08',
   },
   {
@@ -214,6 +219,7 @@ export const mockTenders = [
     id: '9',
     imageUrl: Images.tender9,
     industry: 'Retail',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-08',
   },
   {
@@ -232,6 +238,7 @@ export const mockTenders = [
     id: '12',
     imageUrl: Images.tender12,
     industry: 'Fashion',
+    enquiryEmail: 'tenders@company.com',
     postedDate: '2025-01-08',
   }
 ];
