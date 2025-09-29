@@ -208,7 +208,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
             onPressOut={() => handlePressOut(1)}
             onPress={() => {
               navigation.navigate('Vacancy', { screen: 'Vacancies' });
-              // navigation.closeDrawer();
+              navigation.closeDrawer();
             }}
           >
             <Icons.Feather

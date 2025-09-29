@@ -19,7 +19,6 @@ import {
 import { useRoute, useNavigation } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
 import { Icons } from "../constants/Icons";
-// import { BlurView } from "expo-blur";
 import { useCallFunction } from "../components/customCallAlert";
 import {
   handleWhatsapp,

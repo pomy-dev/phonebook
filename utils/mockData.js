@@ -1,4 +1,4 @@
-import { Event, Vacancy, Tender, Profile } from './types';
+import { Images } from '../constants/Images';
 
 export const mockEvents = [
   {
@@ -78,132 +78,161 @@ export const mockEvents = [
 export const mockVacancies = [
   {
     id: '1',
-    title: 'Senior Software Engineer',
-    company: 'TechCorp Solutions',
-    location: 'Remote',
-    salary: '$120,000 - $160,000',
-    description: 'We are looking for a senior software engineer to join our growing team and lead development of our core platform.',
-    requirements: ['5+ years React/React Native', 'TypeScript expertise', 'Cloud deployment experience'],
     industry: 'Technology',
     type: 'full-time',
+    imageUrl: Images.vacancy1,
     postedDate: '2025-01-15',
-    deadline: '2025-02-15',
-    applicants: 47
+    recruitmentEmail: 'mdzeshh@gmail.com'
   },
   {
     id: '2',
-    title: 'Manufacturing Process Engineer',
-    company: 'Industrial Dynamics',
-    location: 'Chicago, IL',
-    salary: '$85,000 - $110,000',
-    description: 'Join our team to optimize manufacturing processes and implement lean manufacturing principles.',
-    requirements: ['Bachelor in Engineering', 'Lean Six Sigma certification', '3+ years manufacturing experience'],
     industry: 'Manufacturing',
     type: 'full-time',
+    imageUrl: Images.vacancy2,
     postedDate: '2025-01-18',
-    deadline: '2025-02-18',
-    applicants: 23
   },
   {
     id: '3',
-    title: 'Clinical Research Coordinator',
-    company: 'MedResearch Institute',
-    location: 'San Diego, CA',
-    salary: '$65,000 - $85,000',
-    description: 'Coordinate clinical trials and ensure compliance with regulatory requirements.',
-    requirements: ['Healthcare background', 'Clinical research experience', 'Attention to detail'],
     industry: 'Healthcare',
     type: 'full-time',
+    imageUrl: Images.vacancy3,
     postedDate: '2025-01-20',
-    deadline: '2025-02-20',
-    applicants: 31
+    recruitmentEmail: 'mdzeshh@gmail.com'
   },
   {
     id: '4',
-    title: 'Marketing Manager',
-    company: 'Creative Agency Plus',
-    location: 'Los Angeles, CA',
-    salary: '$75,000 - $95,000',
-    description: 'Lead marketing campaigns and brand strategy for diverse client portfolio.',
-    requirements: ['Marketing degree', '4+ years experience', 'Digital marketing expertise'],
     industry: 'Marketing',
     type: 'full-time',
-    postedDate: '2025-01-22',
-    deadline: '2025-02-22',
-    applicants: 89
+    imageUrl: Images.vacancy4,
+    postedDate: '2025-01-22'
   },
   {
     id: '5',
-    title: 'Elementary School Teacher',
-    company: 'Sunshine Elementary',
-    location: 'Portland, OR',
-    salary: '$45,000 - $65,000',
-    description: 'Passionate educator needed for 3rd grade classroom with focus on STEM integration.',
-    requirements: ['Teaching certification', 'Bachelor in Education', 'Classroom management skills'],
     industry: 'Education',
     type: 'full-time',
+    imageUrl: Images.vacancy5,
     postedDate: '2025-01-25',
-    deadline: '2025-02-25',
-    applicants: 12
+    recruitmentEmail: 'mdzeshh@gmail.com'
+  },
+  {
+    id: '6',
+    industry: 'Manufacturing',
+    type: 'part-time',
+    imageUrl: Images.vacancy6,
+    postedDate: '2025-01-25'
+  },
+  {
+    id: '7',
+    industry: 'Oil & Gas',
+    type: 'part-time',
+    imageUrl: Images.vacancy7,
+    postedDate: '2025-01-25',
+    recruitmentEmail: 'mdzeshh@gmail.com'
+  },
+  {
+    id: '8',
+    industry: 'Education',
+    type: 'full-time',
+    imageUrl: Images.vacancy8,
+    postedDate: '2025-01-25'
+  },
+  {
+    id: '9',
+    industry: 'Finance',
+    type: 'full-time',
+    imageUrl: Images.vacancy9,
+    postedDate: '2025-01-25',
+    recruitmentEmail: 'mdzeshh@gmail.com'
+  },
+  {
+    id: '10',
+    industry: 'Marketing',
+    type: 'full-time',
+    imageUrl: Images.vacancy10,
+    postedDate: '2025-01-25',
+    recruitmentEmail: 'mdzeshh@gmail.com'
+  },
+  {
+    id: '11',
+    industry: 'Energy',
+    type: 'part-time',
+    imageUrl: Images.vacancy11,
+    postedDate: '2025-01-25'
   }
 ];
 
 export const mockTenders = [
   {
     id: '1',
-    title: 'Enterprise Software Development',
-    company: 'Global Corp',
-    description: 'Development of a comprehensive enterprise resource planning system with modern technologies.',
-    budget: '$500,000 - $750,000',
-    deadline: '2025-03-15',
+    imageUrl: Images.tender1,
     industry: 'Technology',
-    requirements: ['Full-stack development team', 'Cloud architecture expertise', '24/7 support capability'],
-    location: 'Nationwide',
     postedDate: '2025-01-10',
-    status: 'open',
-    bidders: 15
   },
   {
     id: '2',
-    title: 'Factory Automation System',
-    company: 'Manufacturing Solutions Ltd',
-    description: 'Design and implementation of automated manufacturing line with IoT integration.',
-    budget: '$1,200,000 - $1,800,000',
-    deadline: '2025-02-28',
+    imageUrl: Images.tender2,
     industry: 'Manufacturing',
-    requirements: ['Industrial automation experience', 'IoT implementation', 'Safety compliance expertise'],
-    location: 'Texas',
     postedDate: '2025-01-05',
-    status: 'closing-soon',
-    bidders: 8
   },
   {
     id: '3',
-    title: 'Hospital Management System',
-    company: 'Regional Health Network',
-    description: 'Complete hospital management system with patient records, billing, and scheduling.',
-    budget: '$300,000 - $450,000',
-    deadline: '2025-04-01',
+    imageUrl: Images.tender3,
     industry: 'Healthcare',
-    requirements: ['Healthcare software experience', 'HIPAA compliance', 'Integration capabilities'],
-    location: 'California',
     postedDate: '2025-01-12',
-    status: 'open',
-    bidders: 22
   },
   {
     id: '4',
-    title: 'Renewable Energy Infrastructure',
-    company: 'Green Power Initiative',
-    description: 'Solar panel installation and grid integration for municipal buildings.',
-    budget: '$2,000,000 - $3,500,000',
-    deadline: '2025-03-20',
+    imageUrl: Images.tender4,
     industry: 'Energy',
-    requirements: ['Solar installation expertise', 'Grid integration experience', 'Municipal project history'],
-    location: 'Arizona',
     postedDate: '2025-01-08',
-    status: 'open',
-    bidders: 6
+  },
+  {
+    id: '5',
+    imageUrl: Images.tender5,
+    industry: 'Agriculture',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '6',
+    imageUrl: Images.tender6,
+    industry: 'Glass & Ceramics',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '7',
+    imageUrl: Images.tender7,
+    industry: 'Construction',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '8',
+    imageUrl: Images.tender8,
+    industry: 'Transportation',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '9',
+    imageUrl: Images.tender9,
+    industry: 'Retail',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '10',
+    imageUrl: Images.tender10,
+    industry: 'Telecommunications',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '11',
+    imageUrl: Images.tender11,
+    industry: 'Government',
+    postedDate: '2025-01-08',
+  },
+  {
+    id: '12',
+    imageUrl: Images.tender12,
+    industry: 'Fashion',
+    postedDate: '2025-01-08',
   }
 ];
 

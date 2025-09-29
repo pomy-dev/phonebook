@@ -6,124 +6,101 @@ import {
   ScrollView,
   TouchableOpacity,
   Modal,
-  TextInput,
+  StatusBar,
+  Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FileText, DollarSign, Calendar, MapPin, AlertCircle, Clock, X, User, Mail, Phone, Building, Users } from 'lucide-react-native';
-import { mockTenders, allIndustries } from '../utils/mockData';
-import { Tender } from '../utils/types';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icons } from '../constants/Icons';
+import { Images } from '../constants/Images';
+import { AppContext } from '../context/appContext';
+import { mockTenders, allIndustries } from '../utils/mockData'; // Assume mockTenders exists
 
-export default function TendersScreen() {
-  const [selectedFilter, setSelectedFilter] = useState < string > ('all');
-  const [filteredTenders, setFilteredTenders] = useState < Tender > (mockTenders);
-  const [showBidModal, setShowBidModal] = useState(false);
-  const [selectedTender, setSelectedTender] = useState < Tender | null > (null);
-  const [formData, setFormData] = useState({
-    companyName: '',
-    contactPerson: '',
-    email: '',
-    phone: '',
-    businessRegistration: '',
-    experience: '',
-    teamSize: '',
-    proposedBudget: '',
-    timeline: '',
-    approach: '',
-    previousWork: '',
-    certifications: '',
-    additionalInfo: ''
-  });
+export default function TendersScreen({ navigation }) {
+  const { theme, isDarkMode } = React.useContext(AppContext);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [filteredTenders, setFilteredTenders] = useState(mockTenders);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
-  const industries = ['all', ...allIndustries.slice(0, 8)];
+  const industries = ['all', ...allIndustries];
 
   const handleFilterChange = (industry) => {
     setSelectedFilter(industry);
     if (industry === 'all') {
       setFilteredTenders(mockTenders);
     } else {
-      setFilteredTenders(mockTenders.filter(tender => tender.industry === industry));
+      setFilteredTenders(mockTenders.filter((tender) => tender.industry === industry));
     }
   };
 
   const handleSubmitBid = (tender) => {
-    if (tender.status === 'closed') return;
-    setSelectedTender(tender);
-    setShowBidModal(true);
+    if (tender.enquiryEmail) {
+      Linking.openURL(
+        `mailto:${tender.enquiryEmail}?subject=Inquiry for Tender: ${tender.title}`
+      );
+    } else {
+      Alert.alert('Error', 'No enquiry email available for this tender');
+    }
   };
 
-  const handleBidSubmission = () => {
-    if (!formData.companyName || !formData.contactPerson || !formData.email || !formData.proposedBudget || !formData.approach) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    Alert.alert('Success', `Your bid for ${selectedTender?.title} has been submitted!`);
-    setShowBidModal(false);
-    setFormData({
-      companyName: '',
-      contactPerson: '',
-      email: '',
-      phone: '',
-      businessRegistration: '',
-      experience: '',
-      teamSize: '',
-      proposedBudget: '',
-      timeline: '',
-      approach: '',
-      previousWork: '',
-      certifications: '',
-      additionalInfo: ''
-    });
+  const handleViewImage = (tender) => {
+    tender.imageUrl &&
+      (
+        setSelectedImage(tender.imageUrl),
+        setShowImageModal(true)
+      );
   };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'open': return '#10b981';
-      case 'closing-soon': return '#f97316';
-      case 'closed': return '#ef4444';
-      default: return '#6b7280';
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'open': return <FileText size={16} color="#10b981" />;
-      case 'closing-soon': return <AlertCircle size={16} color="#f97316" />;
-      case 'closed': return <Clock size={16} color="#ef4444" />;
-      default: return <FileText size={16} color="#6b7280" />;
-    }
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.colors.background}
+      />
+
       <View style={styles.header}>
-        <Text style={styles.title}>Business Tenders</Text>
-        <Text style={styles.subtitle}>Find contract opportunities for your business</Text>
+        <View style={styles.subHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Icons.Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Tenders</Text>
+        </View>
+        <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>
+          Find your next business opportunity
+        </Text>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterContainer}
+      >
         {industries.map((industry) => (
           <TouchableOpacity
             key={industry}
             style={[
               styles.filterChip,
-              selectedFilter === industry && styles.filterChipActive
+              selectedFilter === industry && styles.filterChipActive,
             ]}
             onPress={() => handleFilterChange(industry)}
           >
-            <Text style={[
-              styles.filterText,
-              selectedFilter === industry && styles.filterTextActive
-            ]}>
+            <Text
+              style={[
+                styles.filterText,
+                selectedFilter === industry && styles.filterTextActive,
+              ]}
+            >
               {industry === 'all' ? 'All Industries' : industry}
             </Text>
           </TouchableOpacity>
@@ -132,77 +109,44 @@ export default function TendersScreen() {
 
       <ScrollView style={styles.tendersList} showsVerticalScrollIndicator={false}>
         {filteredTenders.map((tender) => (
-          <TouchableOpacity key={tender.id} style={styles.tenderCard}>
-            <View style={styles.tenderHeader}>
-              <View style={[
-                styles.statusBadge,
-                { backgroundColor: getStatusColor(tender.status) }
-              ]}>
-                <View style={styles.statusBadgeContent}>
-                  {getStatusIcon(tender.status)}
-                  <Text style={styles.statusBadgeText}>
-                    {tender.status.replace('-', ' ').toUpperCase()}
-                  </Text>
-                </View>
-              </View>
+          <TouchableOpacity
+            key={tender.id}
+            style={[styles.tenderSummary, { backgroundColor: theme.colors.card }]}
+            activeOpacity={0.9}
+            onPress={() => handleViewImage(tender)}
+          >
+            <View style={styles.imageContainer}>
+              {tender.imageUrl ? (
+                <>
+                  <Image
+                    source={tender.imageUrl}
+                    style={styles.tenderImage}
+                    resizeMode="cover"
+                  />
+                  <LinearGradient
+                    colors={['rgba(0, 0, 0, 0.4)', 'transparent']}
+                    style={styles.imageOverlay}
+                  />
+                </>
+              ) : (
+                <Image
+                  source={Images.noImage}
+                  style={styles.tenderImage}
+                  resizeMode="cover"
+                />
+              )}
               <View style={styles.industryBadge}>
                 <Text style={styles.industryBadgeText}>{tender.industry}</Text>
               </View>
             </View>
 
-            <Text style={styles.tenderTitle}>{tender.title}</Text>
-            <Text style={styles.companyName}>{tender.company}</Text>
-
-            <Text style={styles.tenderDescription}>{tender.description}</Text>
-
-            <View style={styles.tenderDetails}>
-              <View style={styles.detailRow}>
-                <DollarSign size={16} color="#6b7280" />
-                <Text style={styles.detailText}>Budget: {tender.budget}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Calendar size={16} color="#6b7280" />
-                <Text style={styles.detailText}>
-                  Deadline: {formatDate(tender.deadline)}
-                </Text>
-              </View>
-              <View style={styles.detailRow}>
-                <MapPin size={16} color="#6b7280" />
-                <Text style={styles.detailText}>{tender.location}</Text>
-              </View>
-              <View style={styles.detailRow}>
-                <Users size={16} color="#6b7280" />
-                <Text style={styles.detailText}>
-                  {tender.bidders} bidders
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.requirementsSection}>
-              <Text style={styles.requirementsTitle}>Key Requirements:</Text>
-              {tender.requirements.slice(0, 3).map((req, index) => (
-                <Text key={index} style={styles.requirementItem}>• {req}</Text>
-              ))}
-            </View>
-
             <View style={styles.tenderFooter}>
-              <Text style={styles.postedDate}>
-                Posted {formatDate(tender.postedDate)}
-              </Text>
+              <Text style={styles.postedDate}>Posted {formatDate(tender.postedDate)}</Text>
               <TouchableOpacity
-                style={[
-                  styles.bidButton,
-                  tender.status === 'closed' && styles.bidButtonDisabled
-                ]}
-                disabled={tender.status === 'closed'}
+                style={[styles.submitButton, { backgroundColor: theme.colors.indicator }]}
                 onPress={() => handleSubmitBid(tender)}
               >
-                <Text style={[
-                  styles.bidButtonText,
-                  tender.status === 'closed' && styles.bidButtonTextDisabled
-                ]}>
-                  {tender.status === 'closed' ? 'Closed' : 'Submit Bid'}
-                </Text>
+                <Text style={styles.submitButtonText}>Submit Bid</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -210,210 +154,23 @@ export default function TendersScreen() {
       </ScrollView>
 
       <Modal
-        visible={showBidModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowBidModal(false)}
+        visible={showImageModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowImageModal(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Submit Bid</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowBidModal(false)}
-            >
-              <X size={24} color="#6b7280" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-            <View style={styles.tenderSummary}>
-              <Text style={styles.tenderSummaryTitle}>{selectedTender?.title}</Text>
-              <Text style={styles.tenderSummaryCompany}>{selectedTender?.company}</Text>
-              <Text style={styles.tenderSummaryDetails}>
-                Budget: {selectedTender?.budget} • Deadline: {selectedTender && formatDate(selectedTender.deadline)}
-              </Text>
-            </View>
-
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Company Information</Text>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Company Name *</Text>
-                <View style={styles.inputContainer}>
-                  <Building size={20} color="#6b7280" />
-                  <TextInput
-                    style={styles.textInput}
-                    value={formData.companyName}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, companyName: text }))}
-                    placeholder="Your company name"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Contact Person *</Text>
-                <View style={styles.inputContainer}>
-                  <User size={20} color="#6b7280" />
-                  <TextInput
-                    style={styles.textInput}
-                    value={formData.contactPerson}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, contactPerson: text }))}
-                    placeholder="Primary contact name"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email Address *</Text>
-                <View style={styles.inputContainer}>
-                  <Mail size={20} color="#6b7280" />
-                  <TextInput
-                    style={styles.textInput}
-                    value={formData.email}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
-                    placeholder="contact@company.com"
-                    keyboardType="email-address"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Phone Number</Text>
-                <View style={styles.inputContainer}>
-                  <Phone size={20} color="#6b7280" />
-                  <TextInput
-                    style={styles.textInput}
-                    value={formData.phone}
-                    onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
-                    placeholder="+1 (555) 123-4567"
-                    keyboardType="phone-pad"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Business Registration Number</Text>
-                <TextInput
-                  style={styles.textInputFull}
-                  value={formData.businessRegistration}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, businessRegistration: text }))}
-                  placeholder="Business registration or license number"
-                />
-              </View>
-            </View>
-
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Company Capabilities</Text>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Years of Experience</Text>
-                <TextInput
-                  style={styles.textInputFull}
-                  value={formData.experience}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, experience: text }))}
-                  placeholder="e.g., 10 years in software development"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Team Size</Text>
-                <TextInput
-                  style={styles.textInputFull}
-                  value={formData.teamSize}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, teamSize: text }))}
-                  placeholder="Number of team members for this project"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Relevant Certifications</Text>
-                <TextInput
-                  style={[styles.textInputFull, styles.textArea]}
-                  value={formData.certifications}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, certifications: text }))}
-                  placeholder="List relevant certifications, licenses, or accreditations"
-                  multiline
-                  numberOfLines={2}
-                />
-              </View>
-            </View>
-
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Bid Details</Text>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Proposed Budget *</Text>
-                <TextInput
-                  style={styles.textInputFull}
-                  value={formData.proposedBudget}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, proposedBudget: text }))}
-                  placeholder="e.g., $450,000"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Proposed Timeline</Text>
-                <TextInput
-                  style={styles.textInputFull}
-                  value={formData.timeline}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, timeline: text }))}
-                  placeholder="e.g., 6 months from project start"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Technical Approach *</Text>
-                <TextInput
-                  style={[styles.textInputFull, styles.textArea]}
-                  value={formData.approach}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, approach: text }))}
-                  placeholder="Describe your technical approach and methodology for this project..."
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Previous Similar Work</Text>
-                <TextInput
-                  style={[styles.textInputFull, styles.textArea]}
-                  value={formData.previousWork}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, previousWork: text }))}
-                  placeholder="Describe similar projects you've completed..."
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Additional Information</Text>
-                <TextInput
-                  style={[styles.textInputFull, styles.textArea]}
-                  value={formData.additionalInfo}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, additionalInfo: text }))}
-                  placeholder="Any additional information that supports your bid..."
-                  multiline
-                  numberOfLines={2}
-                />
-              </View>
-            </View>
-          </ScrollView>
-
-          <View style={styles.modalFooter}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowBidModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleBidSubmission}
-            >
-              <Text style={styles.submitButtonText}>Submit Bid</Text>
-            </TouchableOpacity>
-          </View>
+        <SafeAreaView style={styles.imageModalContainer}>
+          <Image
+            source={selectedImage}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
+          <TouchableOpacity
+            style={styles.imageModalCloseButton}
+            onPress={() => setShowImageModal(false)}
+          >
+            <Icons.FontAwesome name="remove" size={24} color="#ffffff" />
+          </TouchableOpacity>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -423,41 +180,47 @@ export default function TendersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#ffffff',
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+  },
+  subHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
+    textAlign: 'center',
+    marginLeft: '25%',
+    marginBottom: 3,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
   },
   filterContainer: {
-    paddingVertical: 16,
-    paddingLeft: 20,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 30,
   },
   filterChip: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F0F4FF',
     paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
     marginRight: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+    minHeight: 32,
+    justifyContent: 'center',
   },
   filterChipActive: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
+    backgroundColor: '#003366',
+    borderColor: '#003366',
   },
   filterText: {
     fontSize: 14,
@@ -468,101 +231,61 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   tendersList: {
-    flex: 1,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
   },
-  tenderCard: {
-    backgroundColor: '#ffffff',
+  tenderSummary: {
     borderRadius: 12,
-    padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
+    minHeight: 300,
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+    overflow: 'hidden',
   },
-  tenderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  imageContainer: {
+    position: 'relative',
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  tenderImage: {
+    width: '100%',
+    height: 260,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
-  statusBadgeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusBadgeText: {
-    color: '#ffffff',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginLeft: 4,
+  imageOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   industryBadge: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   industryBadgeText: {
-    color: '#374151',
+    color: '#ffffff',
     fontSize: 12,
-    fontWeight: '500',
-  },
-  tenderTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  companyName: {
-    fontSize: 16,
-    color: '#2563eb',
     fontWeight: '600',
-    marginBottom: 12,
-  },
-  tenderDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  tenderDetails: {
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginLeft: 8,
-  },
-  requirementsSection: {
-    marginBottom: 16,
-  },
-  requirementsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  requirementItem: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginBottom: 4,
   },
   tenderFooter: {
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -571,148 +294,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
   },
-  bidButton: {
-    backgroundColor: '#f97316',
+  submitButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  bidButtonDisabled: {
-    backgroundColor: '#e5e7eb',
-  },
-  bidButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  bidButtonTextDisabled: {
-    color: '#9ca3af',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1f2937',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  modalContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  tenderSummary: {
-    backgroundColor: '#f8fafc',
-    padding: 16,
-    borderRadius: 12,
-    marginVertical: 16,
-  },
-  tenderSummaryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 4,
-  },
-  tenderSummaryCompany: {
-    fontSize: 16,
-    color: '#2563eb',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  tenderSummaryDetails: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  formSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 16,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1f2937',
-    marginLeft: 8,
-  },
-  textInputFull: {
-    backgroundColor: '#f9fafb',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#1f2937',
-  },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#f3f4f6',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  submitButton: {
-    flex: 2,
-    backgroundColor: '#f97316',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
   submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageModalCloseButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    padding: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
   },
 });
