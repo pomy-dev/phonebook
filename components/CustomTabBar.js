@@ -64,6 +64,8 @@ export default function CustomTabBar({ state, descriptors, navigation, theme, is
                         iconName = isFocused ? "heart" : "heart-outline"
                     } else if (route.name === "Nots") {
                         iconName = isFocused ? "notifications" : "notifications-outline"
+                    } else if (route.name === "People") {
+                        iconName = isFocused ? "people-sharp" : "people-outline"
                     }
 
                     // Animation values for each tab

@@ -19,7 +19,6 @@ import {
 import { useRoute, useNavigation } from "@react-navigation/native";
 import NetInfo from "@react-native-community/netinfo";
 import { Icons } from "../constants/Icons";
-// import { BlurView } from "expo-blur";
 import { useCallFunction } from "../components/customCallAlert";
 import {
   handleWhatsapp,
@@ -263,10 +262,7 @@ const BusinessArticlesScreen = () => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background}
-      />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.colors.background} />
 
       {isLoading && <CustomLoader />}
 
@@ -570,7 +566,7 @@ const BusinessArticlesScreen = () => {
             <Icons.MaterialIcons
               name="signal-wifi-off"
               size={80}
-              color={theme.colors.text}
+              color="#CCC"
               style={styles.noConnectionIcon}
             />
             <Text

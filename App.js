@@ -11,6 +11,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import PublicationsStackNavigator from "./navigator/PublicationsStack";
+import CorporateStackNavigator from "./navigator/CorporateStack";
 import TabNavigator from "./components/TabNavigator";
 import SplashScreen from "./screens/SplashScreen";
 import CustomDrawerContent from "./components/Drawer";
@@ -213,6 +214,11 @@ function AppContent() {
                 component={PublicationsStackNavigator}
                 options={{ headerShown: false }}
                 initialParams={{ selectedState, contentType: "Promotions" }}
+              />
+              <Drawer.Screen
+                name="Corporate"
+                component={CorporateStackNavigator}
+                options={{ headerShown: false }}
               />
             </Drawer.Navigator>
             <StatusBar style={isDarkMode ? "light" : "dark"} />

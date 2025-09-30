@@ -242,7 +242,7 @@ const PublicationScreen = () => {
         <Icons.MaterialIcons
           name="signal-wifi-off"
           size={80}
-          color={theme.colors.text}
+          color="#CCC"
           style={styles.noConnectionIcon}
         />
 
@@ -310,7 +310,7 @@ const PublicationScreen = () => {
           />
         </TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: "700", left: "13%", color: theme.colors.text }}>
-          {contentType === "Promotions" ? "Promotions/Adverts" : "Publications/Articles"}
+          {contentType === "Promotions" ? "Promotions" : "Publications"}
         </Text>
       </View>
 

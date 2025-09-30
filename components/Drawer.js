@@ -68,6 +68,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
         setPickerValue(item.name);
         setSelectedState(item.name);
         setModalVisible(false);
+        navigation.closeDrawer();
       }}
     >
       <Image
@@ -185,13 +186,38 @@ const CustomDrawerContent = ({ states, navigation }) => {
               navigation.closeDrawer();
             }}
           >
-            <Icons.Ionicons
-              name="megaphone-outline"
+            <Icons.AntDesign
+              name="tags"
               size={20}
               color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
               style={styles.icon}
             />
             <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Promotions</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
+        <Animated.View
+          style={{
+            opacity: fadeAnims[1],
+            transform: [{ scale: scaleAnims[1] }],
+          }}
+        >
+          <TouchableOpacity
+            style={styles.drawerItem}
+            onPressIn={() => handlePressIn(1)}
+            onPressOut={() => handlePressOut(1)}
+            onPress={() => {
+              navigation.navigate('Corporate', { screen: 'Corporates' });
+              navigation.closeDrawer();
+            }}
+          >
+            <Icons.Feather
+              name="briefcase"
+              size={20}
+              color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
+              style={styles.icon}
+            />
+            <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Corporates</Text>
           </TouchableOpacity>
         </Animated.View>
 

@@ -5,6 +5,7 @@ import CustomTabBar from "./CustomTabBar"
 import HomeStackNavigator from "../navigator/HomeStack"
 import BusinessesStackNavigator from "../navigator/BusinessesStack"
 import FavoritesStackNavigator from "../navigator/FavoritesStack"
+import PeopleStackNavigator from "../navigator/PeopleStack"
 import NotificationsStackNavigator from "../navigator/NotificationStack"
 import { AppContext } from '../context/appContext';
 
@@ -47,6 +48,13 @@ export default function TabNavigator() {
                 component={FavoritesStackNavigator}
                 options={{
                     tabBarLabel: "Favorites",
+                }}
+            />
+            <Tab.Screen
+                name="People"
+                component={PeopleStackNavigator}
+                options={{
+                    tabBarLabel: "Profiles",
                 }}
             />
         </Tab.Navigator>
