@@ -9,15 +9,18 @@ import {
   Image,
   Linking,
 } from 'react-native';
+import { Modal } from 'react-native';
 import { Icons } from "../constants/Icons";
 import { AppContext } from '../context/appContext';
 import { mockProfiles, allIndustries } from '../utils/mockData';
 
-export default function PeopleScreen() {
+export default function PeopleScreen({ navigation }) {
   const { theme, isDarkMode } = React.useContext(AppContext);
   const [selectedIndustry, setSelectedIndustry] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [filteredProfiles, setFilteredProfiles] = useState(mockProfiles);
+  const [showContactSheet, setShowContactSheet] = useState(false);
+  const [selectedContact, setSelectedContact] = useState(null);
 
   const industries = ['all', ...allIndustries];
 
@@ -51,17 +54,30 @@ export default function PeopleScreen() {
     Linking.openURL(url);
   };
 
+  const handleContactPress = (profile) => {
+    setSelectedContact(profile);
+    setShowContactSheet(true);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text, textAlign: 'center' }]}>Professional Network</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>Connect with industry professionals</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Professionals' Network</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>Profiles</Text>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('AddProfile', { screen: 'ProfileScreen' })}
+            style={[styles.addProfile, { backgroundColor: theme.colors.indicator, borderColor: theme.colors.indicator }]}>
+            <Icons.Feather name="user-plus" size={18} color='#ccc' />
+            <Text style={{ color: '#ffff' }}>Add Profile</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <View style={styles.filtersSection}>
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Industry</Text>
+      <View style={[styles.filtersSection, { backgroundColor: theme.colors.card }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
           {industries.map((industry) => (
             <TouchableOpacity
@@ -97,7 +113,7 @@ export default function PeopleScreen() {
                 styles.filterText,
                 selectedAvailability === availability && styles.filterTextActive
               ]}>
-                {availability === 'all' ? 'All' :
+                {availability === 'all' ? 'Miscellenious' :
                   availability === 'available' ? 'Open to Work' : 'Not Available'}
               </Text>
             </TouchableOpacity>
@@ -181,13 +197,58 @@ export default function PeopleScreen() {
                 <Text style={styles.linkedinText}>LinkedIn</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.connectButton, { backgroundColor: theme.colors.indicator }]}>
+              <TouchableOpacity onPress={() => handleContactPress(profile)}
+                style={[styles.connectButton, { backgroundColor: theme.colors.indicator }]}>
                 <Text style={styles.connectButtonText}>Contact</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      <Modal
+        visible={showContactSheet}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowContactSheet(false)}
+      >
+        <View style={styles.sheetOverlay}>
+          <View style={[styles.sheetContainer, { backgroundColor: theme.colors.sub_card }]}>
+            <TouchableOpacity
+              style={styles.sheetCloseBtn}
+              onPress={() => setShowContactSheet(false)}
+            >
+              <Icons.FontAwesome name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.sheetTitle}>Contact Details</Text>
+            {selectedContact && (
+              <>
+                {(selectedContact.phone || selectedContact.email) ? (
+                  <>
+                    {selectedContact.phone && (
+                      <TouchableOpacity onPress={() => { Linking.openURL(`tel:${selectedContact.phone}`) }} style={styles.sheetRow}>
+                        <Icons.FontAwesome name="phone" size={20} color={theme.colors.indicator} style={{ marginRight: 10 }} />
+                        <Text style={[styles.sheetText, { color: theme.colors.sub_text }]}>{selectedContact.phone}</Text>
+                      </TouchableOpacity>
+                    )}
+                    {selectedContact.email && (
+                      <TouchableOpacity onPress={() => { Linking.openURL(`mailto:${selectedContact.email}`) }} style={styles.sheetRow}>
+                        <Icons.Ionicons name="mail-outline" size={20} color={theme.colors.indicator} style={{ marginRight: 10 }} />
+                        <Text style={[styles.sheetText, { color: theme.colors.sub_text }]}>{selectedContact.email}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                ) : (
+                  <View style={[styles.sheetNoData, { backgroundColor: theme.colors.sub_card }]}>
+                    <Icons.FontAwesome name="exclamation-circle" size={40} color="#ccc" />
+                    <Text style={styles.sheetNoDataText}>No contact details available</Text>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -198,7 +259,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 10,
     marginTop: 30,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
@@ -211,8 +272,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
   },
+  addProfile: {
+    flexDirection: 'row',
+    borderRadius: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 5,
+  },
   filtersSection: {
-    backgroundColor: '#ffffff',
+    paddingTop: 16,
     paddingBottom: 16,
   },
   filterSectionTitle: {
@@ -386,5 +453,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#ccc',
     fontWeight: '600',
+  },
+  sheetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    minHeight: 120,
+    elevation: 10,
+  },
+  sheetCloseBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+    padding: 8,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 24,
+    textAlign: 'center',
+    color: '#003366',
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+    marginLeft: 10,
+  },
+  sheetText: {
+    fontSize: 16,
+  },
+  sheetNoData: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  sheetNoDataText: {
+    fontSize: 16,
+    color: '#888',
+    marginTop: 12,
+    textAlign: 'center',
   },
 });

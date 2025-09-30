@@ -26,6 +26,7 @@ import vacancy9 from '../assets/vacancies/9.jpg';
 import vacancy10 from '../assets/vacancies/10.jpg';
 import vacancy11 from '../assets/vacancies/11.jpg';
 
+// Tenders
 import tender1 from '../assets/tenders/1.jpeg';
 import tender2 from '../assets/tenders/2.png';
 import tender3 from '../assets/tenders/3.jpeg';
@@ -38,6 +39,16 @@ import tender9 from '../assets/tenders/9.jpeg';
 import tender10 from '../assets/tenders/10.jpeg';
 import tender11 from '../assets/tenders/11.jpeg';
 import tender12 from '../assets/tenders/12.jpg';
+
+// Internships
+import intern1 from '../assets/internships/1.jpeg'
+import intern2 from '../assets/internships/2.jpeg'
+import intern3 from '../assets/internships/3.jpeg'
+import intern4 from '../assets/internships/4.jpeg'
+import intern5 from '../assets/internships/5.jpeg'
+import intern6 from '../assets/internships/6.jpeg'
+import intern7 from '../assets/internships/7.png'
+
 
 // no image placeholder
 import noImage from '../assets/no-image.jpg';
@@ -85,6 +96,15 @@ export const Images = {
   tender10,
   tender11,
   tender12,
+
+  // Internships
+  intern1,
+  intern2,
+  intern3,
+  intern4,
+  intern5,
+  intern6,
+  intern7,
 
   // no image placeholder
   noImage,

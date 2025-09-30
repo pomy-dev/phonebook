@@ -11,8 +11,7 @@ import { createDrawerNavigator } from "@react-navigation/drawer";
 import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import PublicationsStackNavigator from "./navigator/PublicationsStack";
-import VacancyStackNavigator from "./navigator/VacancyStack";
-import TenderStackNavigator from "./navigator/TenderStack";
+import CorporateStackNavigator from "./navigator/CorporateStack";
 import TabNavigator from "./components/TabNavigator";
 import SplashScreen from "./screens/SplashScreen";
 import CustomDrawerContent from "./components/Drawer";
@@ -217,13 +216,8 @@ function AppContent() {
                 initialParams={{ selectedState, contentType: "Promotions" }}
               />
               <Drawer.Screen
-                name="Vacancy"
-                component={VacancyStackNavigator}
-                options={{ headerShown: false }}
-              />
-              <Drawer.Screen
-                name="Tender"
-                component={TenderStackNavigator}
+                name="Corporate"
+                component={CorporateStackNavigator}
                 options={{ headerShown: false }}
               />
             </Drawer.Navigator>

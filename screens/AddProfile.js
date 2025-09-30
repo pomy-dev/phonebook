@@ -28,7 +28,7 @@ import { AppContext } from '../context/appContext';
 //   isAvailableForWork: boolean;
 // }
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation, route }) {
   const { theme, isDarkMode } = React.useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
@@ -45,6 +45,7 @@ export default function ProfileScreen() {
     avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
     isAvailableForWork: true,
   });
+  const minimal = route?.params?.minimal;
 
   const [newSkill, setNewSkill] = useState('');
   const [newAchievement, setNewAchievement] = useState('');
@@ -103,7 +104,7 @@ export default function ProfileScreen() {
 
       <View style={styles.header}>
         {/* back button */}
-        <TouchableOpacity onPress={() => { /* navigation.goBack() */ }}>
+        <TouchableOpacity onPress={() => { navigation.goBack() }}>
           <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.text} />
         </TouchableOpacity>
 

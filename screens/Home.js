@@ -367,7 +367,7 @@ const HomeScreen = ({ navigation }) => {
         {/* profile button */}
         <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}
           onPress={() => navigation.navigate('Profile')}>
-            
+
           <Icons.Ionicons name="person-circle-outline" size={24} color={theme.colors.text} />
           {/* my profile text */}
           <Text style={{

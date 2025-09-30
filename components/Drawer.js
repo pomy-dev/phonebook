@@ -207,7 +207,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
             onPressIn={() => handlePressIn(1)}
             onPressOut={() => handlePressOut(1)}
             onPress={() => {
-              navigation.navigate('Vacancy', { screen: 'Vacancies' });
+              navigation.navigate('Corporate', { screen: 'Corporates' });
               navigation.closeDrawer();
             }}
           >
@@ -217,32 +217,7 @@ const CustomDrawerContent = ({ states, navigation }) => {
               color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
               style={styles.icon}
             />
-            <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Vacancies</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        <Animated.View
-          style={{
-            opacity: fadeAnims[1],
-            transform: [{ scale: scaleAnims[1] }],
-          }}
-        >
-          <TouchableOpacity
-            style={styles.drawerItem}
-            onPressIn={() => handlePressIn(1)}
-            onPressOut={() => handlePressOut(1)}
-            onPress={() => {
-              navigation.navigate('Tender', { screen: 'Tenders' });
-              // navigation.closeDrawer();
-            }}
-          >
-            <Icons.Ionicons
-              name="megaphone-outline"
-              size={20}
-              color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
-              style={styles.icon}
-            />
-            <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Tenders</Text>
+            <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Corporates</Text>
           </TouchableOpacity>
         </Animated.View>
 
