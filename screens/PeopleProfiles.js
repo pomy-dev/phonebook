@@ -69,9 +69,9 @@ export default function PeopleScreen({ navigation }) {
           <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>Profiles</Text>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('AddProfile', { screen: 'ProfileScreen' })}
+            onPress={() => navigation.navigate('AddProfile', { register: true })}
             style={[styles.addProfile, { backgroundColor: theme.colors.indicator, borderColor: theme.colors.indicator }]}>
-            <Icons.Feather name="user-plus" size={18} color='#ccc' />
+            <Icons.Feather name="user-plus" size={18} color='#ffff' />
             <Text style={{ color: '#ffff' }}>Add Profile</Text>
           </TouchableOpacity>
         </View>
@@ -113,7 +113,7 @@ export default function PeopleScreen({ navigation }) {
                 styles.filterText,
                 selectedAvailability === availability && styles.filterTextActive
               ]}>
-                {availability === 'all' ? 'Miscellenious' :
+                {availability === 'all' ? 'Miscellaneous' :
                   availability === 'available' ? 'Open to Work' : 'Not Available'}
               </Text>
             </TouchableOpacity>
@@ -172,7 +172,7 @@ export default function PeopleScreen({ navigation }) {
               <View style={styles.skillsContainer}>
                 {profile.skills.slice(0, 6).map((skill, index) => (
                   <View key={index} style={styles.skillChip}>
-                    <Text style={[styles.skillText, { color: theme.colors.text }]}>{skill}</Text>
+                    <Text style={styles.skillText}>{skill}</Text>
                   </View>
                 ))}
               </View>
@@ -409,6 +409,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   skillText: {
+    color: '#6b7280',
     fontSize: 11,
     fontWeight: '500',
   },

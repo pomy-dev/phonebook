@@ -64,7 +64,7 @@ export default function CustomTabBar({ state, descriptors, navigation, theme, is
                         iconName = isFocused ? "heart" : "heart-outline"
                     } else if (route.name === "Nots") {
                         iconName = isFocused ? "notifications" : "notifications-outline"
-                    } else if (route.name === "People") {
+                    } else if (route.name === "Profiles") {
                         iconName = isFocused ? "people-sharp" : "people-outline"
                     }
 

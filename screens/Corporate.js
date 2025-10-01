@@ -139,7 +139,7 @@ export default function CorporatePlaceScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.unitPickerContainer, { backgroundColor: theme.colors.sub_card }]}>
+        <View style={[styles.unitPickerContainer, { backgroundColor: theme.colors.card }]}>
           <Picker
             selectedValue={contentType}
             onValueChange={(value) => {
@@ -149,7 +149,8 @@ export default function CorporatePlaceScreen({ navigation }) {
                 setIsLoading(false)
               }, 2000)
             }}
-            style={[styles.unitPicker, { color: theme.colors.text }]}
+            dropdownIconColor={theme.colors.text}
+            style={styles.unitPicker}
             mode="dropdown"
           >
             {contentTypes?.map((type, index) => (
@@ -266,7 +267,7 @@ export default function CorporatePlaceScreen({ navigation }) {
                 </Text>
               )}
 
-              <View style={styles.itemFooter}>
+              <View style={[styles.itemFooter, { backgroundColor: theme.colors.sub_card }]}>
                 <Text style={[styles.postedDate, { color: theme.colors.sub_text }]}>
                   Posted {formatDate(item.postedDate)}
                 </Text>
@@ -457,10 +458,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   itemFooter: {
-    backgroundColor: '#F8FAFC',
     padding: 12,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -497,7 +495,7 @@ const styles = StyleSheet.create({
   },
   imageModalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },

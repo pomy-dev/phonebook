@@ -49,9 +49,19 @@ import intern5 from '../assets/internships/5.jpeg'
 import intern6 from '../assets/internships/6.jpeg'
 import intern7 from '../assets/internships/7.png'
 
+// Events
+import event1 from '../assets/events/1.jpeg'
+import event2 from '../assets/events/2.jpg'
+import event3 from '../assets/events/3.jpeg'
+import event4 from '../assets/events/4.jpeg'
+import event5 from '../assets/events/5.jpeg'
+
 
 // no image placeholder
 import noImage from '../assets/no-image.jpg';
+
+// default user
+import default_user from '../assets/default-user.png';
 
 // export the images
 export const Images = {
@@ -106,6 +116,16 @@ export const Images = {
   intern6,
   intern7,
 
+  // Events
+  event1,
+  event2,
+  event3,
+  event4,
+  event5,
+
   // no image placeholder
   noImage,
+
+  // default user
+  default_user
 };

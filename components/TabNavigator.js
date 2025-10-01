@@ -51,7 +51,7 @@ export default function TabNavigator() {
                 }}
             />
             <Tab.Screen
-                name="People"
+                name="Profiles"
                 component={PeopleStackNavigator}
                 options={{
                     tabBarLabel: "Profiles",
