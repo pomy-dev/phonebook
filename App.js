@@ -12,6 +12,7 @@ import { StatusBar } from "expo-status-bar";
 import Toast from "react-native-toast-message";
 import PublicationsStackNavigator from "./navigator/PublicationsStack";
 import CorporateStackNavigator from "./navigator/CorporateStack";
+import EventsStackNavigator from "./navigator/EventsStack";
 import TabNavigator from "./components/TabNavigator";
 import SplashScreen from "./screens/SplashScreen";
 import CustomDrawerContent from "./components/Drawer";
@@ -218,6 +219,11 @@ function AppContent() {
               <Drawer.Screen
                 name="Corporate"
                 component={CorporateStackNavigator}
+                options={{ headerShown: false }}
+              />
+              <Drawer.Screen
+                name="Event"
+                component={EventsStackNavigator}
                 options={{ headerShown: false }}
               />
             </Drawer.Navigator>

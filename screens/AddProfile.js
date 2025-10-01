@@ -11,7 +11,10 @@ import {
   Alert,
 } from 'react-native';
 import { Icons } from '../constants/Icons';
+import { Images } from '../constants/Images';
 import { AppContext } from '../context/appContext';
+// import * as ImagePicker from 'expo-image-picker';
+// import * as FileSystem from 'expo-file-system';
 
 // interface ProfileData {
 //   name: string;
@@ -29,23 +32,39 @@ import { AppContext } from '../context/appContext';
 // }
 
 export default function ProfileScreen({ navigation, route }) {
+  const register = route?.params?.register;
   const { theme, isDarkMode } = React.useContext(AppContext);
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    name: 'John Doe',
-    title: 'Software Developer',
-    company: 'Tech Solutions Inc.',
-    location: 'San Francisco, CA',
-    industry: 'Technology',
-    experience: '5 years',
-    skills: ['JavaScript', 'React', 'Node.js'],
-    achievements: ['Led development of flagship product'],
-    education: 'BS Computer Science, UC Berkeley',
-    linkedinUrl: 'https://linkedin.com/in/johndoe',
-    avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
-    isAvailableForWork: true,
-  });
-  const minimal = route?.params?.minimal;
+  const [image, setImage] = useState('');
+  const [profile, setProfile] = register
+    ? useState({
+      name: '',
+      title: '',
+      company: '',
+      location: '',
+      industry: '',
+      experience: '',
+      skills: [],
+      achievements: [],
+      education: '',
+      linkedinUrl: '',
+      avatar: Images.default_user,
+      isAvailableForWork: true,
+    })
+    : useState({
+      name: 'John Doe',
+      title: 'Software Developer',
+      company: 'Tech Solutions Inc.',
+      location: 'San Francisco, CA',
+      industry: 'Technology',
+      experience: '5 years',
+      skills: ['JavaScript', 'React', 'Node.js'],
+      achievements: ['Led development of flagship product'],
+      education: 'BS Computer Science, UC Berkeley',
+      linkedinUrl: 'https://linkedin.com/in/johndoe',
+      avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
+      isAvailableForWork: true,
+    });
 
   const [newSkill, setNewSkill] = useState('');
   const [newAchievement, setNewAchievement] = useState('');
@@ -58,6 +77,77 @@ export default function ProfileScreen({ navigation, route }) {
     'Sports', 'Non-profit', 'Government', 'Insurance', 'Banking', 'Entertainment',
     'Gaming', 'Other'
   ];
+
+  // Function to request permissions on Android
+  const requestPermissions = async () => {
+    if (Platform.OS !== 'web') {
+      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
+        Alert.alert(
+          'Insufficient permissions!',
+          'You need to grant camera and media library permissions to use this feature.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+      return true;
+    }
+    return true;
+  };
+
+  // Function to open the gallery and pick an image
+  const pickImage = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        aspect: [4, 3],
+        quality: 0.8,
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        result.assets.forEach(asset => {
+          handleImageSelected(asset);
+        });
+        const uris = result.assets.map((asset) => ({ uri: asset.uri }));
+        console.log('Picked URIs:', uris);
+        return uris;
+      }
+      return [];
+    } catch (error) {
+      console.error('Error picking image:', error);
+      setError('Failed to select image. Please try again.');
+    }
+  };
+
+  const handleImageSelected = async (asset) => {
+    try {
+      // Get file info (size, extension, etc.)
+      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+
+      // Create a more suitable object for our state and later upload
+      const newImage = {
+        id: generateId(),
+        uri: asset.uri,
+        name: asset.uri.split('/').pop() || `image-${Date.now()}.jpg`,
+        type: `image/${asset.uri.split('.').pop() || 'jpeg'}`,
+        size: fileInfo.size,
+        localPath: asset.uri
+      };
+
+      setImage(newImage);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setError('Failed to process image. Please try again.');
+    }
+  };
 
   const handleSave = () => {
     setIsEditing(false);
@@ -108,19 +198,19 @@ export default function ProfileScreen({ navigation, route }) {
           <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.text} />
         </TouchableOpacity>
 
-        <Text style={[styles.title, { color: theme.colors.text }]}>My Profile</Text>
+        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.title, { color: theme.colors.text }]}>{register ? 'Add My Profile' : 'My Profile'}</Text>
 
         <TouchableOpacity
-          style={[styles.editButton, isEditing && styles.saveButton]}
+          style={[styles.editButton, (isEditing || register) && styles.saveButton]}
           onPress={isEditing ? handleSave : () => setIsEditing(true)}
         >
-          {isEditing ? (
+          {isEditing || register ? (
             <>
               <Icons.Ionicons name='save-outline' size={16} color="#ffffff" />
               <Text style={styles.buttonText}>Save</Text>
             </>
           ) : (
-            <Text style={[styles.editButtonText, { color: theme.colors.text }]}>Edit Profile</Text>
+            <Text style={[styles.editButtonText, { color: '#6b7280' }]}>Edit Profile</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -128,18 +218,27 @@ export default function ProfileScreen({ navigation, route }) {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <>
           <View style={styles.avatarSection}>
-            <Image source={{ uri: profile.avatar }} style={styles.avatar} />
-            <View style={[
-              styles.availabilityBadge,
-              { backgroundColor: profile.isAvailableForWork ? '#dcfce7' : '#fef3c7' }
-            ]}>
-              <Text style={[
-                styles.availabilityText,
-                { color: profile.isAvailableForWork ? '#16a34a' : '#d97706' }
+            <Image source={register ? image !== '' ? { uri: image.uri } : profile.avatar : { uri: profile.avatar }} style={styles.avatar} />
+            {register
+              ?
+              <TouchableOpacity
+                onPress={() => pickImage}
+                style={[styles.photo, { backgroundColor: theme.colors.notification }]}>
+                <Icons.EvilIcons name='image' size={24} color='#ffff' />
+                <Text style={{ color: theme.colors.text, fontSize: 15, fontWeight: 400 }}>{image === '' ? 'Pick Photo' : 'Change Photo'}</Text>
+              </TouchableOpacity>
+              :
+              <View style={[
+                styles.availabilityBadge,
+                { backgroundColor: profile.isAvailableForWork ? '#dcfce7' : '#fef3c7' }
               ]}>
-                {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
-              </Text>
-            </View>
+                <Text style={[
+                  styles.availabilityText,
+                  { color: profile.isAvailableForWork ? '#16a34a' : '#d97706' }
+                ]}>
+                  {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
+                </Text>
+              </View>}
           </View>
 
           <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
@@ -150,9 +249,9 @@ export default function ProfileScreen({ navigation, route }) {
 
             <View style={styles.field}>
               <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Full Name</Text>
-              {isEditing ? (
+              {isEditing || register ? (
                 <TextInput
-                  style={[styles.textInput, { color: theme.colors.text }]}
+                  style={styles.textInput}
                   value={profile.name}
                   onChangeText={(text) => setProfile(prev => ({ ...prev, name: text }))}
                   placeholder="Enter your full name"
@@ -164,9 +263,9 @@ export default function ProfileScreen({ navigation, route }) {
 
             <View style={styles.field}>
               <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Professional Title</Text>
-              {isEditing ? (
+              {isEditing || register ? (
                 <TextInput
-                  style={[styles.textInput, { color: theme.colors.text }]}
+                  style={styles.textInput}
                   value={profile.title}
                   onChangeText={(text) => setProfile(prev => ({ ...prev, title: text }))}
                   placeholder="Your job title"
@@ -178,9 +277,9 @@ export default function ProfileScreen({ navigation, route }) {
 
             <View style={styles.field}>
               <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Company</Text>
-              {isEditing ? (
+              {isEditing || register ? (
                 <TextInput
-                  style={[styles.textInput, { color: theme.colors.text }]}
+                  style={styles.textInput}
                   value={profile.company}
                   onChangeText={(text) => setProfile(prev => ({ ...prev, company: text }))}
                   placeholder="Current company"
@@ -192,9 +291,9 @@ export default function ProfileScreen({ navigation, route }) {
 
             <View style={styles.field}>
               <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Location</Text>
-              {isEditing ? (
+              {isEditing || register ? (
                 <TextInput
-                  style={[styles.textInput, { color: theme.colors.text }]}
+                  style={styles.textInput}
                   value={profile.location}
                   onChangeText={(text) => setProfile(prev => ({ ...prev, location: text }))}
                   placeholder="City, State"
@@ -208,8 +307,8 @@ export default function ProfileScreen({ navigation, route }) {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Industry</Text>
-              {isEditing ? (
+              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Industry</Text>
+              {isEditing || register ? (
                 <View style={styles.industrySelector}>
                   {industries.map((industry) => (
                     <TouchableOpacity
@@ -222,7 +321,7 @@ export default function ProfileScreen({ navigation, route }) {
                     >
                       <Text style={[
                         styles.industryChipText,
-                        profile.industry === industry && styles.industryChipTextSelected, { color: theme.colors.text }
+                        profile.industry === industry && styles.industryChipTextSelected
                       ]}>
                         {industry}
                       </Text>
@@ -235,10 +334,10 @@ export default function ProfileScreen({ navigation, route }) {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.fieldLabel}>Experience</Text>
-              {isEditing ? (
+              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Experience</Text>
+              {isEditing || register ? (
                 <TextInput
-                  style={[styles.textInput, { color: theme.colors.text }]}
+                  style={styles.textInput}
                   value={profile.experience}
                   onChangeText={(text) => setProfile(prev => ({ ...prev, experience: text }))}
                   placeholder="e.g., 5 years"
@@ -251,7 +350,7 @@ export default function ProfileScreen({ navigation, route }) {
               )}
             </View>
 
-            {isEditing && (
+            {isEditing || register && (
               <View style={styles.field}>
                 <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Work Availability</Text>
                 <View style={styles.availabilitySelector}>
@@ -279,7 +378,7 @@ export default function ProfileScreen({ navigation, route }) {
                   >
                     <Text style={[
                       styles.availabilityOptionText,
-                      !profile.isAvailableForWork && styles.availabilityOptionTextSelected, { color: theme.colors.text }
+                      !profile.isAvailableForWork && styles.availabilityOptionTextSelected
                     ]}>
                       Employed
                     </Text>
@@ -294,7 +393,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Icons.FontAwesome6 name='graduation-cap' size={20} color={theme.colors.indicator} />
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Education</Text>
             </View>
-            {isEditing ? (
+            {isEditing || register ? (
               <TextInput
                 style={[styles.textInput, styles.multilineInput]}
                 value={profile.education}
@@ -303,7 +402,7 @@ export default function ProfileScreen({ navigation, route }) {
                 multiline
               />
             ) : (
-              <Text style={styles.fieldValue}>{profile.education}</Text>
+              <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{profile.education}</Text>
             )}
           </View>
 
@@ -316,7 +415,7 @@ export default function ProfileScreen({ navigation, route }) {
               {profile.skills.map((skill, index) => (
                 <View key={index} style={styles.skillChip}>
                   <Text style={styles.skillText}>{skill}</Text>
-                  {isEditing && (
+                  {isEditing || register && (
                     <TouchableOpacity
                       style={styles.removeButton}
                       onPress={() => removeSkill(skill)}
@@ -327,7 +426,7 @@ export default function ProfileScreen({ navigation, route }) {
                 </View>
               ))}
             </View>
-            {isEditing && (
+            {isEditing || register && (
               <View style={styles.addSkillContainer}>
                 <TextInput
                   style={styles.addSkillInput}
@@ -335,7 +434,7 @@ export default function ProfileScreen({ navigation, route }) {
                   onChangeText={setNewSkill}
                   placeholder="Add a skill"
                 />
-                <TouchableOpacity style={styles.addButton} onPress={addSkill}>
+                <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addSkill}>
                   <Icons.Entypo name='plus' size={16} color="#ffffff" />
                 </TouchableOpacity>
               </View>
@@ -349,8 +448,8 @@ export default function ProfileScreen({ navigation, route }) {
             </View>
             {profile.achievements.map((achievement, index) => (
               <View key={index} style={styles.achievementItem}>
-                <Text style={styles.achievementText}>• {achievement}</Text>
-                {isEditing && (
+                <Text style={[styles.achievementText, { color: theme.colors.text }]}>• {achievement}</Text>
+                {isEditing || register && (
                   <TouchableOpacity
                     style={styles.removeButton}
                     onPress={() => removeAchievement(achievement)}
@@ -360,17 +459,17 @@ export default function ProfileScreen({ navigation, route }) {
                 )}
               </View>
             ))}
-            {isEditing && (
+            {isEditing || register && (
               <View style={styles.addAchievementContainer}>
                 <TextInput
-                  style={[styles.textInput, styles.multilineInput]}
+                  style={[styles.textInput, styles.multilineInput, { marginBottom: 5 }]}
                   value={newAchievement}
                   onChangeText={setNewAchievement}
                   placeholder="Add an achievement"
                   multiline
                 />
-                <TouchableOpacity style={styles.addButton} onPress={addAchievement}>
-                  <Icons.Entypo name='plus' size={16} color="#ffffff" />
+                <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addAchievement}>
+                  <Text style={{ textAlign: 'center', fontSize: 16, color: '#ffff' }}>Add</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -381,9 +480,9 @@ export default function ProfileScreen({ navigation, route }) {
               <Icons.EvilIcons name='external-link' size={24} color={theme.colors.indicator} />
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>LinkedIn Profile</Text>
             </View>
-            {isEditing ? (
+            {isEditing || register ? (
               <TextInput
-                style={[styles.textInput, { color: theme.colors.text }]}
+                style={styles.textInput}
                 value={profile.linkedinUrl}
                 onChangeText={(text) => setProfile(prev => ({ ...prev, linkedinUrl: text }))}
                 placeholder="LinkedIn profile URL"
@@ -415,12 +514,19 @@ const styles = StyleSheet.create({
     marginTop: 15,
     borderBottomColor: '#e5e7eb',
   },
+  photo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5
+  },
   title: {
     fontSize: 24,
     fontWeight: '700'
   },
   editButton: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#F8FAFC',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -499,6 +605,7 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: '#f9fafb',
     borderWidth: 1,
+    color: '#6b7280',
     borderColor: '#e5e7eb',
     borderRadius: 8,
     paddingHorizontal: 12,
@@ -529,6 +636,7 @@ const styles = StyleSheet.create({
     borderColor: '#2563eb',
   },
   industryChipText: {
+    color: '#6b7280',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -549,10 +657,11 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
   },
   availabilityOptionSelected: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
+    backgroundColor: '#003366',
+    borderColor: '#003366',
   },
   availabilityOptionText: {
+    color: '#6b7280',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -599,7 +708,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   addButton: {
-    backgroundColor: '#2563eb',
     padding: 8,
     borderRadius: 8,
   },
@@ -611,7 +719,6 @@ const styles = StyleSheet.create({
   },
   achievementText: {
     fontSize: 14,
-    color: '#374151',
     flex: 1,
   },
   addAchievementContainer: {
