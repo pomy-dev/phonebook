@@ -97,7 +97,6 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const [reviewRating, setReviewRating] = useState(5);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [hasWhatsApp, setHasWhatsApp] = useState(false);
-  const [mapError, setMapError] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [businessLocation, setBusinessLocation] = useState(null);
   const [directions, setDirections] = useState(null);
@@ -118,9 +117,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   const galleryRef = useRef(null);
 
   // Calculate average rating
-  // const averageRating = business.reviews && business.reviews.length > 0
-  //   ? business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / business.reviews.length
-  //   : 0;
+  const averageRating = business.reviews && business.reviews.length > 0
+    ? business.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / business.reviews.length
+    : 0;
 
   // Check if business is in favorites and if it has WhatsApp
   useEffect(() => {
@@ -579,38 +578,38 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  // const toggleRatingDetails = () => {
-  //   setShowRatingDetails(!showRatingDetails)
-  // }
+  const toggleRatingDetails = () => {
+    setShowRatingDetails(!showRatingDetails)
+  }
 
   const handleMapLoadError = () => {
     setLocationError("Failed to load map. Check your network connection.");
     setLoadingMap(false);
   };
 
-  // const renderStars = (rating, size = 16, color = "#FFD700") => {
-  //   const stars = []
-  //   const fullStars = Math.floor(rating)
-  //   const halfStar = rating - fullStars >= 0.5
+  const renderStars = (rating, size = 16, color = "#FFD700") => {
+    const stars = []
+    const fullStars = Math.floor(rating)
+    const halfStar = rating - fullStars >= 0.5
 
-  //   for (let i = 0; i < 5; i++) {
-  //     if (i < fullStars) {
-  //       stars.push(
-  //         <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
-  //       )
-  //     } else if (i === fullStars && halfStar) {
-  //       stars.push(
-  //         <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
-  //       )
-  //     } else {
-  //       stars.push(
-  //         <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
-  //       )
-  //     }
-  //   }
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <Icons.Ionicons key={`star-${i}`} name="star" size={size} color={color} style={{ marginRight: 2 }} />
+        )
+      } else if (i === fullStars && halfStar) {
+        stars.push(
+          <Icons.Ionicons key={`star-${i}`} name="star-half" size={size} color={color} style={{ marginRight: 2 }} />
+        )
+      } else {
+        stars.push(
+          <Icons.Ionicons key={`star-${i}`} name="star-outline" size={size} color={color} style={{ marginRight: 2 }} />
+        )
+      }
+    }
 
-  //   return stars
-  // }
+    return stars
+  }
 
   const renderGalleryItem = ({ item }) => (
     <TouchableOpacity
@@ -638,6 +637,23 @@ const BusinessDetailScreen = ({ route, navigation }) => {
     </View>
   );
 
+  const renderReviewItem = ({ item, index }) => (
+    <View style={styles.reviewCard}>
+      <View style={styles.reviewHeader}>
+        <View style={styles.reviewerInitialContainer}>
+          <Text style={styles.reviewerInitial}>{item.name.charAt(0)}</Text>
+        </View>
+        <View style={styles.reviewerInfo}>
+          <Text style={styles.reviewerName}>{item.name}</Text>
+          <View style={{ flexDirection: 'row', marginTop: 4 }}>
+            {renderStars(item.rating || 0, 14)}
+          </View>
+        </View>
+      </View>
+      <Text style={styles.reviewText}>{item.review}</Text>
+    </View>
+  )
+
   const handleNews = async () => {
     // Navigate to the BusinessArticle screen if connected
     navigation.navigate("BusinessArticle", {
@@ -655,13 +671,8 @@ const BusinessDetailScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView
-      style={[styles.container, , { backgroundColor: theme.colors.background }]}
-    >
-      <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
-        backgroundColor={theme.colors.background}
-      />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.colors.background} />
 
       {/* Company Details Body */}
       <Animated.ScrollView
@@ -722,7 +733,9 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               >
                 {business.company_type}
               </Text>
-              {/* <TouchableOpacity
+
+              {/* Rating */}
+              <TouchableOpacity
                 style={styles.ratingContainer}
                 onPress={toggleRatingDetails}
                 activeOpacity={0.7}
@@ -731,17 +744,20 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   <View style={{ flexDirection: 'row' }}>
                     {renderStars(averageRating)}
                   </View>
-                  <Text style={styles.ratingText}>
+                  <Text style={[styles.ratingText, { color: theme.colors.text }]}>
                     {averageRating.toFixed(1)} ({business.reviews ? business.reviews.length : 0})
                   </Text>
                 </View>
                 <Icons.Ionicons
                   name={showRatingDetails ? "chevron-up" : "chevron-down"}
                   size={16}
-                  color="#666666"
+                  color={theme.colors.text}
                 />
-              </TouchableOpacity> */}
-              {/* {showRatingDetails && (
+              </TouchableOpacity>
+
+              {/* Rating Details */}
+
+              {showRatingDetails && (
                 <Animated.View
                   style={[
                     styles.ratingDetailsContainer,
@@ -759,37 +775,37 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   ]}
                 >
                   <View style={styles.ratingBarContainer}>
-                    <Text style={styles.ratingBarLabel}>5</Text>
-                    <View style={styles.ratingBarBackground}>
+                    <Text style={[styles.ratingBarLabel, { color: theme.colors.highlight }]}>5</Text>
+                    <View style={[styles.ratingBarBackground, { backgroundColor: theme.colors.highlight }]}>
                       <View style={[styles.ratingBarFill, { width: '80%' }]} />
                     </View>
                   </View>
                   <View style={styles.ratingBarContainer}>
-                    <Text style={styles.ratingBarLabel}>4</Text>
-                    <View style={styles.ratingBarBackground}>
+                    <Text style={[styles.ratingBarLabel, { color: theme.colors.highlight }]}>4</Text>
+                    <View style={[styles.ratingBarBackground, { backgroundColor: theme.colors.highlight }]}>
                       <View style={[styles.ratingBarFill, { width: '60%' }]} />
                     </View>
                   </View>
                   <View style={styles.ratingBarContainer}>
-                    <Text style={styles.ratingBarLabel}>3</Text>
-                    <View style={styles.ratingBarBackground}>
+                    <Text style={[styles.ratingBarLabel, { color: theme.colors.highlight }]}>3</Text>
+                    <View style={[styles.ratingBarBackground, { backgroundColor: theme.colors.highlight }]}>
                       <View style={[styles.ratingBarFill, { width: '40%' }]} />
                     </View>
                   </View>
                   <View style={styles.ratingBarContainer}>
-                    <Text style={styles.ratingBarLabel}>2</Text>
-                    <View style={styles.ratingBarBackground}>
+                    <Text style={[styles.ratingBarLabel, { color: theme.colors.highlight }]}>2</Text>
+                    <View style={[styles.ratingBarBackground, { backgroundColor: theme.colors.highlight }]}>
                       <View style={[styles.ratingBarFill, { width: '20%' }]} />
                     </View>
                   </View>
                   <View style={styles.ratingBarContainer}>
-                    <Text style={styles.ratingBarLabel}>1</Text>
-                    <View style={styles.ratingBarBackground}>
+                    <Text style={[styles.ratingBarLabel, { color: theme.colors.highlight }]}>1</Text>
+                    <View style={[styles.ratingBarBackground, { backgroundColor: theme.colors.highlight }]}>
                       <View style={[styles.ratingBarFill, { width: '10%' }]} />
                     </View>
                   </View>
                 </Animated.View>
-              )} */}
+              )}
             </View>
           </View>
 
@@ -947,6 +963,7 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               Services
             </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.tabButton,
@@ -969,6 +986,20 @@ const BusinessDetailScreen = ({ route, navigation }) => {
               Gallery
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === "reviews" && styles.activeTabButton]}
+            onPress={() => handleTabPress("reviews")}
+            activeOpacity={0.7}
+          >
+            <Icons.Ionicons
+              name={activeTab === "reviews" ? "chatbubbles" : "chatbubbles-outline"}
+              size={20}
+              color={activeTab === "reviews" ? "#FFFFFF" : "#999999"}
+            />
+            <Text style={[styles.tabText, activeTab === "reviews" && styles.activeTabText]}>Reviews</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={[
               styles.tabButton,
@@ -1334,6 +1365,46 @@ const BusinessDetailScreen = ({ route, navigation }) => {
                   <Text style={styles.noImagesText}>No images available</Text>
                 </View>
               )}
+            </View>
+          )}
+          {activeTab === "reviews" && (
+            <View style={[styles.section, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.reviewsHeader}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Customer Reviews</Text>
+                <View style={styles.reviewsSummary}>
+                  <Text style={styles.reviewsRatingNumber}>{averageRating.toFixed(1)}</Text>
+                  <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                    {renderStars(averageRating)}
+                  </View>
+                  <Text style={styles.reviewsCount}>
+                    Based on {business.reviews ? business.reviews.length : 0} reviews
+                  </Text>
+                </View>
+              </View>
+
+              {business.reviews && business.reviews.length > 0 ? (
+                <FlatList
+                  data={business.reviews}
+                  renderItem={renderReviewItem}
+                  keyExtractor={(item, index) => index.toString()}
+                  scrollEnabled={false}
+                  contentContainerStyle={styles.reviewsList}
+                />
+              ) : (
+                <View style={styles.noReviewsContainer}>
+                  <Icons.Ionicons name="chatbubbles-outline" size={48} color="#DDDDDD" />
+                  <Text style={styles.noReviewsText}>No reviews yet</Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[styles.writeReviewButton, { backgroundColor: theme.colors.indicator }]}
+                onPress={() => setShowReviewModal(true)}
+                activeOpacity={0.7}
+              >
+                <Icons.Ionicons name="create-outline" size={16} color="#FFFFFF" />
+                <Text style={styles.writeReviewText}>Write a Review</Text>
+              </TouchableOpacity>
             </View>
           )}
           {activeTab === "contact" && (
@@ -2021,7 +2092,6 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: "#666666",
     marginLeft: 6,
   },
   ratingDetailsContainer: {
@@ -2038,13 +2108,11 @@ const styles = StyleSheet.create({
   ratingBarLabel: {
     width: 15,
     fontSize: 12,
-    color: "#666666",
     marginRight: 8,
   },
   ratingBarBackground: {
     flex: 1,
     height: 6,
-    backgroundColor: "#EEEEEE",
     borderRadius: 3,
     overflow: "hidden",
   },
@@ -2128,7 +2196,6 @@ const styles = StyleSheet.create({
   },
   mapSection: {
     borderRadius: 16,
-    // padding: 20,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -2610,6 +2677,107 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 2000,
   },
+  // Reviews
+  reviewsHeader: {
+    marginBottom: 20,
+  },
+  reviewsSummary: {
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  reviewsRatingNumber: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  reviewsCount: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 8,
+  },
+  reviewsList: {
+    marginBottom: 16,
+  },
+  reviewCard: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    borderLeftWidth: 3,
+    borderLeftColor: "#003366",
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  reviewerInitialContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#003366",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  reviewerInitial: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+  },
+  reviewerInfo: {
+    flex: 1,
+  },
+  reviewerName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333333",
+  },
+  reviewText: {
+    fontSize: 15,
+    color: "#555555",
+    lineHeight: 22,
+  },
+  noReviewsContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  noReviewsText: {
+    fontSize: 16,
+    color: "#999999",
+    marginTop: 16,
+  },
+  writeReviewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  writeReviewText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginLeft: 8,
+  },
+
   reviewModalContainer: {
     width: "90%",
     maxWidth: 400,

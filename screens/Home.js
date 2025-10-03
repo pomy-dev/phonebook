@@ -14,12 +14,10 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import { useRealm, } from '@realm/react';
+// import { Entity } from '../models/Entity';
 import { Icons } from '../constants/Icons';
-import {
-  fetchAllCompanies,
-  fetchAllCompaniesOffline,
-  fetchCompaniesWithAge,
-} from '../service/getApi';
+import { fetchAllCompanies, fetchAllCompaniesOffline, fetchCompaniesWithAge, useEntities } from '../service/getApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkNetworkConnectivity } from '../service/checkNetwork';
 import CustomLoader from '../components/customLoader';
@@ -34,6 +32,8 @@ import CustomCard from '../components/customCard';
 
 const HomeScreen = ({ navigation }) => {
   const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, notifications } = useContext(AppContext);
+  const realm = useRealm();
+  const entities = useEntities();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
@@ -219,9 +219,9 @@ const HomeScreen = ({ navigation }) => {
       let companyData;
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
-        companyData = isConnected ? await fetchAllCompanies() : await fetchAllCompaniesOffline();
+        companyData = isConnected ? await fetchAllCompanies(realm) : entities;
       } else {
-        companyData = await fetchAllCompaniesOffline();
+        companyData = entities;
         notificationsEnabled &&
           CustomToast('Offline Mode', 'Using cached data as app is in offline mode.')
       }

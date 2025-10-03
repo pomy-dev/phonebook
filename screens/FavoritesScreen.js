@@ -179,7 +179,7 @@ export default function FavoritesScreen({ navigation }) {
 
                 <TouchableOpacity
                     style={[styles.viewDetailsButton, { backgroundColor: theme.colors.primary }]}
-                    onPress={() => handleBusinessPress(item)}
+                    onPress={() => onBusinessPress(item)}
                 >
                     <Text style={[styles.viewDetailsText, { color: "#FFFF" }]}>View Details</Text>
                     <Icons.Ionicons name="chevron-forward" size={16} color="#FFFF" />

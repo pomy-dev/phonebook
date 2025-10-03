@@ -1,6 +1,6 @@
 // App.js
 import "react-native-gesture-handler";
-import { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { View, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
@@ -19,6 +19,8 @@ import CustomDrawerContent from "./components/Drawer";
 import { Images } from "./constants/Images";
 import { AppContext, AppProvider } from "./context/appContext";
 import * as Notifications from "expo-notifications";
+import { RealmProvider } from '@realm/react';
+import { Entity, PhoneObject, SocialMediaObject, WorkingHoursObject, TeamMember, GeoPoint, Review } from './models/Entity';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -163,74 +165,78 @@ function AppContent() {
       {!isAppReady ? (
         <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
       ) : (
-        <>
-          <NavigationContainer ref={navigationRef} theme={theme}>
-            <Drawer.Navigator
-              drawerContent={(props) => (
-                <CustomDrawerContent
-                  {...props}
-                  states={[
-                    {
-                      id: "bs_eswatini",
-                      name: "Business eSwatini",
-                      coatOfArmsIcon: Images.bs_eswatini,
-                      flagIcon: "flag-outline",
-                    },
-                    {
-                      id: "eptc",
-                      name: "E.P.T.C",
-                      coatOfArmsIcon: Images.eptc,
-                      flagIcon: "flag-outline",
-                    },
-                  ]}
-                  selectedState={selectedState}
-                  setSelectedState={setSelectedState}
-                  isDarkMode={isDarkMode}
-                  notificationsEnabled={notificationsEnabled}
-                  isOnline={isOnline}
-                  toggleTheme={toggleTheme}
-                  toggleNotifications={toggleNotifications}
-                  toggleOnlineMode={toggleOnlineMode}
+        <RealmProvider
+          schemaVersion={2} // <-- increment this when you change the schema
+          schema={[Entity, PhoneObject, SocialMediaObject, WorkingHoursObject, TeamMember, GeoPoint, Review]}>
+          <>
+            <NavigationContainer ref={navigationRef} theme={theme}>
+              <Drawer.Navigator
+                drawerContent={(props) => (
+                  <CustomDrawerContent
+                    {...props}
+                    states={[
+                      {
+                        id: "bs_eswatini",
+                        name: "Business eSwatini",
+                        coatOfArmsIcon: Images.bs_eswatini,
+                        flagIcon: "flag-outline",
+                      },
+                      {
+                        id: "eptc",
+                        name: "E.P.T.C",
+                        coatOfArmsIcon: Images.eptc,
+                        flagIcon: "flag-outline",
+                      },
+                    ]}
+                    selectedState={selectedState}
+                    setSelectedState={setSelectedState}
+                    isDarkMode={isDarkMode}
+                    notificationsEnabled={notificationsEnabled}
+                    isOnline={isOnline}
+                    toggleTheme={toggleTheme}
+                    toggleNotifications={toggleNotifications}
+                    toggleOnlineMode={toggleOnlineMode}
+                  />
+                )}
+                screenOptions={{
+                  drawerStyle: {
+                    width: 250,
+                  },
+                }}
+              >
+                <Drawer.Screen
+                  name="Tabs"
+                  component={TabNavigator}
+                  options={{ headerShown: false }}
                 />
-              )}
-              screenOptions={{
-                drawerStyle: {
-                  width: 250,
-                },
-              }}
-            >
-              <Drawer.Screen
-                name="Tabs"
-                component={TabNavigator}
-                options={{ headerShown: false }}
-              />
-              <Drawer.Screen
-                name="Publications"
-                component={PublicationsStackNavigator}
-                options={{ headerShown: false }}
-                initialParams={{ selectedState, contentType: "Publications" }}
-              />
-              <Drawer.Screen
-                name="Promotions"
-                component={PublicationsStackNavigator}
-                options={{ headerShown: false }}
-                initialParams={{ selectedState, contentType: "Promotions" }}
-              />
-              <Drawer.Screen
-                name="Corporate"
-                component={CorporateStackNavigator}
-                options={{ headerShown: false }}
-              />
-              <Drawer.Screen
-                name="Event"
-                component={EventsStackNavigator}
-                options={{ headerShown: false }}
-              />
-            </Drawer.Navigator>
-            <StatusBar style={isDarkMode ? "light" : "dark"} />
-          </NavigationContainer>
-          <Toast config={toastConfig} />
-        </>
+                <Drawer.Screen
+                  name="Publications"
+                  component={PublicationsStackNavigator}
+                  options={{ headerShown: false }}
+                  initialParams={{ selectedState, contentType: "Publications" }}
+                />
+                <Drawer.Screen
+                  name="Promotions"
+                  component={PublicationsStackNavigator}
+                  options={{ headerShown: false }}
+                  initialParams={{ selectedState, contentType: "Promotions" }}
+                />
+                <Drawer.Screen
+                  name="Corporate"
+                  component={CorporateStackNavigator}
+                  options={{ headerShown: false }}
+                />
+                <Drawer.Screen
+                  name="Event"
+                  component={EventsStackNavigator}
+                  options={{ headerShown: false }}
+                />
+              </Drawer.Navigator>
+              <StatusBar style={isDarkMode ? "light" : "dark"} />
+            </NavigationContainer>
+            <Toast config={toastConfig} />
+          </>
+        </RealmProvider>
       )}
     </SafeAreaProvider>
   );

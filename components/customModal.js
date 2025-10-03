@@ -10,7 +10,6 @@ import {
   Animated,
   StyleSheet
 } from "react-native";
-import { BlurView } from "expo-blur"
 import { Icons } from '../constants/Icons';
 import { AppContext } from '../context/appContext';
 import CustomShareVia from "./customShareVia";
@@ -98,30 +97,55 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                 </View>
               </View>
 
-              <TouchableOpacity
-                style={{ alignSelf: 'flex-end', marginBottom: 5 }}
-                onPress={handleShare}
-              >
-                <Icons.Feather name="share-2" size={24} color={theme.colors.indicator} />
-              </TouchableOpacity>
+              <View style={styles.utilityContainer}>
+                <TouchableOpacity
+                  style={{ alignSelf: 'flex-end', marginBottom: 5 }}
+                  onPress={() => { }}
+                >
+                  <Icons.FontAwesome6 name="newspaper" size={24} color={theme.colors.indicator} />
+                  <Text style={{ color: '#292828ff' }}>News</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ alignSelf: 'flex-end', marginBottom: 5 }}
+                  onPress={() => { }}
+                >
+                  <Icons.AntDesign name="tags" size={24} color={theme.colors.indicator} />
+                  <Text style={{ color: '#292828ff' }}>Adverts</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{ alignSelf: 'flex-end', marginBottom: 5 }}
+                  onPress={handleShare}
+                >
+                  <Icons.Feather name="share-2" size={24} color={theme.colors.indicator} />
+                  <Text style={{ color: '#292828ff' }}>Share</Text>
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.basicInfoContainer}>
                 {selectedBronzeBusiness.phone &&
-                  selectedBronzeBusiness.phone.length > 0 && (
-                    <TouchableOpacity
-                      style={styles.basicInfoItem}
-                      onPress={() => handleCall(selectedBronzeBusiness.phone)}
-                    >
-                      <Icons.Ionicons
-                        name="call-outline"
-                        size={20}
-                        color="#003366"
-                      />
-                      <Text style={styles.basicInfoText}>
-                        {selectedBronzeBusiness.phone[0].number}
-                      </Text>
-                    </TouchableOpacity>
-                  )
+                  selectedBronzeBusiness.phone.some(
+                    (p) => p.phone_type === "call") &&
+                  selectedBronzeBusiness.phone.map
+                    ((cell, index) =>
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.basicInfoItem}
+                        onPress={() => {
+                          handleCall(cell)
+                        }}
+                      >
+                        <Icons.Ionicons
+                          name="call-outline"
+                          size={20}
+                          color="#003366"
+                        />
+                        <Text style={styles.basicInfoText}>
+                          {cell.number}
+                        </Text>
+                      </TouchableOpacity>
+                    )
                 }
 
                 {selectedBronzeBusiness.phone &&
@@ -173,24 +197,6 @@ export function CustomModal({ isModalVisible, selectedBronzeBusiness, onClose })
                     </Text>
                   </TouchableOpacity>
                 )}
-              </View>
-
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                  style={[styles.primaryActionButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => {
-                    onClose();
-                    if (
-                      selectedBronzeBusiness.phone &&
-                      selectedBronzeBusiness.phone.length > 0
-                    ) {
-                      handleCall(selectedBronzeBusiness.phone);
-                    }
-                  }}
-                >
-                  <Icons.Ionicons name="call-outline" size={18} color="#CCC" />
-                  <Text style={[styles.primaryActionText, { color: "#CCC" }]}>Call Business</Text>
-                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -299,11 +305,19 @@ const styles = StyleSheet.create({
     color: "#666666",
     marginBottom: 8,
   },
-  basicInfoContainer: {
+  utilityContainer: {
     backgroundColor: "#F8F9FA",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  basicInfoContainer: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 16,
   },
   basicInfoItem: {
     flexDirection: "row",

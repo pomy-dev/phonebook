@@ -15,7 +15,7 @@ import {
   RefreshControl
 } from "react-native";
 import { Icons } from '../constants/Icons'
-import { fetchAllCompaniesOffline } from "../service/getApi";
+import { fetchAllCompaniesOffline, useEntities } from "../service/getApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CustomToast } from "../components/customToast";
 import { CustomModal } from "../components/customModal";
@@ -23,10 +23,12 @@ import { useCallFunction } from '../components/customCallAlert';
 import { AppContext } from '../context/appContext';
 import CustomLoader from "../components/customLoader";
 import CustomCard from "../components/customCard";
+import { Entity } from '../models/Entity';
 import { handleEmail, handleLocation, handleWhatsapp, handleBusinessPress } from "../utils/callFunctions";
 
 export default function BusinessList({ route, navigation }) {
   const { theme, isDarkMode, selectedState } = React.useContext(AppContext);
+  const entities = useEntities();
   const { category } = route.params;
   const [businesses, setBusinesses] = useState([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState([]);
@@ -95,14 +97,7 @@ export default function BusinessList({ route, navigation }) {
     async function loadCompanies() {
       // console.log(category);
       setLoading(true);
-      const companyData = await fetchAllCompaniesOffline();
-
-      // Filter companies based on selected state
-      const directoryCompanies = companyData.filter(
-        (company) => company.directory === selectedState?.trim()
-      ) || [];
-
-      setBusinesses(directoryCompanies);
+      setBusinesses(entities);
       setLoading(false);
     }
     loadCompanies();
@@ -227,7 +222,7 @@ export default function BusinessList({ route, navigation }) {
         <FlatList
           data={filteredBusinesses}
           renderItem={renderBusinessItem}
-          keyExtractor={(item) => item._id.toString()}
+          keyExtractor={(item, index) => `${item._id}-${index}`}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
