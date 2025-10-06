@@ -2,6 +2,87 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQuery } from '@realm/react';
 import { API_BASE_URL } from "../config/env";
 
+export const addUser = async (userData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/add-profile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error adding user:", error);
+    throw error;
+  }
+};
+
+export const getUserProfile = async (email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/user-profile?email=${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+};
+
+export const updateUserProfile = async (id, updatedData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/update-profile?id=${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+};
+
+export const deleteUserProfile = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/delete-profile?id=${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting user profile:", error);
+    throw error;
+  }
+};
+
 export const fetchAllCompanies = async (realm) => {
   try {
     let allCompanies = [];
@@ -391,7 +472,7 @@ export const fetchNotifications = async () => {
 };
 
 // Helper function to load offline data
-export const loadOfflineData = async () => {
+export const loadOfflineData = async (companies) => {
   try {
     const data = await fetchAllCompaniesOffline(companies);
     const companyData = data ? JSON.parse(data) : [];

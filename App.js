@@ -21,8 +21,6 @@ import { AppContext, AppProvider } from "./context/appContext";
 import * as Notifications from "expo-notifications";
 import { RealmProvider } from '@realm/react';
 import { AuthProvider } from "./context/authProvider";
-import LoginScreen from "./components/loginModal";
-import ProfileScreen from "./screens/AddProfile"
 import { Entity, PhoneObject, SocialMediaObject, WorkingHoursObject, TeamMember, GeoPoint, Review } from './models/Entity';
 
 // Configure notification handler
@@ -181,7 +179,7 @@ function AppContent() {
                       states={[
                         {
                           id: "bs_eswatini",
-                          name: "Business eSwatini",
+                          name: "BE",
                           coatOfArmsIcon: Images.bs_eswatini,
                           flagIcon: "flag-outline",
                         },

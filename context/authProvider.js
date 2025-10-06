@@ -1,10 +1,12 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Auth0 from 'react-native-auth0';
+import { jwtDecode } from 'jwt-decode';
+import { AUTH0_DOMAIN, AUTH0_CLIENT_ID, AUTH0_REDIRECT_URI, AUTH0_LOGOUT_REDIRECT_URI } from '../config/env';
 
 const auth0 = new Auth0({
-  domain: 'dev-3zyqmqx2ka58kywm.us.auth0.com',
-  clientId: 'wuNnffEgLMLYx1G6ZSBL6ci2rL8b1VOT',
+  domain: AUTH0_DOMAIN,
+  clientId: AUTH0_CLIENT_ID,
 });
 
 export const AuthContext = createContext();
@@ -33,13 +35,17 @@ export const AuthProvider = ({ children }) => {
       const credentials = await auth0.webAuth.authorize({
         scope: 'openid profile email',
         connection,
-        redirectUri: 'businesslink://dev-3zyqmqx2ka58kywm.us.auth0.com/callback', // 👈 MUST match Auth0
+        redirectUri: AUTH0_REDIRECT_URI,
       });
 
+      // Decode the JWT to get user info
+      const decodedUser = jwtDecode(credentials.idToken);
+
+      // Store tokens & user info
       setAccessToken(credentials.accessToken);
-      setUser(credentials.idToken);
+      setUser(decodedUser);
       await AsyncStorage.setItem('accessToken', credentials.accessToken);
-      await AsyncStorage.setItem('user', JSON.stringify(credentials.idToken));
+      await AsyncStorage.setItem('user', JSON.stringify(decodedUser));
 
       return credentials;
     } catch (error) {
@@ -52,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await auth0.webAuth.clearSession({
         federated: true,
-        returnTo: 'businesslink://dev-3zyqmqx2ka58kywm.us.auth0.com/callback',
+        returnTo: AUTH0_LOGOUT_REDIRECT_URI,
       });
 
       setAccessToken(null);

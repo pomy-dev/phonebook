@@ -12,15 +12,20 @@ import {
 import { Modal } from 'react-native';
 import { Icons } from "../constants/Icons";
 import { AppContext } from '../context/appContext';
+import { AuthContext } from '../context/authProvider';
+import LoginScreen from '../components/loginModal';
 import { mockProfiles, allIndustries } from '../utils/mockData';
 
 export default function PeopleScreen({ navigation }) {
   const { theme, isDarkMode } = React.useContext(AppContext);
+  const { user, loading } = React.useContext(AuthContext);
   const [selectedIndustry, setSelectedIndustry] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [filteredProfiles, setFilteredProfiles] = useState(mockProfiles);
   const [showContactSheet, setShowContactSheet] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [isLoginVisible, setIsLoginVisible] = useState(false);
+  const [selectedSkillTabs, setSelectedSkillTabs] = useState({});
 
   const industries = ['all', ...allIndustries];
 
@@ -59,9 +64,52 @@ export default function PeopleScreen({ navigation }) {
     setShowContactSheet(true);
   };
 
+  const handleAddProfile = () => {
+    if (!user) {
+      setIsLoginVisible(true);
+      return;
+    }
+    navigation.navigate('AddProfile', { register: true });
+  };
+
+  const getSocialIcon = (platform) => {
+    switch (platform) {
+      case 'linkedin': return <Icons.Ionicons name='logo-linkedin' size={14} color="#0077b5" />;
+      case 'twitter': return <Icons.Ionicons name='logo-twitter' size={14} color="#1da1f2" />;
+      case 'github': return <Icons.Ionicons name='logo-github' size={14} color="#333" />;
+      case 'website': return <Icons.Ionicons name='globe-outline' size={14} color="#10b981" />;
+      case 'instagram': return <Icons.Ionicons name='logo-instagram' size={14} color="#e4405f" />;
+      case 'facebook': return <Icons.Ionicons name='logo-facebook' size={14} color="#1877f2" />;
+      default: return <Icons.EvilIcons name='external-link' size={14} color="#6b7280" />;
+    }
+  };
+
+  const handleSkillTabChange = (profileId, tab) => {
+    setSelectedSkillTabs(prev => ({
+      ...prev,
+      [profileId]: tab
+    }));
+  };
+
+  const getSkillsForTab = (profile, tab) => {
+    switch (tab) {
+      case 'acquired': return profile.acquiredSkills;
+      case 'innate': return profile.innateSkills;
+      case 'domestic': return profile.domesticSkills;
+      default: return profile.acquiredSkills;
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
+
+      {!loading && (
+        <LoginScreen
+          isLoginVisible={isLoginVisible}
+          onClose={() => setIsLoginVisible(false)}
+        />
+      )}
 
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>Professionals' Network</Text>
@@ -69,7 +117,7 @@ export default function PeopleScreen({ navigation }) {
           <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>Profiles</Text>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('AddProfile', { register: true })}
+            onPress={() => handleAddProfile()}
             style={[styles.addProfile, { backgroundColor: theme.colors.indicator, borderColor: theme.colors.indicator }]}>
             <Icons.Feather name="user-plus" size={18} color='#ffff' />
             <Text style={{ color: '#ffff' }}>Add Profile</Text>
@@ -169,8 +217,27 @@ export default function PeopleScreen({ navigation }) {
 
             <View style={styles.skillsSection}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Skills</Text>
+              <View style={styles.skillTabsContainer}>
+                {['acquired', 'innate', 'domestic'].map((tab) => (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[
+                      styles.skillTab,
+                      (selectedSkillTabs[profile.id] || 'acquired') === tab && styles.skillTabActive
+                    ]}
+                    onPress={() => handleSkillTabChange(profile.id, tab)}
+                  >
+                    <Text style={[
+                      styles.skillTabText,
+                      (selectedSkillTabs[profile.id] || 'acquired') === tab && styles.skillTabTextActive
+                    ]}>
+                      {tab === 'acquired' ? 'Acquired' : tab === 'innate' ? 'Innate' : 'Domestic'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <View style={styles.skillsContainer}>
-                {profile.skills.slice(0, 6).map((skill, index) => (
+                {getSkillsForTab(profile, selectedSkillTabs[profile.id] || 'acquired').slice(0, 4).map((skill, index) => (
                   <View key={index} style={styles.skillChip}>
                     <Text style={styles.skillText}>{skill}</Text>
                   </View>
@@ -188,15 +255,28 @@ export default function PeopleScreen({ navigation }) {
               ))}
             </View>
 
-            <View style={styles.profileFooter}>
-              <TouchableOpacity
-                style={styles.linkedinButton}
-                onPress={() => openLinkedIn(profile.linkedinUrl)}
-              >
-                <Icons.Feather name='external-link' size={16} color={"#0077b5"} />
-                <Text style={styles.linkedinText}>LinkedIn</Text>
-              </TouchableOpacity>
+            <View style={styles.socialSection}>
+              <Text style={styles.sectionTitle}>Social Links</Text>
+              <View style={styles.socialLinksContainer}>
+                {Object.entries(profile.socialLinks).map(([platform, url]) => {
+                  if (!url) return null;
+                  return (
+                    <TouchableOpacity
+                      key={platform}
+                      style={styles.socialLink}
+                      onPress={() => Linking.openURL(url)}
+                    >
+                      {getSocialIcon(platform)}
+                      <Text style={styles.socialLinkText}>
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
 
+            <View style={styles.profileFooter}>
               <TouchableOpacity onPress={() => handleContactPress(profile)}
                 style={[styles.connectButton, { backgroundColor: theme.colors.indicator }]}>
                 <Text style={styles.connectButtonText}>Contact</Text>
@@ -387,13 +467,38 @@ const styles = StyleSheet.create({
   },
   education: {
     fontSize: 13,
-  },
-  skillsSection: {
+  }, skillsSection: {
     marginBottom: 16,
+  },
+  skillTabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  skillTab: {
+    backgroundColor: '#f9fafb',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  skillTabActive: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  skillTabText: {
+    fontSize: 11,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  skillTabTextActive: {
+    color: '#ffffff',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#374151',
     marginBottom: 8,
   },
   skillsContainer: {
@@ -409,8 +514,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   skillText: {
-    color: '#6b7280',
     fontSize: 11,
+    color: '#374151',
     fontWeight: '500',
   },
   achievementsSection: {
@@ -426,26 +531,36 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     flex: 1,
   },
-  profileFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  socialSection: {
+    marginBottom: 16,
   },
-  linkedinButton: {
+  socialLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  socialLink: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f8ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 4,
   },
-  linkedinText: {
-    fontSize: 12,
-    color: '#0077b5',
-    fontWeight: '600',
+  socialLinkText: {
+    fontSize: 11,
+    color: '#374151',
+    fontWeight: '500',
     marginLeft: 4,
   },
+  profileFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   connectButton: {
+    width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -453,6 +568,7 @@ const styles = StyleSheet.create({
   connectButtonText: {
     fontSize: 14,
     color: '#ccc',
+    textAlign: 'center',
     fontWeight: '600',
   },
   sheetOverlay: {

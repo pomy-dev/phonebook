@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "scheme": "businesslink",
+    "scheme": "com.pld.phonebook.auth0",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

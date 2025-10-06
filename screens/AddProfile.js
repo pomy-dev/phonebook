@@ -13,27 +13,12 @@ import {
 import { Icons } from '../constants/Icons';
 import { Images } from '../constants/Images';
 import { AppContext } from '../context/appContext';
-// import * as ImagePicker from 'expo-image-picker';
-// import * as FileSystem from 'expo-file-system';
-
-// interface ProfileData {
-//   name: string;
-//   title: string;
-//   company: string;
-//   location: string;
-//   industry: string;
-//   experience: string;
-//   skills: string[];
-//   achievements: string[];
-//   education: string;
-//   linkedinUrl: string;
-//   avatar: string;
-//   isAvailableForWork: boolean;
-// }
+import { AuthContext } from '../context/authProvider';
 
 export default function ProfileScreen({ navigation, route }) {
   const register = route?.params?.register;
   const { theme, isDarkMode } = React.useContext(AppContext);
+  const { user, loading } = React.useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [image, setImage] = useState('');
   const [profile, setProfile] = register
@@ -44,29 +29,52 @@ export default function ProfileScreen({ navigation, route }) {
       location: '',
       industry: '',
       experience: '',
-      skills: [],
+      acquiredSkills: [],
+      innateSkills: [],
+      domesticSkills: [],
       achievements: [],
       education: '',
-      linkedinUrl: '',
+      socialLinks: {
+        linkedin: '',
+        twitter: '',
+        github: '',
+        website: '',
+        instagram: '',
+        facebook: ''
+      },
       avatar: Images.default_user,
       isAvailableForWork: true,
     })
     : useState({
-      name: 'John Doe',
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      whatsApp: '+268 7123456',
       title: 'Software Developer',
       company: 'Tech Solutions Inc.',
       location: 'San Francisco, CA',
       industry: 'Technology',
       experience: '5 years',
-      skills: ['JavaScript', 'React', 'Node.js'],
+      acquiredSkills: ['JavaScript', 'React', 'Node.js'],
+      innateSkills: ['Problem Solving', 'Critical Thinking'],
+      domesticSkills: ['Time Management', 'Organization'],
       achievements: ['Led development of flagship product'],
       education: 'BS Computer Science, UC Berkeley',
-      linkedinUrl: 'https://linkedin.com/in/johndoe',
-      avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
+      socialLinks: {
+        linkedin: 'https://linkedin.com/in/johndoe',
+        twitter: 'https://twitter.com/johndoe',
+        github: 'https://github.com/johndoe',
+        website: 'https://johndoe.dev',
+        instagram: '',
+        facebook: '',
+      },
+      avatar: user.picture || Images.default_user,
       isAvailableForWork: true,
     });
 
-  const [newSkill, setNewSkill] = useState('');
+  const [newAcquiredSkill, setNewAcquiredSkill] = useState('');
+  const [newInnateSkill, setNewInnateSkill] = useState('');
+  const [newDomesticSkill, setNewDomesticSkill] = useState('');
   const [newAchievement, setNewAchievement] = useState('');
 
   const industries = [
@@ -155,19 +163,53 @@ export default function ProfileScreen({ navigation, route }) {
   };
 
   const addSkill = () => {
-    if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
+    if (newAcquiredSkill.trim() && !profile.acquiredSkills.includes(newAcquiredSkill.trim())) {
       setProfile(prev => ({
         ...prev,
-        skills: [...prev.skills, newSkill.trim()]
+        acquiredSkills: [...prev.acquiredSkills, newAcquiredSkill.trim()]
       }));
-      setNewSkill('');
+      setNewAcquiredSkill('');
     }
   };
 
-  const removeSkill = (skillToRemove) => {
+  const addInnateSkill = () => {
+    if (newInnateSkill.trim() && !profile.innateSkills.includes(newInnateSkill.trim())) {
+      setProfile(prev => ({
+        ...prev,
+        innateSkills: [...prev.innateSkills, newInnateSkill.trim()]
+      }));
+      setNewInnateSkill('');
+    }
+  };
+
+  const addDomesticSkill = () => {
+    if (newDomesticSkill.trim() && !profile.domesticSkills.includes(newDomesticSkill.trim())) {
+      setProfile(prev => ({
+        ...prev,
+        domesticSkills: [...prev.domesticSkills, newDomesticSkill.trim()]
+      }));
+      setNewDomesticSkill('');
+    }
+  };
+
+  const removeAcquiredSkill = (skillToRemove) => {
     setProfile(prev => ({
       ...prev,
-      skills: prev.skills.filter(skill => skill !== skillToRemove)
+      acquiredSkills: prev.acquiredSkills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
+  const removeInnateSkill = (skillToRemove) => {
+    setProfile(prev => ({
+      ...prev,
+      innateSkills: prev.innateSkills.filter(skill => skill !== skillToRemove)
+    }));
+  };
+
+  const removeDomesticSkill = (skillToRemove) => {
+    setProfile(prev => ({
+      ...prev,
+      domesticSkills: prev.domesticSkills.filter(skill => skill !== skillToRemove)
     }));
   };
 
@@ -210,7 +252,7 @@ export default function ProfileScreen({ navigation, route }) {
               <Text style={styles.buttonText}>Save</Text>
             </>
           ) : (
-            <Text style={[styles.editButtonText, { color: '#6b7280' }]}>Edit Profile</Text>
+            <Text style={[styles.editButtonText, { color: '#ffff' }]}>Edit Profile</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -238,7 +280,8 @@ export default function ProfileScreen({ navigation, route }) {
                 ]}>
                   {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
                 </Text>
-              </View>}
+              </View>
+            }
           </View>
 
           <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
@@ -406,36 +449,103 @@ export default function ProfileScreen({ navigation, route }) {
             )}
           </View>
 
-          <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+          <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Icons.Entypo name='star' size={24} color={theme.colors.indicator} />
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Skills</Text>
+              <Text style={styles.sectionTitle}>Acquired Skills</Text>
             </View>
             <View style={styles.skillsContainer}>
-              {profile.skills.map((skill, index) => (
+              {profile.acquiredSkills.map((skill, index) => (
                 <View key={index} style={styles.skillChip}>
                   <Text style={styles.skillText}>{skill}</Text>
-                  {isEditing || register && (
+                  {isEditing && (
                     <TouchableOpacity
                       style={styles.removeButton}
-                      onPress={() => removeSkill(skill)}
+                      onPress={() => removeAcquiredSkill(skill)}
                     >
-                      <Icons.FontAwesome name='remove' size={12} color="#6b7280" />
+                      <X size={12} color="#6b7280" />
                     </TouchableOpacity>
                   )}
                 </View>
               ))}
             </View>
-            {isEditing || register && (
+            {isEditing && (
               <View style={styles.addSkillContainer}>
                 <TextInput
                   style={styles.addSkillInput}
-                  value={newSkill}
-                  onChangeText={setNewSkill}
-                  placeholder="Add a skill"
+                  value={newAcquiredSkill}
+                  onChangeText={setNewAcquiredSkill}
+                  placeholder="Add an acquired skill"
                 />
-                <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addSkill}>
-                  <Icons.Entypo name='plus' size={16} color="#ffffff" />
+                <TouchableOpacity style={styles.addButton} onPress={addSkill}>
+                  <Plus size={16} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Innate Skills</Text>
+            </View>
+            <View style={styles.skillsContainer}>
+              {profile.innateSkills.map((skill, index) => (
+                <View key={index} style={styles.skillChip}>
+                  <Text style={styles.skillText}>{skill}</Text>
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeInnateSkill(skill)}
+                    >
+                      <X size={12} color="#6b7280" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+            {isEditing && (
+              <View style={styles.addSkillContainer}>
+                <TextInput
+                  style={styles.addSkillInput}
+                  value={newInnateSkill}
+                  onChangeText={setNewInnateSkill}
+                  placeholder="Add an innate skill"
+                />
+                <TouchableOpacity style={styles.addButton} onPress={addInnateSkill}>
+                  <Plus size={16} color="#ffffff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Domestic Skills</Text>
+            </View>
+            <View style={styles.skillsContainer}>
+              {profile.domesticSkills.map((skill, index) => (
+                <View key={index} style={styles.skillChip}>
+                  <Text style={styles.skillText}>{skill}</Text>
+                  {isEditing && (
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeDomesticSkill(skill)}
+                    >
+                      <X size={12} color="#6b7280" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+            {isEditing && (
+              <View style={styles.addSkillContainer}>
+                <TextInput
+                  style={styles.addSkillInput}
+                  value={newDomesticSkill}
+                  onChangeText={setNewDomesticSkill}
+                  placeholder="Add a domestic skill"
+                />
+                <TouchableOpacity style={styles.addButton} onPress={addDomesticSkill}>
+                  <Plus size={16} color="#ffffff" />
                 </TouchableOpacity>
               </View>
             )}
@@ -478,20 +588,122 @@ export default function ProfileScreen({ navigation, route }) {
           <View style={[styles.cardBody, { backgroundColor: theme.colors.card, marginBottom: 30 }]}>
             <View style={styles.sectionHeader}>
               <Icons.EvilIcons name='external-link' size={24} color={theme.colors.indicator} />
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>LinkedIn Profile</Text>
+              <Text style={styles.sectionTitle}>Social Links</Text>
             </View>
-            {isEditing || register ? (
-              <TextInput
-                style={styles.textInput}
-                value={profile.linkedinUrl}
-                onChangeText={(text) => setProfile(prev => ({ ...prev, linkedinUrl: text }))}
-                placeholder="LinkedIn profile URL"
-              />
+            {isEditing ? (
+              <View>
+                <View style={styles.socialInputGroup}>
+                  <Text style={styles.socialLabel}>LinkedIn</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.socialLinks.linkedin}
+                    onChangeText={(text) => setProfile(prev => ({
+                      ...prev,
+                      socialLinks: { ...prev.socialLinks, linkedin: text }
+                    }))}
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </View>
+                <View style={styles.socialInputGroup}>
+                  <Text style={styles.socialLabel}>Twitter</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.socialLinks.twitter}
+                    onChangeText={(text) => setProfile(prev => ({
+                      ...prev,
+                      socialLinks: { ...prev.socialLinks, twitter: text }
+                    }))}
+                    placeholder="https://twitter.com/username"
+                  />
+                </View>
+                <View style={styles.socialInputGroup}>
+                  <Text style={styles.socialLabel}>GitHub</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.socialLinks.github}
+                    onChangeText={(text) => setProfile(prev => ({
+                      ...prev,
+                      socialLinks: { ...prev.socialLinks, github: text }
+                    }))}
+                    placeholder="https://github.com/username"
+                  />
+                </View>
+                <View style={styles.socialInputGroup}>
+                  <Text style={styles.socialLabel}>Website</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.socialLinks.website}
+                    onChangeText={(text) => setProfile(prev => ({
+                      ...prev,
+                      socialLinks: { ...prev.socialLinks, website: text }
+                    }))}
+                    placeholder="https://yourwebsite.com"
+                  />
+                </View>
+                <View style={styles.socialInputGroup}>
+                  <Text style={styles.socialLabel}>Instagram</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.socialLinks.instagram}
+                    onChangeText={(text) => setProfile(prev => ({
+                      ...prev,
+                      socialLinks: { ...prev.socialLinks, instagram: text }
+                    }))}
+                    placeholder="https://instagram.com/username"
+                  />
+                </View>
+                <View style={styles.socialInputGroup}>
+                  <Text style={styles.socialLabel}>Facebook</Text>
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.socialLinks.facebook}
+                    onChangeText={(text) => setProfile(prev => ({
+                      ...prev,
+                      socialLinks: { ...prev.socialLinks, facebook: text }
+                    }))}
+                    placeholder="https://facebook.com/username"
+                  />
+                </View>
+              </View>
             ) : (
-              <TouchableOpacity style={styles.linkedinLink}>
-                <Icons.EvilIcons name='external-link' size={16} color="#0077b5" />
-                <Text style={styles.linkedinText}>View LinkedIn Profile</Text>
-              </TouchableOpacity>
+              <View style={styles.socialLinksContainer}>
+                {profile.socialLinks.linkedin && (
+                  <TouchableOpacity style={styles.socialLink}>
+                    <Icons.EvilIcons name='external-link' size={16} color="#0077b5" />
+                    <Text style={styles.socialLinkText}>LinkedIn</Text>
+                  </TouchableOpacity>
+                )}
+                {profile.socialLinks.twitter && (
+                  <TouchableOpacity style={styles.socialLink}>
+                    <Icons.EvilIcons name='external-link' size={16} color="#1da1f2" />
+                    <Text style={styles.socialLinkText}>Twitter</Text>
+                  </TouchableOpacity>
+                )}
+                {profile.socialLinks.github && (
+                  <TouchableOpacity style={styles.socialLink}>
+                    <Icons.EvilIcons name='external-link' size={16} color="#333" />
+                    <Text style={styles.socialLinkText}>GitHub</Text>
+                  </TouchableOpacity>
+                )}
+                {profile.socialLinks.website && (
+                  <TouchableOpacity style={styles.socialLink}>
+                    <Icons.EvilIcons name='external-link' size={16} color="#10b981" />
+                    <Text style={styles.socialLinkText}>Website</Text>
+                  </TouchableOpacity>
+                )}
+                {profile.socialLinks.instagram && (
+                  <TouchableOpacity style={styles.socialLink}>
+                    <Icons.EvilIcons name='external-link' size={16} color="#e4405f" />
+                    <Text style={styles.socialLinkText}>Instagram</Text>
+                  </TouchableOpacity>
+                )}
+                {profile.socialLinks.facebook && (
+                  <TouchableOpacity style={styles.socialLink}>
+                    <Icons.EvilIcons name='external-link' size={16} color="#1877f2" />
+                    <Text style={styles.socialLinkText}>Facebook</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </View>
         </>
@@ -526,7 +738,7 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   editButton: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FF4500',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -723,19 +935,32 @@ const styles = StyleSheet.create({
   },
   addAchievementContainer: {
     marginTop: 12,
+  }, socialInputGroup: {
+    marginBottom: 12,
   },
-  linkedinLink: {
+  socialLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  socialLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  socialLink: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f8ff',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
-  linkedinText: {
+  socialLinkText: {
     fontSize: 14,
-    color: '#0077b5',
+    color: '#374151',
     fontWeight: '600',
     marginLeft: 6,
   },

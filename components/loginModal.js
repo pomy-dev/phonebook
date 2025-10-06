@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,23 @@ import { AuthContext } from '../context/authProvider';
 
 export default function LoginScreen({ isLoginVisible, onClose }) {
   const { socialLogin, user, logout, loading } = useContext(AuthContext);
+  const [isConnecting, setIsConnecting] = useState(false);
   const { theme } = useContext(AppContext);
+
+  console.log('User Info:', user);
+
+  const handleSocialLogin = (connection) => {
+    console.log(`Initiating ${connection} login...`);
+    try {
+      setIsConnecting(true);
+      socialLogin(connection);
+      // onClose(); 
+    } catch (error) {
+      console.error('Login failed:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  }
 
   return (
     <Modal
@@ -28,8 +44,8 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
         <View style={[styles.modalContainer, { backgroundColor: theme.colors.card }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>
-              {user ? `Welcome, ${user.name || user.email}` : 'Sign In'}
+            <Text ellipsizeMode='tail' width={'90%'} numberOfLines={1} style={[styles.title, { color: theme.colors.text }]}>
+              {user ? `Hello, ${user.name || user.email}` : 'Sign In'}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Icons.AntDesign name="close" size={24} color={theme.colors.notification} />
@@ -37,11 +53,11 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
           </View>
 
           {/* Loading State */}
-          {loading && (
+          {loading || isConnecting && (
             <View style={styles.loadingContainer}>
               <CustomLoader />
               <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                Loading...
+                waiting...
               </Text>
             </View>
           )}
@@ -69,7 +85,7 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
                   </Text>
                   <TouchableOpacity
                     style={[styles.socialButton, { borderColor: theme.colors.border }]}
-                    onPress={() => socialLogin('google-oauth2')}
+                    onPress={() => handleSocialLogin('google-oauth2')}
                   >
                     <Image source={Images.google} style={styles.socialIcon} />
                     <Text style={[styles.socialButtonText, { color: theme.colors.text }]}>
@@ -78,7 +94,7 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.socialButton, { borderColor: theme.colors.border }]}
-                    onPress={() => socialLogin('facebook')}
+                    onPress={() => handleSocialLogin('facebook')}
                   >
                     <Image source={Images.facebook} style={styles.socialIcon} />
                     <Text style={[styles.socialButtonText, { color: theme.colors.text }]}>

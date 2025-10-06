@@ -233,9 +233,9 @@ export const getSynonyms = (term) => {
   }, [lowerTerm]);
 };
 
-export async function filterAllBusinesses(query = "", companyDirectory = "") {
+export async function filterAllBusinesses(query = "", companies) {
   try {
-    const data = await fetchAllCompaniesOffline();
+    const data = companies;
     if (!data || data.length === 0) {
       return [];
     }
@@ -244,12 +244,7 @@ export async function filterAllBusinesses(query = "", companyDirectory = "") {
     const queryTerms = query.toLowerCase().trim().split(/\s+/);
     const allSearchTerms = queryTerms.flatMap((term) => getSynonyms(term));
 
-    // Filter businesses based on query terms and selected directory
-    directoryCompanies = companyDirectory
-      ? data.filter((company) => company.directory === companyDirectory.trim())
-      : data;
-
-    const filtered = directoryCompanies.filter((business) => {
+    const filtered = data.filter((business) => {
       // Combine all searchable fields into a single string
       const searchableText = [
         business.company_name || "",

@@ -178,8 +178,8 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    loadBusinesses(selectedState, isRefreshing);
-  }, [selectedState, isOnline]); // Add selectedState as a dependency to reload businesses when state changes
+    loadBusinesses(isRefreshing);
+  }, [isOnline]); // Add selectedState as a dependency to reload businesses when state changes
 
   useEffect(() => {
     filterBusinesses(allBusinesses, activeCategory);
@@ -192,7 +192,7 @@ const HomeScreen = ({ navigation }) => {
   const filterALLBs = async (query = searchQuery) => {
     setSearchedBusinesses([]);
     try {
-      const filtered = await filterAllBusinesses(query, selectedState);
+      const filtered = await filterAllBusinesses(query, entities);
       setSearchedBusinesses(filtered);
     } catch (error) {
       console.log('Error in filterALLBs:', error);
@@ -216,8 +216,7 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const loadBusinesses = async (companyDirectory, isRefresh) => {
-    console.log('Loading businesses for directory:', companyDirectory);
+  const loadBusinesses = async (isRefresh) => {
     try {
       isRefresh ? setIsRefreshing(true) : setIsLoading(true);
       let companyData;
@@ -232,13 +231,7 @@ const HomeScreen = ({ navigation }) => {
 
       console.log(`Fetched ${companyData.length} companies from API or cache.`);
 
-      const companies = companyData.filter(
-        (company) => company.directory === companyDirectory?.trim()
-      ) || [];
-
-      console.log(`Filtered to ${companies.length} companies in directory: ${companyDirectory}`);
-
-      const featuredBusinesses = companies.filter(
+      const featuredBusinesses = companyData.filter(
         (company) => company.subscription_type === 'Gold'
       );
 
@@ -246,7 +239,7 @@ const HomeScreen = ({ navigation }) => {
 
       const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
-      const nonGoldCompanies = companies.filter(
+      const nonGoldCompanies = companyData.filter(
         (company) => company.subscription_type !== 'Gold'
       );
 
@@ -287,12 +280,8 @@ const HomeScreen = ({ navigation }) => {
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
         if (isConnected) {
-          console.log('Selected State on Refresh:', selectedState);
           try {
-            const companyData = await fetchAllCompanies();
-            const companies = companyData.filter(
-              (company) => company.directory === selectedState?.trim()
-            ) || [];
+            const companies = await fetchAllCompanies(realm);
 
             const featuredBusinesses = companies.filter(
               (company) => company.subscription_type === 'Gold'
@@ -310,26 +299,26 @@ const HomeScreen = ({ navigation }) => {
             setLastRefresh('Last refresh was just now');
           } catch (err) {
             console.log('API Error:', err.message);
-            await loadBusinesses(selectedState, isRefreshing);
+            await loadBusinesses(isRefreshing);
             setLastRefresh('Using cached data (network unavailable)');
             notificationsEnabled &&
               CustomToast('Network Error', 'Failed to fetch new data. Using cached data.');
           }
         } else {
-          await loadBusinesses(selectedState, isRefreshing);
+          await loadBusinesses(isRefreshing);
           setLastRefresh('Using cached data (offline mode)');
           notificationsEnabled &&
             CustomToast('Offline Mode', 'No network connection. Using cached data.');
         }
       } else {
-        await loadBusinesses(selectedState, isRefreshing);
+        await loadBusinesses(isRefreshing);
         setLastRefresh('Using cached data (offline mode)');
         notificationsEnabled &&
           CustomToast('Offline Mode', 'App is in offline mode. Using cached data.');
       }
     } catch (err) {
       console.log('General Error:', err.message);
-      await loadBusinesses(selectedState, isRefreshing);
+      await loadBusinesses(isRefreshing);
       setLastRefresh('Using cached data');
       notificationsEnabled &&
         CustomToast('Error', 'An error occurred. Using cached data.');
@@ -410,7 +399,7 @@ const HomeScreen = ({ navigation }) => {
 
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Image
-            source={selectedState === 'Business eSwatini' ? Images.bs_eswatini : Images.eptc}
+            source={selectedState === 'BE' ? Images.bs_eswatini : Images.eptc}
             style={styles.image}
           />
           <View style={{ marginLeft: 10 }}>
