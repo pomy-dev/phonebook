@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "businesslink",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -60,6 +61,13 @@
           "mode": "production",
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": false
+        }
+      ],
+      [
+        "react-native-auth0",
+        {
+          "clientId": "wuNnffEgLMLYx1G6ZSBL6ci2rL8b1VOT",
+          "domain": "dev-3zyqmqx2ka58kywm.us.auth0.com"
         }
       ]
     ],

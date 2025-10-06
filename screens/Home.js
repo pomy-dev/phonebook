@@ -15,23 +15,25 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRealm, } from '@realm/react';
-// import { Entity } from '../models/Entity';
 import { Icons } from '../constants/Icons';
-import { fetchAllCompanies, fetchAllCompaniesOffline, fetchCompaniesWithAge, useEntities } from '../service/getApi';
+import { fetchAllCompanies, fetchCompaniesWithAge, useEntities } from '../service/getApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkNetworkConnectivity } from '../service/checkNetwork';
 import CustomLoader from '../components/customLoader';
 import { Images } from '../constants/Images';
 import { CustomToast } from '../components/customToast';
 import { CustomModal } from '../components/customModal';
+import LoginScreen from '../components/loginModal';
 import { useCallFunction } from '../components/customCallAlert';
 import { AppContext } from '../context/appContext';
 import * as Notifications from 'expo-notifications';
 import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from '../utils/callFunctions';
 import CustomCard from '../components/customCard';
+import { AuthContext } from '../context/authProvider';
 
 const HomeScreen = ({ navigation }) => {
   const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, notifications } = useContext(AppContext);
+  const { user, loading } = useContext(AuthContext);
   const realm = useRealm();
   const entities = useEntities();
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +50,8 @@ const HomeScreen = ({ navigation }) => {
   const [businesses, setBusinesses] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
+  const [showLogin, setShowLogin] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const categories = ['All', 'Government', 'Emergency', 'More...'];
 
@@ -338,6 +342,15 @@ const HomeScreen = ({ navigation }) => {
     handleRefresh();
   }, [isOnline, notificationsEnabled]);
 
+  const handleLogin = () => {
+    if (loading) return;
+    if (user) {
+      navigation.navigate('Profile');
+    } else {
+      setShowLogin(true);
+    }
+  };
+
   const hide = searchQuery.length > 0;
 
   return (
@@ -354,6 +367,22 @@ const HomeScreen = ({ navigation }) => {
         onClose={() => setUpgradeModalVisible(false)}
       />
 
+      {/* Login Modal */}
+      {showLogin && (
+        <LoginScreen
+          isLoginVisible={showLogin}
+          onClose={() => setShowLogin(false)}
+        />
+      )}
+
+      {/* Show ProfileScreen Modal */}
+      {showProfile && (
+        <ProfileScreen
+          isVisible={showProfile}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
       {/* Custom Alert */}
       <AlertUI />
 
@@ -366,7 +395,7 @@ const HomeScreen = ({ navigation }) => {
 
         {/* profile button */}
         <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}
-          onPress={() => navigation.navigate('Profile')}>
+          onPress={handleLogin}>
 
           <Icons.Ionicons name="person-circle-outline" size={24} color={theme.colors.text} />
           {/* my profile text */}
