@@ -9,21 +9,34 @@ import {
   TextInput,
   Image,
   Alert,
+  Platform,
+  KeyboardAvoidingView
 } from 'react-native';
 import { Icons } from '../constants/Icons';
 import { Images } from '../constants/Images';
+import * as ImagePicker from 'expo-image-picker';
+import { File, Directory, Paths } from 'expo-file-system';
 import { AppContext } from '../context/appContext';
 import { AuthContext } from '../context/authProvider';
+import { CustomToast } from '../components/customToast';
+import CustomLoader  from '../components/customLoader';
+import { addUser, getUserProfile, updateUserProfile, deleteUserProfile } from '../service/getApi';
+
+const generateId = () => `id-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
 export default function ProfileScreen({ navigation, route }) {
   const register = route?.params?.register;
   const { theme, isDarkMode } = React.useContext(AppContext);
-  const { user, loading } = React.useContext(AuthContext);
+  const { user } = React.useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [image, setImage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = register
     ? useState({
       name: '',
+      email: user.email,
+      phone: '',
+      whatsApp: '',
       title: '',
       company: '',
       location: '',
@@ -42,7 +55,7 @@ export default function ProfileScreen({ navigation, route }) {
         instagram: '',
         facebook: ''
       },
-      avatar: Images.default_user,
+      avatar: image ? image.uri : Images.default_user,
       isAvailableForWork: true,
     })
     : useState({
@@ -88,6 +101,12 @@ export default function ProfileScreen({ navigation, route }) {
 
   // Function to request permissions on Android
   const requestPermissions = async () => {
+    console.log('Three Four')
+    if (Platform.OS !== 'web')
+      console.log('It is device')
+    else
+      console.log('It is web')
+
     if (Platform.OS !== 'web') {
       const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
       const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -105,28 +124,47 @@ export default function ProfileScreen({ navigation, route }) {
     return true;
   };
 
+  // Function to launch camera and take a photo
+  const takePhoto = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images', 'livePhotos'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        console.log(result)
+        handleImageSelected(result.assets[0]);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      setError('Failed to take photo. Please try again.');
+    }
+  };
+
   // Function to open the gallery and pick an image
   const pickImage = async () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.8,
-        allowsEditing: false,
-        allowsMultipleSelection: true,
+        quality: 1,
       });
 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        result.assets.forEach(asset => {
-          handleImageSelected(asset);
-        });
-        const uris = result.assets.map((asset) => ({ uri: asset.uri }));
-        console.log('Picked URIs:', uris);
-        return uris;
+      console.log(result);
+
+      if (!result.canceled) {
+        setImage(result.assets[0]);
+        handleImageSelected(result.assets[0]);
       }
       return [];
     } catch (error) {
@@ -137,10 +175,8 @@ export default function ProfileScreen({ navigation, route }) {
 
   const handleImageSelected = async (asset) => {
     try {
-      // Get file info (size, extension, etc.)
-      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+      const fileInfo = new File(Paths.cache, "subdirName", asset);
 
-      // Create a more suitable object for our state and later upload
       const newImage = {
         id: generateId(),
         uri: asset.uri,
@@ -157,9 +193,29 @@ export default function ProfileScreen({ navigation, route }) {
     }
   };
 
-  const handleSave = () => {
+  // Submit form OR Edits 
+  const handleSave = async () => {
     setIsEditing(false);
-    Alert.alert('Success', 'Profile updated successfully!');
+    try {
+      console.log('Profile to be saved:', profile);
+      if (register) {
+        setIsLoading(true);
+        //   const newUser = await addUser(profile);
+        //   // set the new user in context
+        // } else {
+        //   setIsLoading(true)
+        //   const updatedUser = await updateUserProfile(user.id, profile);
+        //   // set the updated user in context
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      CustomToast('Error', error);
+    } finally {
+      if (register) {
+        // navigation.replace('Home');
+      }
+      // setIsLoading(false);
+    }
   };
 
   const addSkill = () => {
@@ -231,484 +287,539 @@ export default function ProfileScreen({ navigation, route }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0} // adjust if you have a header
+    >
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
-      <View style={styles.header}>
-        {/* back button */}
-        <TouchableOpacity onPress={() => { navigation.goBack() }}>
-          <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.text} />
-        </TouchableOpacity>
+        {isLoading && <CustomLoader />}
 
-        <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.title, { color: theme.colors.text }]}>{register ? 'Add My Profile' : 'My Profile'}</Text>
+        <View style={styles.header}>
+          {/* back button */}
+          <TouchableOpacity onPress={() => { navigation.goBack() }}>
+            <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.text} />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.editButton, (isEditing || register) && styles.saveButton]}
-          onPress={isEditing ? handleSave : () => setIsEditing(true)}
-        >
-          {isEditing || register ? (
-            <>
-              <Icons.Ionicons name='save-outline' size={16} color="#ffffff" />
-              <Text style={styles.buttonText}>Save</Text>
-            </>
-          ) : (
-            <Text style={[styles.editButtonText, { color: '#ffff' }]}>Edit Profile</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.title, { color: theme.colors.text }]}>{register ? 'Add My Profile' : 'My Profile'}</Text>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <>
-          <View style={styles.avatarSection}>
-            <Image source={register ? image !== '' ? { uri: image.uri } : profile.avatar : { uri: profile.avatar }} style={styles.avatar} />
-            {register
-              ?
-              <TouchableOpacity
-                onPress={() => pickImage}
-                style={[styles.photo, { backgroundColor: theme.colors.notification }]}>
-                <Icons.EvilIcons name='image' size={24} color='#ffff' />
-                <Text style={{ color: theme.colors.text, fontSize: 15, fontWeight: 400 }}>{image === '' ? 'Pick Photo' : 'Change Photo'}</Text>
-              </TouchableOpacity>
-              :
-              <View style={[
-                styles.availabilityBadge,
-                { backgroundColor: profile.isAvailableForWork ? '#dcfce7' : '#fef3c7' }
-              ]}>
-                <Text style={[
-                  styles.availabilityText,
-                  { color: profile.isAvailableForWork ? '#16a34a' : '#d97706' }
-                ]}>
-                  {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
-                </Text>
-              </View>
-            }
-          </View>
+          <TouchableOpacity
+            style={[styles.editButton, (isEditing || register) && styles.saveButton]}
+            onPress={isEditing ? handleSave : () => setIsEditing(true)}
+          >
+            {isEditing || register ? (
+              <>
+                <Icons.Ionicons name='save-outline' size={16} color="#ffffff" />
+                <Text style={styles.buttonText}>Save</Text>
+              </>
+            ) : (
+              <Text style={[styles.editButtonText, { color: '#ffff' }]}>Edit Profile</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-          <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
-            <View style={styles.sectionHeader}>
-              <Icons.Ionicons name='person-circle-outline' size={24} color={theme.colors.indicator} />
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Basic Information</Text>
-            </View>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <>
+            <View style={styles.avatarSection}>
+              <Image source={register ? image !== '' ? { uri: image.uri } : profile.avatar : { uri: profile.avatar }} style={styles.avatar} />
+              {register
+                ?
+                <View style={styles.imageOptionsContainer}>
+                  <TouchableOpacity style={styles.imageOption} onPress={takePhoto}>
+                    <Icons.AntDesign name='camerao' size={24} color="#4F46E5" />
+                    <Text style={styles.imageOptionText}>Take Photo</Text>
+                  </TouchableOpacity>
 
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Full Name</Text>
-              {isEditing || register ? (
-                <TextInput
-                  style={styles.textInput}
-                  value={profile.name}
-                  onChangeText={(text) => setProfile(prev => ({ ...prev, name: text }))}
-                  placeholder="Enter your full name"
-                />
-              ) : (
-                <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.name}</Text>
-              )}
-            </View>
-
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Professional Title</Text>
-              {isEditing || register ? (
-                <TextInput
-                  style={styles.textInput}
-                  value={profile.title}
-                  onChangeText={(text) => setProfile(prev => ({ ...prev, title: text }))}
-                  placeholder="Your job title"
-                />
-              ) : (
-                <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.title}</Text>
-              )}
-            </View>
-
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Company</Text>
-              {isEditing || register ? (
-                <TextInput
-                  style={styles.textInput}
-                  value={profile.company}
-                  onChangeText={(text) => setProfile(prev => ({ ...prev, company: text }))}
-                  placeholder="Current company"
-                />
-              ) : (
-                <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.company}</Text>
-              )}
-            </View>
-
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Location</Text>
-              {isEditing || register ? (
-                <TextInput
-                  style={styles.textInput}
-                  value={profile.location}
-                  onChangeText={(text) => setProfile(prev => ({ ...prev, location: text }))}
-                  placeholder="City, State"
-                />
-              ) : (
-                <View style={styles.fieldValueRow}>
-                  <Icons.Feather name='map-pin' size={16} color={theme.colors.light} />
-                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.location}</Text>
+                  <TouchableOpacity style={styles.imageOption} onPress={pickImage}>
+                    <Icons.Ionicons name='images-outline' size={24} color="#4F46E5" />
+                    <Text style={styles.imageOptionText}>Gallery</Text>
+                  </TouchableOpacity>
                 </View>
-              )}
+                :
+                <View style={[
+                  styles.availabilityBadge,
+                  { backgroundColor: profile.isAvailableForWork ? '#dcfce7' : '#fef3c7' }
+                ]}>
+                  <Text style={[
+                    styles.availabilityText,
+                    { color: profile.isAvailableForWork ? '#16a34a' : '#d97706' }
+                  ]}>
+                    {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
+                  </Text>
+                </View>
+              }
             </View>
 
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Industry</Text>
-              {isEditing || register ? (
-                <View style={styles.industrySelector}>
-                  {industries.map((industry) => (
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.sectionHeader}>
+                <Icons.Ionicons name='person-circle-outline' size={24} color={theme.colors.indicator} />
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Basic Information</Text>
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Full Name</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.name}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, name: text }))}
+                    placeholder="Enter your full name"
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.name}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Email</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.email}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, email: text }))}
+                    placeholder="Enter your email address"
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.email}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Phone</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.phone}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, phone: text }))}
+                    placeholder="Enter your phone number"
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.phone}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>WhatsApp</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.whatsApp}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, whatsApp: text }))}
+                    placeholder="Enter your whatsApp number"
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.email}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Professional Title</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.title}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, title: text }))}
+                    placeholder="Your job title"
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.title}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Company</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.company}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, company: text }))}
+                    placeholder="Current company"
+                  />
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.company}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Location</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.location}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, location: text }))}
+                    placeholder="City, State"
+                  />
+                ) : (
+                  <View style={styles.fieldValueRow}>
+                    <Icons.Feather name='map-pin' size={16} color={theme.colors.light} />
+                    <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.location}</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Industry</Text>
+                {isEditing || register ? (
+                  <View style={styles.industrySelector}>
+                    {industries.map((industry) => (
+                      <TouchableOpacity
+                        key={industry}
+                        style={[
+                          styles.industryChip,
+                          profile.industry === industry && styles.industryChipSelected
+                        ]}
+                        onPress={() => setProfile(prev => ({ ...prev, industry }))}
+                      >
+                        <Text style={[
+                          styles.industryChipText,
+                          profile.industry === industry && styles.industryChipTextSelected
+                        ]}>
+                          {industry}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ) : (
+                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.industry}</Text>
+                )}
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Experience</Text>
+                {isEditing || register ? (
+                  <TextInput
+                    style={styles.textInput}
+                    value={profile.experience}
+                    onChangeText={(text) => setProfile(prev => ({ ...prev, experience: text }))}
+                    placeholder="e.g., 5 years"
+                  />
+                ) : (
+                  <View style={styles.fieldValueRow}>
+                    <Icons.Feather name='briefcase' size={16} color={theme.colors.light} />
+                    <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.experience}</Text>
+                  </View>
+                )}
+              </View>
+
+              {isEditing || register && (
+                <View style={styles.field}>
+                  <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Work Availability</Text>
+                  <View style={styles.availabilitySelector}>
                     <TouchableOpacity
-                      key={industry}
                       style={[
-                        styles.industryChip,
-                        profile.industry === industry && styles.industryChipSelected
+                        styles.availabilityOption,
+                        profile.isAvailableForWork && styles.availabilityOptionSelected
                       ]}
-                      onPress={() => setProfile(prev => ({ ...prev, industry }))}
+                      onPress={() => setProfile(prev => ({ ...prev, isAvailableForWork: true }))}
                     >
                       <Text style={[
-                        styles.industryChipText,
-                        profile.industry === industry && styles.industryChipTextSelected
+                        styles.availabilityOptionText,
+                        profile.isAvailableForWork && styles.availabilityOptionTextSelected
                       ]}>
-                        {industry}
+                        Open to Work
                       </Text>
                     </TouchableOpacity>
-                  ))}
+
+                    <TouchableOpacity
+                      style={[
+                        styles.availabilityOption,
+                        !profile.isAvailableForWork && styles.availabilityOptionSelected
+                      ]}
+                      onPress={() => setProfile(prev => ({ ...prev, isAvailableForWork: false }))}
+                    >
+                      <Text style={[
+                        styles.availabilityOptionText,
+                        !profile.isAvailableForWork && styles.availabilityOptionTextSelected
+                      ]}>
+                        Employed
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              ) : (
-                <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.industry}</Text>
               )}
             </View>
 
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Experience</Text>
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.sectionHeader}>
+                <Icons.FontAwesome6 name='graduation-cap' size={20} color={theme.colors.indicator} />
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Education</Text>
+              </View>
               {isEditing || register ? (
                 <TextInput
-                  style={styles.textInput}
-                  value={profile.experience}
-                  onChangeText={(text) => setProfile(prev => ({ ...prev, experience: text }))}
-                  placeholder="e.g., 5 years"
+                  style={[styles.textInput, styles.multilineInput]}
+                  value={profile.education}
+                  onChangeText={(text) => setProfile(prev => ({ ...prev, education: text }))}
+                  placeholder="Degree, University"
+                  multiline
                 />
               ) : (
-                <View style={styles.fieldValueRow}>
-                  <Icons.Feather name='briefcase' size={16} color={theme.colors.light} />
-                  <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.experience}</Text>
+                <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{profile.education}</Text>
+              )}
+            </View>
+
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Acquired Skills</Text>
+              </View>
+              <View style={styles.skillsContainer}>
+                {profile.acquiredSkills.map((skill, index) => (
+                  <View key={index} style={styles.skillChip}>
+                    <Text style={styles.skillText}>{skill}</Text>
+                    {(isEditing || register) && (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeAcquiredSkill(skill)}
+                      >
+                        <Icons.FontAwesome name='remove' size={12} color="#6b7280" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </View>
+              {(isEditing || register) && (
+                <View style={styles.addSkillContainer}>
+                  <TextInput
+                    style={styles.addSkillInput}
+                    value={newAcquiredSkill}
+                    onChangeText={setNewAcquiredSkill}
+                    placeholder="Add an acquired skill"
+                  />
+                  <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addSkill}>
+                    <Icons.Feather name='plus' size={16} color="#ffffff" />
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
 
-            {isEditing || register && (
-              <View style={styles.field}>
-                <Text style={[styles.fieldLabel, { color: theme.colors.text }]}>Work Availability</Text>
-                <View style={styles.availabilitySelector}>
-                  <TouchableOpacity
-                    style={[
-                      styles.availabilityOption,
-                      profile.isAvailableForWork && styles.availabilityOptionSelected
-                    ]}
-                    onPress={() => setProfile(prev => ({ ...prev, isAvailableForWork: true }))}
-                  >
-                    <Text style={[
-                      styles.availabilityOptionText,
-                      profile.isAvailableForWork && styles.availabilityOptionTextSelected
-                    ]}>
-                      Open to Work
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.availabilityOption,
-                      !profile.isAvailableForWork && styles.availabilityOptionSelected
-                    ]}
-                    onPress={() => setProfile(prev => ({ ...prev, isAvailableForWork: false }))}
-                  >
-                    <Text style={[
-                      styles.availabilityOptionText,
-                      !profile.isAvailableForWork && styles.availabilityOptionTextSelected
-                    ]}>
-                      Employed
-                    </Text>
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Innate Skills</Text>
+              </View>
+              <View style={styles.skillsContainer}>
+                {profile.innateSkills.map((skill, index) => (
+                  <View key={index} style={styles.skillChip}>
+                    <Text style={styles.skillText}>{skill}</Text>
+                    {(isEditing || register) && (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeInnateSkill(skill)}
+                      >
+                        <Icons.FontAwesome name='remove' size={12} color="#6b7280" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </View>
+              {(isEditing || register) && (
+                <View style={styles.addSkillContainer}>
+                  <TextInput
+                    style={styles.addSkillInput}
+                    value={newInnateSkill}
+                    onChangeText={setNewInnateSkill}
+                    placeholder="Add an innate skill"
+                  />
+                  <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addInnateSkill}>
+                    <Icons.Feather name='plus' size={16} color="#ffffff" />
                   </TouchableOpacity>
                 </View>
+              )}
+            </View>
+
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Domestic Skills</Text>
               </View>
-            )}
-          </View>
-
-          <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
-            <View style={styles.sectionHeader}>
-              <Icons.FontAwesome6 name='graduation-cap' size={20} color={theme.colors.indicator} />
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Education</Text>
+              <View style={styles.skillsContainer}>
+                {profile.domesticSkills.map((skill, index) => (
+                  <View key={index} style={styles.skillChip}>
+                    <Text style={styles.skillText}>{skill}</Text>
+                    {(isEditing || register) && (
+                      <TouchableOpacity
+                        style={styles.removeButton}
+                        onPress={() => removeDomesticSkill(skill)}
+                      >
+                        <Icons.FontAwesome name='remove' size={12} color="#6b7280" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+              </View>
+              {(isEditing || register) && (
+                <View style={styles.addSkillContainer}>
+                  <TextInput
+                    style={styles.addSkillInput}
+                    value={newDomesticSkill}
+                    onChangeText={setNewDomesticSkill}
+                    placeholder="Add a domestic skill"
+                  />
+                  <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addDomesticSkill}>
+                    <Icons.Feather name='plus' size={16} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-            {isEditing || register ? (
-              <TextInput
-                style={[styles.textInput, styles.multilineInput]}
-                value={profile.education}
-                onChangeText={(text) => setProfile(prev => ({ ...prev, education: text }))}
-                placeholder="Degree, University"
-                multiline
-              />
-            ) : (
-              <Text style={[styles.fieldValue, { color: theme.colors.text }]}>{profile.education}</Text>
-            )}
-          </View>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Acquired Skills</Text>
-            </View>
-            <View style={styles.skillsContainer}>
-              {profile.acquiredSkills.map((skill, index) => (
-                <View key={index} style={styles.skillChip}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                  {isEditing && (
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
+              <View style={styles.sectionHeader}>
+                <Icons.FontAwesome6 name='award' size={20} color={theme.colors.indicator} />
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Achievements</Text>
+              </View>
+              {profile.achievements.map((achievement, index) => (
+                <View key={index} style={styles.achievementItem}>
+                  <Text style={[styles.achievementText, { color: theme.colors.text }]}>• {achievement}</Text>
+                  {isEditing || register && (
                     <TouchableOpacity
                       style={styles.removeButton}
-                      onPress={() => removeAcquiredSkill(skill)}
+                      onPress={() => removeAchievement(achievement)}
                     >
-                      <X size={12} color="#6b7280" />
+                      <Icons.FontAwesome name='remove' size={14} color="#6b7280" />
                     </TouchableOpacity>
                   )}
                 </View>
               ))}
+              {(isEditing || register) && (
+                <View style={styles.addAchievementContainer}>
+                  <TextInput
+                    style={[styles.textInput, styles.multilineInput, { marginBottom: 5 }]}
+                    value={newAchievement}
+                    onChangeText={setNewAchievement}
+                    placeholder="Add an achievement"
+                    multiline
+                  />
+                  <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addAchievement}>
+                    <Text style={{ textAlign: 'center', fontSize: 16, color: '#ffff' }}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-            {isEditing && (
-              <View style={styles.addSkillContainer}>
-                <TextInput
-                  style={styles.addSkillInput}
-                  value={newAcquiredSkill}
-                  onChangeText={setNewAcquiredSkill}
-                  placeholder="Add an acquired skill"
-                />
-                <TouchableOpacity style={styles.addButton} onPress={addSkill}>
-                  <Plus size={16} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Innate Skills</Text>
-            </View>
-            <View style={styles.skillsContainer}>
-              {profile.innateSkills.map((skill, index) => (
-                <View key={index} style={styles.skillChip}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                  {isEditing && (
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => removeInnateSkill(skill)}
-                    >
-                      <X size={12} color="#6b7280" />
+            <View style={[styles.cardBody, { backgroundColor: theme.colors.card, marginBottom: 30 }]}>
+              <View style={styles.sectionHeader}>
+                <Icons.EvilIcons name='external-link' size={24} color={theme.colors.indicator} />
+                <Text style={styles.sectionTitle}>Social Links</Text>
+              </View>
+              {(isEditing || register) ? (
+                <View>
+                  <View style={styles.socialInputGroup}>
+                    <Text style={styles.socialLabel}>LinkedIn</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={profile.socialLinks.linkedin}
+                      onChangeText={(text) => setProfile(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, linkedin: text }
+                      }))}
+                      placeholder="https://linkedin.com/in/username"
+                    />
+                  </View>
+                  <View style={styles.socialInputGroup}>
+                    <Text style={styles.socialLabel}>Twitter</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={profile.socialLinks.twitter}
+                      onChangeText={(text) => setProfile(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, twitter: text }
+                      }))}
+                      placeholder="https://twitter.com/username"
+                    />
+                  </View>
+                  <View style={styles.socialInputGroup}>
+                    <Text style={styles.socialLabel}>GitHub</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={profile.socialLinks.github}
+                      onChangeText={(text) => setProfile(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, github: text }
+                      }))}
+                      placeholder="https://github.com/username"
+                    />
+                  </View>
+                  <View style={styles.socialInputGroup}>
+                    <Text style={styles.socialLabel}>Website</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={profile.socialLinks.website}
+                      onChangeText={(text) => setProfile(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, website: text }
+                      }))}
+                      placeholder="https://yourwebsite.com"
+                    />
+                  </View>
+                  <View style={styles.socialInputGroup}>
+                    <Text style={styles.socialLabel}>Instagram</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={profile.socialLinks.instagram}
+                      onChangeText={(text) => setProfile(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, instagram: text }
+                      }))}
+                      placeholder="https://instagram.com/username"
+                    />
+                  </View>
+                  <View style={styles.socialInputGroup}>
+                    <Text style={styles.socialLabel}>Facebook</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={profile.socialLinks.facebook}
+                      onChangeText={(text) => setProfile(prev => ({
+                        ...prev,
+                        socialLinks: { ...prev.socialLinks, facebook: text }
+                      }))}
+                      placeholder="https://facebook.com/username"
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.socialLinksContainer}>
+                  {profile.socialLinks.linkedin && (
+                    <TouchableOpacity style={styles.socialLink}>
+                      <Icons.EvilIcons name='external-link' size={16} color="#0077b5" />
+                      <Text style={styles.socialLinkText}>LinkedIn</Text>
+                    </TouchableOpacity>
+                  )}
+                  {profile.socialLinks.twitter && (
+                    <TouchableOpacity style={styles.socialLink}>
+                      <Icons.EvilIcons name='external-link' size={16} color="#1da1f2" />
+                      <Text style={styles.socialLinkText}>Twitter</Text>
+                    </TouchableOpacity>
+                  )}
+                  {profile.socialLinks.github && (
+                    <TouchableOpacity style={styles.socialLink}>
+                      <Icons.EvilIcons name='external-link' size={16} color="#333" />
+                      <Text style={styles.socialLinkText}>GitHub</Text>
+                    </TouchableOpacity>
+                  )}
+                  {profile.socialLinks.website && (
+                    <TouchableOpacity style={styles.socialLink}>
+                      <Icons.EvilIcons name='external-link' size={16} color="#10b981" />
+                      <Text style={styles.socialLinkText}>Website</Text>
+                    </TouchableOpacity>
+                  )}
+                  {profile.socialLinks.instagram && (
+                    <TouchableOpacity style={styles.socialLink}>
+                      <Icons.EvilIcons name='external-link' size={16} color="#e4405f" />
+                      <Text style={styles.socialLinkText}>Instagram</Text>
+                    </TouchableOpacity>
+                  )}
+                  {profile.socialLinks.facebook && (
+                    <TouchableOpacity style={styles.socialLink}>
+                      <Icons.EvilIcons name='external-link' size={16} color="#1877f2" />
+                      <Text style={styles.socialLinkText}>Facebook</Text>
                     </TouchableOpacity>
                   )}
                 </View>
-              ))}
+              )}
             </View>
-            {isEditing && (
-              <View style={styles.addSkillContainer}>
-                <TextInput
-                  style={styles.addSkillInput}
-                  value={newInnateSkill}
-                  onChangeText={setNewInnateSkill}
-                  placeholder="Add an innate skill"
-                />
-                <TouchableOpacity style={styles.addButton} onPress={addInnateSkill}>
-                  <Plus size={16} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Domestic Skills</Text>
-            </View>
-            <View style={styles.skillsContainer}>
-              {profile.domesticSkills.map((skill, index) => (
-                <View key={index} style={styles.skillChip}>
-                  <Text style={styles.skillText}>{skill}</Text>
-                  {isEditing && (
-                    <TouchableOpacity
-                      style={styles.removeButton}
-                      onPress={() => removeDomesticSkill(skill)}
-                    >
-                      <X size={12} color="#6b7280" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ))}
-            </View>
-            {isEditing && (
-              <View style={styles.addSkillContainer}>
-                <TextInput
-                  style={styles.addSkillInput}
-                  value={newDomesticSkill}
-                  onChangeText={setNewDomesticSkill}
-                  placeholder="Add a domestic skill"
-                />
-                <TouchableOpacity style={styles.addButton} onPress={addDomesticSkill}>
-                  <Plus size={16} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
-          <View style={[styles.cardBody, { backgroundColor: theme.colors.card }]}>
-            <View style={styles.sectionHeader}>
-              <Icons.FontAwesome6 name='award' size={20} color={theme.colors.indicator} />
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Achievements</Text>
-            </View>
-            {profile.achievements.map((achievement, index) => (
-              <View key={index} style={styles.achievementItem}>
-                <Text style={[styles.achievementText, { color: theme.colors.text }]}>• {achievement}</Text>
-                {isEditing || register && (
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeAchievement(achievement)}
-                  >
-                    <Icons.FontAwesome name='remove' size={14} color="#6b7280" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
-            {isEditing || register && (
-              <View style={styles.addAchievementContainer}>
-                <TextInput
-                  style={[styles.textInput, styles.multilineInput, { marginBottom: 5 }]}
-                  value={newAchievement}
-                  onChangeText={setNewAchievement}
-                  placeholder="Add an achievement"
-                  multiline
-                />
-                <TouchableOpacity style={[styles.addButton, { backgroundColor: theme.colors.indicator }]} onPress={addAchievement}>
-                  <Text style={{ textAlign: 'center', fontSize: 16, color: '#ffff' }}>Add</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
-          <View style={[styles.cardBody, { backgroundColor: theme.colors.card, marginBottom: 30 }]}>
-            <View style={styles.sectionHeader}>
-              <Icons.EvilIcons name='external-link' size={24} color={theme.colors.indicator} />
-              <Text style={styles.sectionTitle}>Social Links</Text>
-            </View>
-            {isEditing ? (
-              <View>
-                <View style={styles.socialInputGroup}>
-                  <Text style={styles.socialLabel}>LinkedIn</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={profile.socialLinks.linkedin}
-                    onChangeText={(text) => setProfile(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, linkedin: text }
-                    }))}
-                    placeholder="https://linkedin.com/in/username"
-                  />
-                </View>
-                <View style={styles.socialInputGroup}>
-                  <Text style={styles.socialLabel}>Twitter</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={profile.socialLinks.twitter}
-                    onChangeText={(text) => setProfile(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, twitter: text }
-                    }))}
-                    placeholder="https://twitter.com/username"
-                  />
-                </View>
-                <View style={styles.socialInputGroup}>
-                  <Text style={styles.socialLabel}>GitHub</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={profile.socialLinks.github}
-                    onChangeText={(text) => setProfile(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, github: text }
-                    }))}
-                    placeholder="https://github.com/username"
-                  />
-                </View>
-                <View style={styles.socialInputGroup}>
-                  <Text style={styles.socialLabel}>Website</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={profile.socialLinks.website}
-                    onChangeText={(text) => setProfile(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, website: text }
-                    }))}
-                    placeholder="https://yourwebsite.com"
-                  />
-                </View>
-                <View style={styles.socialInputGroup}>
-                  <Text style={styles.socialLabel}>Instagram</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={profile.socialLinks.instagram}
-                    onChangeText={(text) => setProfile(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, instagram: text }
-                    }))}
-                    placeholder="https://instagram.com/username"
-                  />
-                </View>
-                <View style={styles.socialInputGroup}>
-                  <Text style={styles.socialLabel}>Facebook</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={profile.socialLinks.facebook}
-                    onChangeText={(text) => setProfile(prev => ({
-                      ...prev,
-                      socialLinks: { ...prev.socialLinks, facebook: text }
-                    }))}
-                    placeholder="https://facebook.com/username"
-                  />
-                </View>
-              </View>
-            ) : (
-              <View style={styles.socialLinksContainer}>
-                {profile.socialLinks.linkedin && (
-                  <TouchableOpacity style={styles.socialLink}>
-                    <Icons.EvilIcons name='external-link' size={16} color="#0077b5" />
-                    <Text style={styles.socialLinkText}>LinkedIn</Text>
-                  </TouchableOpacity>
-                )}
-                {profile.socialLinks.twitter && (
-                  <TouchableOpacity style={styles.socialLink}>
-                    <Icons.EvilIcons name='external-link' size={16} color="#1da1f2" />
-                    <Text style={styles.socialLinkText}>Twitter</Text>
-                  </TouchableOpacity>
-                )}
-                {profile.socialLinks.github && (
-                  <TouchableOpacity style={styles.socialLink}>
-                    <Icons.EvilIcons name='external-link' size={16} color="#333" />
-                    <Text style={styles.socialLinkText}>GitHub</Text>
-                  </TouchableOpacity>
-                )}
-                {profile.socialLinks.website && (
-                  <TouchableOpacity style={styles.socialLink}>
-                    <Icons.EvilIcons name='external-link' size={16} color="#10b981" />
-                    <Text style={styles.socialLinkText}>Website</Text>
-                  </TouchableOpacity>
-                )}
-                {profile.socialLinks.instagram && (
-                  <TouchableOpacity style={styles.socialLink}>
-                    <Icons.EvilIcons name='external-link' size={16} color="#e4405f" />
-                    <Text style={styles.socialLinkText}>Instagram</Text>
-                  </TouchableOpacity>
-                )}
-                {profile.socialLinks.facebook && (
-                  <TouchableOpacity style={styles.socialLink}>
-                    <Icons.EvilIcons name='external-link' size={16} color="#1877f2" />
-                    <Text style={styles.socialLinkText}>Facebook</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </View>
-        </>
-      </ScrollView>
-    </View>
+          </>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -761,6 +872,50 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingTop: 20,
+  },
+  imageOptionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    marginBottom: 16,
+    gap: 10
+  },
+  imageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EEF2FF',
+    borderRadius: 12,
+    padding: 8,
+    flex: 0.48,
+  },
+  imageOptionText: {
+    marginLeft: 8,
+    color: '#4F46E5',
+    fontWeight: '500',
+  },
+  imagesPreviewContainer: {
+    marginBottom: 24,
+  },
+  imagesPreviewTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#4B5563',
+    marginBottom: 12,
+  },
+  imagesScroll: {
+    flexDirection: 'row',
+    padding: 8
+  },
+  imagePreview: {
+    position: 'relative',
+    marginRight: 10
+  },
+  previewImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   cardBody: {
     marginHorizontal: 10,

@@ -55,10 +55,6 @@ export default function PeopleScreen({ navigation }) {
     setFilteredProfiles(filtered);
   };
 
-  const openLinkedIn = (url) => {
-    Linking.openURL(url);
-  };
-
   const handleContactPress = (profile) => {
     setSelectedContact(profile);
     setShowContactSheet(true);

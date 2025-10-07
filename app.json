@@ -64,6 +64,12 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
         "react-native-auth0",
         {
           "clientId": "wuNnffEgLMLYx1G6ZSBL6ci2rL8b1VOT",

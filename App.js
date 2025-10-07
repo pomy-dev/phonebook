@@ -163,12 +163,13 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
-      {!isAppReady ? (
-        <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
-      ) : (
-        <RealmProvider
-          schemaVersion={2} // <-- increment this when you change the schema
-          schema={[Entity, PhoneObject, SocialMediaObject, WorkingHoursObject, TeamMember, GeoPoint, Review]}>
+      <RealmProvider
+        schemaVersion={2}
+        schema={[Entity, PhoneObject, SocialMediaObject, WorkingHoursObject, TeamMember, GeoPoint, Review]}
+      >
+        {!isAppReady ? (
+          <SplashScreen onConnectionSuccess={() => setIsAppReady(true)} />
+        ) : (
           <AuthProvider>
             <>
               <NavigationContainer ref={navigationRef} theme={theme}>
@@ -239,8 +240,8 @@ function AppContent() {
               <Toast config={toastConfig} />
             </>
           </AuthProvider>
-        </RealmProvider>
-      )}
+        )}
+      </RealmProvider>
     </SafeAreaProvider>
   );
 }
