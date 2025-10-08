@@ -577,3 +577,243 @@ export const allIndustries = [
   'Gaming',
   'Other'
 ];
+
+// Supply Chain
+export const mockVendors = [
+  {
+    id: '1',
+    name: 'Thabo\'s Fresh Vegetables',
+    type: 'Street Vendor',
+    category: 'Vegetables',
+    description: 'Fresh vegetables from local farms',
+    location: {
+      latitude: -26.3051,
+      longitude: 31.1367,
+      address: 'Mbabane Market Square',
+      area: 'Mbabane'
+    },
+    contact: {
+      phone: '+268 2400 1234',
+      whatsapp: '+268 2400 1234'
+    },
+    workingHours: {
+      monday: '06:00-18:00',
+      tuesday: '06:00-18:00',
+      wednesday: '06:00-18:00',
+      thursday: '06:00-18:00',
+      friday: '06:00-18:00',
+      saturday: '06:00-14:00',
+      sunday: 'Closed'
+    },
+    rating: 4.5,
+    reviewCount: 23,
+    deliveryRadius: 5,
+    isOnline: true,
+    joinedDate: '2023-01-15',
+    profileImage: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400',
+    stock: [
+      { item: 'Tomatoes', price: 15, unit: 'per kg', available: true },
+      { item: 'Onions', price: 12, unit: 'per kg', available: true },
+      { item: 'Carrots', price: 18, unit: 'per kg', available: false }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Sipho\'s Mobile Kitchen',
+    type: 'Street Vendor',
+    category: 'Food & Beverages',
+    description: 'Traditional Swazi meals and snacks',
+    location: {
+      latitude: -26.3186,
+      longitude: 31.1417,
+      address: 'Manzini Industrial Area',
+      area: 'Manzini'
+    },
+    contact: {
+      phone: '+268 2505 5678',
+      whatsapp: '+268 2505 5678'
+    },
+    workingHours: {
+      monday: '07:00-19:00',
+      tuesday: '07:00-19:00',
+      wednesday: '07:00-19:00',
+      thursday: '07:00-19:00',
+      friday: '07:00-19:00',
+      saturday: '08:00-15:00',
+      sunday: 'Closed'
+    },
+    rating: 4.8,
+    reviewCount: 45,
+    deliveryRadius: 8,
+    isOnline: true,
+    joinedDate: '2023-02-20',
+    profileImage: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400',
+    stock: [
+      { item: 'Traditional Stew', price: 35, unit: 'per plate', available: true },
+      { item: 'Fresh Bread', price: 8, unit: 'per loaf', available: true },
+      { item: 'Local Tea', price: 5, unit: 'per cup', available: true }
+    ]
+  },
+  {
+    id: '3',
+    name: 'Nomsa\'s Craft Shop',
+    type: 'Small Shop',
+    category: 'Handicrafts',
+    description: 'Traditional Swazi crafts and souvenirs',
+    location: {
+      latitude: -26.3051,
+      longitude: 31.1367,
+      address: 'Ezulwini Valley',
+      area: 'Ezulwini'
+    },
+    contact: {
+      phone: '+268 2416 9012',
+      whatsapp: '+268 2416 9012'
+    },
+    workingHours: {
+      monday: '09:00-17:00',
+      tuesday: '09:00-17:00',
+      wednesday: '09:00-17:00',
+      thursday: '09:00-17:00',
+      friday: '09:00-17:00',
+      saturday: '09:00-16:00',
+      sunday: '10:00-14:00'
+    },
+    rating: 4.2,
+    reviewCount: 18,
+    deliveryRadius: 15,
+    isOnline: false,
+    joinedDate: '2023-03-10',
+    profileImage: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=400',
+    stock: [
+      { item: 'Traditional Baskets', price: 120, unit: 'each', available: true },
+      { item: 'Wooden Carvings', price: 80, unit: 'each', available: true },
+      { item: 'Beaded Jewelry', price: 45, unit: 'each', available: false }
+    ]
+  }
+];
+
+export const mockBulkGroups = [
+  {
+    id: '1',
+    name: 'Mbabane Vegetable Collective',
+    category: 'Vegetables',
+    description: 'Bulk buying group for fresh vegetables',
+    leader: 'Thabo Dlamini',
+    memberCount: 12,
+    minOrder: 500,
+    savings: 15,
+    nextOrderDate: '2024-01-15',
+    area: 'Mbabane',
+    requirements: 'Minimum 6 months business operation',
+    benefits: ['15% bulk discount', 'Weekly delivery', 'Quality guarantee']
+  },
+  {
+    id: '2',
+    name: 'Manzini Food Suppliers',
+    category: 'Food & Beverages',
+    description: 'Bulk purchasing for food vendors',
+    leader: 'Sipho Mamba',
+    memberCount: 8,
+    minOrder: 800,
+    savings: 20,
+    nextOrderDate: '2024-01-20',
+    area: 'Manzini',
+    requirements: 'Valid business license required',
+    benefits: ['20% bulk discount', 'Bi-weekly delivery', 'Freshness guarantee']
+  }
+];
+
+export const mockSuppliers = [
+  {
+    id: '1',
+    name: 'Swazi Fresh Produce Co.',
+    type: 'Wholesale',
+    category: 'Vegetables',
+    description: 'Large scale vegetable supplier',
+    location: 'Malkerns',
+    contact: '+268 2528 3456',
+    minOrder: 1000,
+    deliveryAreas: ['Mbabane', 'Manzini', 'Ezulwini'],
+    products: ['Fresh Vegetables', 'Herbs', 'Fruits']
+  },
+  {
+    id: '2',
+    name: 'Royal Swazi Foods',
+    type: 'Manufacturer',
+    category: 'Processed Foods',
+    description: 'Traditional food processing company',
+    location: 'Matsapha',
+    contact: '+268 2518 7890',
+    minOrder: 500,
+    deliveryAreas: ['All major towns'],
+    products: ['Traditional Foods', 'Snacks', 'Beverages']
+  }
+];
+
+export const mockCustomers = [
+  {
+    id: '1',
+    name: 'John Mkhonta',
+    type: 'Employee',
+    location: 'Mbabane Industrial Area',
+    preferences: ['Vegetables', 'Traditional Foods'],
+    orderHistory: [
+      { vendorId: '1', items: ['Tomatoes', 'Onions'], total: 27, date: '2024-01-10' },
+      { vendorId: '2', items: ['Traditional Stew'], total: 35, date: '2024-01-08' }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Sarah Ndlovu',
+    type: 'Individual',
+    location: 'Ezulwini Valley',
+    preferences: ['Handicrafts', 'Organic Vegetables'],
+    orderHistory: [
+      { vendorId: '3', items: ['Traditional Baskets'], total: 120, date: '2024-01-12' }
+    ]
+  }
+];
+
+export const mockOrders = [
+  {
+    id: '1',
+    customerId: '1',
+    vendorId: '1',
+    items: [
+      { name: 'Tomatoes', quantity: 2, price: 15, unit: 'kg' },
+      { name: 'Onions', quantity: 1, price: 12, unit: 'kg' }
+    ],
+    total: 42,
+    status: 'delivered',
+    orderDate: '2024-01-10',
+    deliveryDate: '2024-01-10',
+    deliveryAddress: 'Mbabane Industrial Area, Building A'
+  },
+  {
+    id: '2',
+    customerId: '2',
+    vendorId: '2',
+    items: [
+      { name: 'Traditional Stew', quantity: 2, price: 35, unit: 'plate' }
+    ],
+    total: 70,
+    status: 'in_progress',
+    orderDate: '2024-01-14',
+    estimatedDelivery: '2024-01-14 12:30',
+    deliveryAddress: 'Ezulwini Valley, House 123'
+  }
+];
+
+export const mockCategories = [
+  { id: '1', name: 'Vegetables', icon: '🥬', color: '#4CAF50' },
+  { id: '2', name: 'Food & Beverages', icon: '🍲', color: '#FF9800' },
+  { id: '3', name: 'Handicrafts', icon: '🎨', color: '#9C27B0' },
+  { id: '4', name: 'Electronics', icon: '📱', color: '#2196F3' },
+  { id: '5', name: 'Clothing', icon: '👕', color: '#E91E63' },
+  { id: '6', name: 'Home & Garden', icon: '🏠', color: '#795548' }
+];
+
+export const mockAreas = [
+  'Mbabane', 'Manzini', 'Ezulwini', 'Malkerns', 'Matsapha', 'Big Bend', 'Nhlangano', 'Siteki'
+];

@@ -13,6 +13,7 @@ import Toast from "react-native-toast-message";
 import PublicationsStackNavigator from "./navigator/PublicationsStack";
 import CorporateStackNavigator from "./navigator/CorporateStack";
 import EventsStackNavigator from "./navigator/EventsStack";
+import LocalMarketStackNavigator from "./navigator/LocalMarketStack";
 import TabNavigator from "./components/TabNavigator";
 import SplashScreen from "./screens/SplashScreen";
 import CustomDrawerContent from "./components/Drawer";
@@ -22,6 +23,9 @@ import * as Notifications from "expo-notifications";
 import { RealmProvider } from '@realm/react';
 import { AuthProvider } from "./context/authProvider";
 import { Entity, PhoneObject, SocialMediaObject, WorkingHoursObject, TeamMember, GeoPoint, Review } from './models/Entity';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { theme as VTheme } from './constants/vendorTheme';
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -172,72 +176,81 @@ function AppContent() {
         ) : (
           <AuthProvider>
             <>
-              <NavigationContainer ref={navigationRef} theme={theme}>
-                <Drawer.Navigator
-                  drawerContent={(props) => (
-                    <CustomDrawerContent
-                      {...props}
-                      states={[
-                        {
-                          id: "bs_eswatini",
-                          name: "BE",
-                          coatOfArmsIcon: Images.bs_eswatini,
-                          flagIcon: "flag-outline",
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <PaperProvider theme={VTheme}>
+                  <NavigationContainer ref={navigationRef} theme={theme}>
+                    <Drawer.Navigator
+                      drawerContent={(props) => (
+                        <CustomDrawerContent
+                          {...props}
+                          states={[
+                            {
+                              id: "bs_eswatini",
+                              name: "BE",
+                              coatOfArmsIcon: Images.bs_eswatini,
+                              flagIcon: "flag-outline",
+                            },
+                            {
+                              id: "eptc",
+                              name: "E.P.T.C",
+                              coatOfArmsIcon: Images.eptc,
+                              flagIcon: "flag-outline",
+                            },
+                          ]}
+                          selectedState={selectedState}
+                          setSelectedState={setSelectedState}
+                          isDarkMode={isDarkMode}
+                          notificationsEnabled={notificationsEnabled}
+                          isOnline={isOnline}
+                          toggleTheme={toggleTheme}
+                          toggleNotifications={toggleNotifications}
+                          toggleOnlineMode={toggleOnlineMode}
+                        />
+                      )}
+                      screenOptions={{
+                        drawerStyle: {
+                          width: 250,
                         },
-                        {
-                          id: "eptc",
-                          name: "E.P.T.C",
-                          coatOfArmsIcon: Images.eptc,
-                          flagIcon: "flag-outline",
-                        },
-                      ]}
-                      selectedState={selectedState}
-                      setSelectedState={setSelectedState}
-                      isDarkMode={isDarkMode}
-                      notificationsEnabled={notificationsEnabled}
-                      isOnline={isOnline}
-                      toggleTheme={toggleTheme}
-                      toggleNotifications={toggleNotifications}
-                      toggleOnlineMode={toggleOnlineMode}
-                    />
-                  )}
-                  screenOptions={{
-                    drawerStyle: {
-                      width: 250,
-                    },
-                  }}
-                >
-                  <Drawer.Screen
-                    name="Tabs"
-                    component={TabNavigator}
-                    options={{ headerShown: false }}
-                  />
-                  <Drawer.Screen
-                    name="Publications"
-                    component={PublicationsStackNavigator}
-                    options={{ headerShown: false }}
-                    initialParams={{ selectedState, contentType: "Publications" }}
-                  />
-                  <Drawer.Screen
-                    name="Promotions"
-                    component={PublicationsStackNavigator}
-                    options={{ headerShown: false }}
-                    initialParams={{ selectedState, contentType: "Promotions" }}
-                  />
-                  <Drawer.Screen
-                    name="Corporate"
-                    component={CorporateStackNavigator}
-                    options={{ headerShown: false }}
-                  />
-                  <Drawer.Screen
-                    name="Event"
-                    component={EventsStackNavigator}
-                    options={{ headerShown: false }}
-                  />
-                </Drawer.Navigator>
-                <StatusBar style={isDarkMode ? "light" : "dark"} />
-              </NavigationContainer>
-              <Toast config={toastConfig} />
+                      }}
+                    >
+                      <Drawer.Screen
+                        name="Tabs"
+                        component={TabNavigator}
+                        options={{ headerShown: false }}
+                      />
+                      <Drawer.Screen
+                        name="Publications"
+                        component={PublicationsStackNavigator}
+                        options={{ headerShown: false }}
+                        initialParams={{ selectedState, contentType: "Publications" }}
+                      />
+                      <Drawer.Screen
+                        name="Promotions"
+                        component={PublicationsStackNavigator}
+                        options={{ headerShown: false }}
+                        initialParams={{ selectedState, contentType: "Promotions" }}
+                      />
+                      <Drawer.Screen
+                        name="Corporate"
+                        component={CorporateStackNavigator}
+                        options={{ headerShown: false }}
+                      />
+                      <Drawer.Screen
+                        name="Event"
+                        component={EventsStackNavigator}
+                        options={{ headerShown: false }}
+                      />
+                      <Drawer.Screen
+                        name="LocalMarket"
+                        component={LocalMarketStackNavigator}
+                        options={{ headerShown: false }}
+                      />
+                    </Drawer.Navigator>
+                    <StatusBar style={isDarkMode ? "light" : "dark"} />
+                  </NavigationContainer>
+                </PaperProvider>
+                <Toast config={toastConfig} />
+              </GestureHandlerRootView>
             </>
           </AuthProvider>
         )}

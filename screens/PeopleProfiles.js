@@ -18,7 +18,7 @@ import { mockProfiles, allIndustries } from '../utils/mockData';
 
 export default function PeopleScreen({ navigation }) {
   const { theme, isDarkMode } = React.useContext(AppContext);
-  const { user, loading } = React.useContext(AuthContext);
+  const { user } = React.useContext(AuthContext);
   const [selectedIndustry, setSelectedIndustry] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [filteredProfiles, setFilteredProfiles] = useState(mockProfiles);
@@ -100,12 +100,11 @@ export default function PeopleScreen({ navigation }) {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
-      {!loading && (
-        <LoginScreen
-          isLoginVisible={isLoginVisible}
-          onClose={() => setIsLoginVisible(false)}
-        />
-      )}
+
+      <LoginScreen
+        isLoginVisible={isLoginVisible}
+        onClose={() => setIsLoginVisible(false)}
+      />
 
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.colors.text }]}>Professionals' Network</Text>

@@ -16,11 +16,12 @@ import { Icons } from '../constants/Icons';
 import { Images } from '../constants/Images';
 import * as ImagePicker from 'expo-image-picker';
 import { File, Directory, Paths } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { AppContext } from '../context/appContext';
 import { AuthContext } from '../context/authProvider';
 import { CustomToast } from '../components/customToast';
-import CustomLoader  from '../components/customLoader';
-import { addUser, getUserProfile, updateUserProfile, deleteUserProfile } from '../service/getApi';
+import CustomLoader from '../components/customLoader';
+import { addUser, getUserProfile, updateUserProfile } from '../service/getApi';
 
 const generateId = () => `id-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
@@ -55,7 +56,7 @@ export default function ProfileScreen({ navigation, route }) {
         instagram: '',
         facebook: ''
       },
-      avatar: image ? image.uri : Images.default_user,
+      avatar: null,
       isAvailableForWork: true,
     })
     : useState({
@@ -160,8 +161,6 @@ export default function ProfileScreen({ navigation, route }) {
         quality: 1,
       });
 
-      console.log(result);
-
       if (!result.canceled) {
         setImage(result.assets[0]);
         handleImageSelected(result.assets[0]);
@@ -187,6 +186,7 @@ export default function ProfileScreen({ navigation, route }) {
       };
 
       setImage(newImage);
+      setProfile((prev) => ({ ...prev, avatar: newImage.uri }));
     } catch (error) {
       console.error('Error processing image:', error);
       setError('Failed to process image. Please try again.');
@@ -197,10 +197,25 @@ export default function ProfileScreen({ navigation, route }) {
   const handleSave = async () => {
     setIsEditing(false);
     try {
-      console.log('Profile to be saved:', profile);
+      setIsLoading(true);
+      const payload = { ...profile };
+
       if (register) {
-        setIsLoading(true);
-        //   const newUser = await addUser(profile);
+        if (image && image.uri) {
+          try {
+            // read image as base64
+            const imageString = await FileSystem.readAsStringAsync(image.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+            payload.avatar = `data:${image.type};base64,${imageString}`;
+            // payload.avatarName = image.name;
+          } catch (fsErr) {
+            console.error('Failed to convert image to base64:', fsErr);
+            CustomToast('Error', 'Failed to process image. Please try again.');
+          }
+        }
+        const newUser = await addUser(payload);
+        console.log('\n\t\tNew User:', newUser);
         //   // set the new user in context
         // } else {
         //   setIsLoading(true)
@@ -209,12 +224,11 @@ export default function ProfileScreen({ navigation, route }) {
       }
     } catch (error) {
       console.error('Error saving profile:', error);
-      CustomToast('Error', error);
+      CustomToast('Error', error.message || 'Failed to your info. Please try again.');
     } finally {
-      if (register) {
-        // navigation.replace('Home');
-      }
-      // setIsLoading(false);
+      if (register)
+        register = false;
+      setIsLoading(false);
     }
   };
 
@@ -323,7 +337,7 @@ export default function ProfileScreen({ navigation, route }) {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <>
             <View style={styles.avatarSection}>
-              <Image source={register ? image !== '' ? { uri: image.uri } : profile.avatar : { uri: profile.avatar }} style={styles.avatar} />
+              <Image source={profile.avatar ? { uri: profile.avatar } : Images.default_user} style={styles.avatar} />
               {register
                 ?
                 <View style={styles.imageOptionsContainer}>
@@ -380,6 +394,7 @@ export default function ProfileScreen({ navigation, route }) {
                     value={profile.email}
                     onChangeText={(text) => setProfile(prev => ({ ...prev, email: text }))}
                     placeholder="Enter your email address"
+                    editable={false}
                   />
                 ) : (
                   <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.email}</Text>
@@ -392,6 +407,7 @@ export default function ProfileScreen({ navigation, route }) {
                   <TextInput
                     style={styles.textInput}
                     value={profile.phone}
+                    keyboardType='number-pad'
                     onChangeText={(text) => setProfile(prev => ({ ...prev, phone: text }))}
                     placeholder="Enter your phone number"
                   />
@@ -406,6 +422,7 @@ export default function ProfileScreen({ navigation, route }) {
                   <TextInput
                     style={styles.textInput}
                     value={profile.whatsApp}
+                    keyboardType='number-pad'
                     onChangeText={(text) => setProfile(prev => ({ ...prev, whatsApp: text }))}
                     placeholder="Enter your whatsApp number"
                   />
@@ -705,72 +722,78 @@ export default function ProfileScreen({ navigation, route }) {
                   <View style={styles.socialInputGroup}>
                     <Text style={styles.socialLabel}>LinkedIn</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { textTransform: 'lowercase' }]}
                       value={profile.socialLinks.linkedin}
                       onChangeText={(text) => setProfile(prev => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, linkedin: text }
                       }))}
+                      autoCapitalize='none'
                       placeholder="https://linkedin.com/in/username"
                     />
                   </View>
                   <View style={styles.socialInputGroup}>
                     <Text style={styles.socialLabel}>Twitter</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { textTransform: 'lowercase' }]}
                       value={profile.socialLinks.twitter}
                       onChangeText={(text) => setProfile(prev => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, twitter: text }
                       }))}
+                      autoCapitalize='none'
                       placeholder="https://twitter.com/username"
                     />
                   </View>
                   <View style={styles.socialInputGroup}>
                     <Text style={styles.socialLabel}>GitHub</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { textTransform: 'lowercase' }]}
                       value={profile.socialLinks.github}
                       onChangeText={(text) => setProfile(prev => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, github: text }
                       }))}
+                      autoCapitalize='none'
                       placeholder="https://github.com/username"
                     />
                   </View>
                   <View style={styles.socialInputGroup}>
                     <Text style={styles.socialLabel}>Website</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { textTransform: 'lowercase' }]}
                       value={profile.socialLinks.website}
                       onChangeText={(text) => setProfile(prev => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, website: text }
                       }))}
+                      autoCapitalize='none'
                       placeholder="https://yourwebsite.com"
                     />
                   </View>
                   <View style={styles.socialInputGroup}>
                     <Text style={styles.socialLabel}>Instagram</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { textTransform: 'lowercase' }]}
                       value={profile.socialLinks.instagram}
                       onChangeText={(text) => setProfile(prev => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, instagram: text }
                       }))}
+                      autoCapitalize='none'
                       placeholder="https://instagram.com/username"
                     />
                   </View>
                   <View style={styles.socialInputGroup}>
                     <Text style={styles.socialLabel}>Facebook</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={[styles.textInput, { textTransform: 'lowercase' }]}
                       value={profile.socialLinks.facebook}
                       onChangeText={(text) => setProfile(prev => ({
                         ...prev,
                         socialLinks: { ...prev.socialLinks, facebook: text }
                       }))}
+                      autoCapitalize='none'
                       placeholder="https://facebook.com/username"
                     />
                   </View>

@@ -18,7 +18,7 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const { theme } = useContext(AppContext);
 
-  console.log('User Info:', user);
+  // console.log('User Info:', user);
 
   const handleSocialLogin = (connection) => {
     console.log(`Initiating ${connection} login...`);

@@ -246,6 +246,31 @@ const CustomDrawerContent = ({ states, navigation }) => {
           </TouchableOpacity>
         </Animated.View>
 
+        <Animated.View
+          style={{
+            opacity: fadeAnims[1],
+            transform: [{ scale: scaleAnims[1] }],
+          }}
+        >
+          <TouchableOpacity
+            style={styles.drawerItem}
+            onPressIn={() => handlePressIn(1)}
+            onPressOut={() => handlePressOut(1)}
+            onPress={() => {
+              navigation.navigate('LocalMarket', { screen: 'VendorLogin' });
+              navigation.closeDrawer();
+            }}
+          >
+            <Icons.MaterialIcons
+              name="event"
+              size={20}
+              color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
+              style={styles.icon}
+            />
+            <Text style={[styles.itemText, isDarkMode && styles.darkText]}>Local Market</Text>
+          </TouchableOpacity>
+        </Animated.View>
+
         <Text style={[styles.sectionTitle, isDarkMode && styles.darkText]}>Preferences</Text>
 
         <View style={styles.drawerItem}>
