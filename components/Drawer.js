@@ -257,12 +257,12 @@ const CustomDrawerContent = ({ states, navigation }) => {
             onPressIn={() => handlePressIn(1)}
             onPressOut={() => handlePressOut(1)}
             onPress={() => {
-              navigation.navigate('LocalMarket', { screen: 'VendorLogin' });
+              navigation.navigate('LocalVendor', { screen: 'VendorLogin' });
               navigation.closeDrawer();
             }}
           >
             <Icons.MaterialIcons
-              name="event"
+              name="store"
               size={20}
               color={isDarkMode ? '#E0E0E0' : '#4B5EAA'}
               style={styles.icon}

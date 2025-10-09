@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Icons } from '../../constants/Icons'
 import React, { useEffect, useState } from 'react';
 import {
@@ -7,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  SafeAreaView,
   View,
 } from 'react-native';
 import {
@@ -68,7 +68,7 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.vendorName}>{item.name}</Text>
               <Text style={styles.vendorType}>{item.type}</Text>
               <View style={styles.ratingContainer}>
-                <Ionicons name="star" size={16} color="#FFD700" />
+                <Icons.Ionicons name="star" size={16} color="#FFD700" />
                 <Text style={styles.rating}>{item.rating}</Text>
                 <Text style={styles.reviewCount}>({item.reviewCount})</Text>
               </View>
@@ -84,17 +84,17 @@ export default function HomeScreen({ navigation }) {
 
           <View style={styles.vendorDetails}>
             <View style={styles.detailItem}>
-              <Ionicons name="location-outline" size={16} color={theme.colors.primary} />
+              <Icons.Ionicons name="location-outline" size={16} color={theme.colors.primary} />
               <Text style={styles.detailText}>{item.location.area}</Text>
             </View>
             <View style={styles.detailItem}>
-              <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
+              <Icons.Ionicons name="time-outline" size={16} color={theme.colors.primary} />
               <Text style={styles.detailText}>
                 {item.workingHours.monday || 'Closed today'}
               </Text>
             </View>
             <View style={styles.detailItem}>
-              <Ionicons name="car-outline" size={16} color={theme.colors.primary} />
+              <Icons.Ionicons name="car-outline" size={16} color={theme.colors.primary} />
               <Text style={styles.detailText}>{item.deliveryRadius}km delivery</Text>
             </View>
           </View>
@@ -115,124 +115,121 @@ export default function HomeScreen({ navigation }) {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.greeting}>Good morning!</Text>
-            <Text style={styles.headerTitle}>Find Local Vendors</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ justifyContent: 'center' }}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 30 }}>
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.primary} />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>Local Market</Text>
+            </View>
+            <>
+              <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')} style={styles.notificationButton}>
+                <Icons.Ionicons name="person-outline" size={24} color={theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.notificationButton}>
+                <Icons.Ionicons name="notifications-outline" size={24} color={theme.colors.primary} />
+                <Badge style={styles.notificationBadge}>3</Badge>
+              </TouchableOpacity>
+            </>
           </View>
-          <>
-            <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')} style={styles.notificationButton}>
-              <Ionicons name="person-outline" size={24} color="white" />
+
+          <Searchbar
+            placeholder="Search vendors, products, or areas..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            onSubmitEditing={handleSearch}
+            style={styles.searchBar}
+            iconColor={theme.colors.primary}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <FlatList
+            data={mockCategories}
+            renderItem={renderCategoryCard}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryList}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Nearby Vendors</Text>
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate('SearchScreen', { sortBy: 'distance' })}
+              compact
+            >
+              See All
+            </Button>
+          </View>
+
+          <FlatList
+            data={nearbyVendors}
+            renderItem={renderVendorCard}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            contentContainerStyle={styles.vendorList}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top Rated</Text>
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate('SearchScreen', { sortBy: 'rating' })}
+              compact
+            >
+              See All
+            </Button>
+          </View>
+
+          <FlatList
+            data={featuredVendors}
+            renderItem={renderVendorCard}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+            contentContainerStyle={styles.vendorList}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActions}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('BulkGroupsScreen')}
+            >
+              <Icons.Ionicons name="people" size={32} color={theme.colors.primary} />
+              <Text style={styles.actionText}>Join Bulk Groups</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.notificationButton}>
-              <Ionicons name="notifications-outline" size={24} color="white" />
-              <Badge style={styles.notificationBadge}>3</Badge>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('OrdersScreen')}
+            >
+              <Icons.Ionicons name="receipt" size={32} color={theme.colors.primary} />
+              <Text style={styles.actionText}>My Orders</Text>
             </TouchableOpacity>
-          </>
 
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('SupplyChain')}
+            >
+              <Icons.FontAwesome6 name="group-arrows-rotate" size={32} color={theme.colors.primary} />
+              <Text style={styles.actionText}>Supply Chain</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-
-        <Searchbar
-          placeholder="Search vendors, products, or areas..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          onSubmitEditing={handleSearch}
-          style={styles.searchBar}
-          iconColor={theme.colors.primary}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        <FlatList
-          data={mockCategories}
-          renderItem={renderCategoryCard}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryList}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nearby Vendors</Text>
-          <Button
-            mode="text"
-            onPress={() => navigation.navigate('SearchScreen', { sortBy: 'distance' })}
-            compact
-          >
-            See All
-          </Button>
-        </View>
-
-        <FlatList
-          data={nearbyVendors}
-          renderItem={renderVendorCard}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          contentContainerStyle={styles.vendorList}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Top Rated</Text>
-          <Button
-            mode="text"
-            onPress={() => navigation.navigate('SearchScreen', { sortBy: 'rating' })}
-            compact
-          >
-            See All
-          </Button>
-        </View>
-
-        <FlatList
-          data={featuredVendors}
-          renderItem={renderVendorCard}
-          keyExtractor={(item) => item.id}
-          scrollEnabled={false}
-          contentContainerStyle={styles.vendorList}
-        />
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('BulkGroupsScreen')}
-          >
-            <Ionicons name="people" size={32} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Join Bulk Groups</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('OrdersScreen')}
-          >
-            <Ionicons name="receipt" size={32} color={theme.colors.primary} />
-            <Text style={styles.actionText}>My Orders</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('SupplyChain')}
-          >
-            <Icons.FontAwesome6 name="group-arrows-rotate" size={32} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Supply Chain</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Supporting local businesses in Swaziland 🇸🇿
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -242,8 +239,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    backgroundColor: theme.colors.primary,
-    paddingTop: 60,
+    paddingTop: 30,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
@@ -259,7 +255,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   headerTitle: {
-    color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 4,
@@ -279,7 +274,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   section: {
-    margin: 20,
+    paddingHorizontal: 10,
+    // margin: 20,
     marginTop: 10,
   },
   sectionHeader: {
@@ -294,20 +290,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   categoryList: {
-    paddingRight: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
   },
   categoryCard: {
-    width: 100,
+    width: 'auto',
     marginRight: 12,
     elevation: 2,
   },
   categoryContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
     alignItems: 'center',
     padding: 12,
   },
   categoryIcon: {
     fontSize: 32,
-    marginBottom: 8,
   },
   categoryName: {
     fontSize: 12,
@@ -385,6 +384,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 16,
+    marginBottom: 60,
   },
   actionButton: {
     alignItems: 'center',

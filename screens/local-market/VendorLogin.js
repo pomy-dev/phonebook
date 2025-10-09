@@ -1,142 +1,91 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
-  View
+  View,
+  TouchableOpacity,
 } from 'react-native';
+import { Icons } from '../../constants/Icons';
 import {
   Button,
   Card,
-  Text,
-  TextInput
+  Text
 } from 'react-native-paper';
 import { theme } from '../../constants/vendorTheme';
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      // For demo purposes, always navigate to main app
-      navigation.navigate('VendorHome');
-    }, 1500);
-  };
 
   const handleVendorLogin = () => {
-    navigation.navigate('VendorRegistration');
+    navigation.navigate('AddVendor');
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>🇸🇿</Text>
-          <Text style={styles.title}>Swaziland Vendor Marketplace</Text>
-          <Text style={styles.subtitle}>
-            Connecting vendors, customers, and communities
-          </Text>
-        </View>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icons.Ionicons name='arrow-back' style={{ color: theme.colors.primary, fontSize: 24 }} />
+        </TouchableOpacity>
+        <Text style={[styles.headerText, { color: theme.colors.primary }]}>Local Market</Text>
       </View>
 
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text style={styles.cardTitle}>Welcome Back</Text>
-          <Text style={styles.cardSubtitle}>
-            Sign in to discover local vendors and place orders
-          </Text>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
 
-          <TextInput
-            label="Email or Phone"
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            style={styles.input}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+        <Card style={styles.vendorCard}>
+          <Card.Content>
+            <Text style={styles.vendorTitle}>Are you a vendor?</Text>
+            <Text style={styles.vendorSubtitle}>
+              Join our marketplace to reach more customers and connect with bulk buying groups
+            </Text>
 
-          <TextInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            secureTextEntry
-            style={styles.input}
-          />
+            <Button
+              mode="outlined"
+              onPress={handleVendorLogin}
+              style={styles.vendorButton}
+              contentStyle={styles.buttonContent}
+            >
+              Vendor Registration
+            </Button>
+          </Card.Content>
+        </Card>
 
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={loading}
-            style={styles.loginButton}
-            contentStyle={styles.buttonContent}
-          >
-            Sign In
-          </Button>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Button
+              mode="contained"
+              onPress={() => navigation.navigate('VendorHome')}
+              style={styles.loginButton}
+              contentStyle={styles.buttonContent}
+            >
+              Continue as Guest
+            </Button>
+          </Card.Content>
+        </Card>
 
-          <Button
-            mode="text"
-            onPress={() => navigation.navigate('Register')}
-            style={styles.registerButton}
-          >
-            Don't have an account? Sign Up
-          </Button>
-        </Card.Content>
-      </Card>
+        <View style={styles.features}>
+          <Text style={styles.featuresTitle}>Why Choose Our Platform?</Text>
 
-      <Card style={styles.vendorCard}>
-        <Card.Content>
-          <Text style={styles.vendorTitle}>Are you a vendor?</Text>
-          <Text style={styles.vendorSubtitle}>
-            Join our marketplace to reach more customers and connect with bulk buying groups
-          </Text>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🔍</Text>
+            <Text style={styles.featureText}>Discover local vendors near you</Text>
+          </View>
 
-          <Button
-            mode="outlined"
-            onPress={handleVendorLogin}
-            style={styles.vendorButton}
-            contentStyle={styles.buttonContent}
-          >
-            Vendor Registration
-          </Button>
-        </Card.Content>
-      </Card>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>👥</Text>
+            <Text style={styles.featureText}>Join bulk buying groups for better prices</Text>
+          </View>
 
-      <View style={styles.features}>
-        <Text style={styles.featuresTitle}>Why Choose Our Platform?</Text>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>🚚</Text>
+            <Text style={styles.featureText}>Fast delivery to your location</Text>
+          </View>
 
-        <View style={styles.featureItem}>
-          <Text style={styles.featureIcon}>🔍</Text>
-          <Text style={styles.featureText}>Discover local vendors near you</Text>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>📱</Text>
+            <Text style={styles.featureText}>Real-time stock updates</Text>
+          </View>
         </View>
-
-        <View style={styles.featureItem}>
-          <Text style={styles.featureIcon}>👥</Text>
-          <Text style={styles.featureText}>Join bulk buying groups for better prices</Text>
-        </View>
-
-        <View style={styles.featureItem}>
-          <Text style={styles.featureIcon}>🚚</Text>
-          <Text style={styles.featureText}>Fast delivery to your location</Text>
-        </View>
-
-        <View style={styles.featureItem}>
-          <Text style={styles.featureIcon}>📱</Text>
-          <Text style={styles.featureText}>Real-time stock updates</Text>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -146,61 +95,18 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   header: {
-    backgroundColor: theme.colors.primary,
-    paddingTop: 60,
-    paddingBottom: 30,
-    paddingHorizontal: 20,
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center', marginTop: 50
   },
-  logoContainer: {
-    alignItems: 'center',
+  backButton: {
+    position: 'absolute', left: 0, padding: 10
   },
-  logoText: {
-    fontSize: 48,
-    marginBottom: 10,
-  },
-  title: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    opacity: 0.9,
-  },
-  card: {
-    margin: 20,
-    elevation: 4,
-  },
-  cardTitle: {
-    textAlign: 'center',
-    marginBottom: 8,
-    color: theme.colors.primary,
-  },
-  cardSubtitle: {
-    textAlign: 'center',
-    marginBottom: 20,
-    color: theme.colors.placeholder,
-  },
-  input: {
-    marginBottom: 16,
-  },
-  loginButton: {
-    marginTop: 8,
-    marginBottom: 16,
-  },
-  buttonContent: {
-    paddingVertical: 8,
-  },
-  registerButton: {
-    marginTop: 8,
+  headerText: {
+    position: 'absolute', left: '30%', textAlign: 'center', fontSize: 24, fontWeight: 'bold',
   },
   vendorCard: {
-    margin: 20,
+    // paddingTop: 60,
+    marginTop: 60,
+    marginHorizontal: 20,
     marginTop: 0,
     elevation: 4,
     borderColor: theme.colors.accent,
@@ -218,6 +124,17 @@ const styles = StyleSheet.create({
   },
   vendorButton: {
     borderColor: theme.colors.accent,
+  },
+  card: {
+    margin: 20,
+    elevation: 4,
+  },
+  loginButton: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  buttonContent: {
+    paddingVertical: 8,
   },
   features: {
     margin: 20,

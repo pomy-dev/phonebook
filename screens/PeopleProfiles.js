@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   Linking,
+  TextInput
 } from 'react-native';
 import { Modal } from 'react-native';
 import { Icons } from "../constants/Icons";
@@ -19,6 +20,7 @@ import { mockProfiles, allIndustries } from '../utils/mockData';
 export default function PeopleScreen({ navigation }) {
   const { theme, isDarkMode } = React.useContext(AppContext);
   const { user } = React.useContext(AuthContext);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [filteredProfiles, setFilteredProfiles] = useState(mockProfiles);
@@ -26,6 +28,9 @@ export default function PeopleScreen({ navigation }) {
   const [selectedContact, setSelectedContact] = useState(null);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
   const [selectedSkillTabs, setSelectedSkillTabs] = useState({});
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const searchInputRef = useRef(null);
 
   const industries = ['all', ...allIndustries];
 
@@ -96,6 +101,49 @@ export default function PeopleScreen({ navigation }) {
     }
   };
 
+  // const handleSearch = (query) => {
+  //   setIsSearching(true);
+  //   if (searchQuery.length > 0) {
+  //     const filtered = mockProfiles.filter(profile =>
+  //       profile.name.toLowerCase().includes(query.toLowerCase()) || profile.title.toLowerCase().includes(query.toLowerCase())
+  //     );
+  //     setFilteredProfiles(filtered);
+  //     setSearchQuery(query);
+  //   }
+  // }
+  // open search input and focus it
+  const startSearch = () => {
+    setIsSearching(true);
+    // small delay to ensure input mounted
+    setTimeout(() => searchInputRef.current && searchInputRef.current.focus(), 50);
+  };
+  // close search and reset results
+  const stopSearch = () => {
+    setIsSearching(false);
+    setSearchQuery('');
+    setFilteredProfiles(mockProfiles);
+    // blur input if available
+    searchInputRef.current && searchInputRef.current.blur && searchInputRef.current.blur();
+  };
+  // live filter as user types
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    const q = query.trim().toLowerCase();
+    if (q.length === 0) {
+      setFilteredProfiles(mockProfiles);
+      return;
+    }
+    const filtered = mockProfiles.filter(profile =>
+      (profile.name || '').toLowerCase().includes(q) ||
+      (profile.title || '').toLowerCase().includes(q)
+    );
+    setFilteredProfiles(filtered);
+  };
+
+  const handleFilter = () => {
+    setIsFiltering(!isFiltering);
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
@@ -106,63 +154,108 @@ export default function PeopleScreen({ navigation }) {
         onClose={() => setIsLoginVisible(false)}
       />
 
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Professionals' Network</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>Profiles</Text>
+
+      {!isSearching ?
+        <View style={styles.header}>
+          <TouchableOpacity onPress={startSearch}>
+            <View>
+              <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border, paddingVertical: 10 }]}>
+                <Icons.Ionicons
+                  name="search-outline"
+                  size={20}
+                  color={theme.colors.text}
+                  style={styles.searchIcon}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleFilter}
+            style={[styles.filterProfile, { backgroundColor: isFiltering ? theme.colors.highlight : 'transparent', borderColor: theme.colors.highlight }]}>
+            <Icons.MaterialCommunityIcons name="account-filter-outline" size={24} color={theme.colors.indicator} />
+          </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => handleAddProfile()}
             style={[styles.addProfile, { backgroundColor: theme.colors.indicator, borderColor: theme.colors.indicator }]}>
             <Icons.Feather name="user-plus" size={18} color='#ffff' />
-            <Text style={{ color: '#ffff' }}>Add Profile</Text>
+            <Text style={{ color: '#ffff' }}>Create Profile</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      <View style={[styles.filtersSection, { backgroundColor: theme.colors.card }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-          {industries.map((industry) => (
-            <TouchableOpacity
-              key={industry}
-              style={[
-                styles.filterChip,
-                selectedIndustry === industry && styles.filterChipActive
-              ]}
-              onPress={() => handleIndustryFilter(industry)}
-            >
-              <Text style={[
-                styles.filterText,
-                selectedIndustry === industry && styles.filterTextActive
-              ]}>
-                {industry === 'all' ? 'All' : industry}
-              </Text>
+        :
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border }]}>
+            <Icons.Ionicons
+              name="search-outline"
+              size={20}
+              color={theme.colors.text}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              ref={searchInputRef}
+              placeholder="Search name or title..."
+              style={[styles.searchInput, { color: theme.colors.text }]}
+              placeholderTextColor={theme.colors.sub_text}
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              autoFocus={true}
+              returnKeyType="search"
+              keyboardType="default"
+              clearButtonMode="while-editing"
+            />
+            <TouchableOpacity onPress={stopSearch} style={{ marginLeft: 8 }}>
+              <Icons.Ionicons name="close" size={20} color={theme.colors.text} />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </View>
+        </View>
+      }
 
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Availability</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-          {['all', 'available', 'unavailable'].map((availability) => (
-            <TouchableOpacity
-              key={availability}
-              style={[
-                styles.filterChip,
-                selectedAvailability === availability && styles.filterChipActive
-              ]}
-              onPress={() => handleAvailabilityFilter(availability)}
-            >
-              <Text style={[
-                styles.filterText,
-                selectedAvailability === availability && styles.filterTextActive
-              ]}>
-                {availability === 'all' ? 'Miscellaneous' :
-                  availability === 'available' ? 'Open to Work' : 'Not Available'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      {isFiltering &&
+        <View style={[styles.filtersSection, { backgroundColor: theme.colors.card }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+            {industries.map((industry) => (
+              <TouchableOpacity
+                key={industry}
+                style={[
+                  styles.filterChip,
+                  selectedIndustry === industry && styles.filterChipActive
+                ]}
+                onPress={() => handleIndustryFilter(industry)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  selectedIndustry === industry && styles.filterTextActive
+                ]}>
+                  {industry === 'all' ? 'All' : industry}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Availability</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+            {['all', 'available', 'unavailable'].map((availability) => (
+              <TouchableOpacity
+                key={availability}
+                style={[
+                  styles.filterChip,
+                  selectedAvailability === availability && styles.filterChipActive
+                ]}
+                onPress={() => handleAvailabilityFilter(availability)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  selectedAvailability === availability && styles.filterTextActive
+                ]}>
+                  {availability === 'all' ? 'Miscellaneous' :
+                    availability === 'available' ? 'Open to Work' : 'Not Available'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      }
 
       <ScrollView style={styles.profilesList} showsVerticalScrollIndicator={false}>
         {filteredProfiles.map((profile) => (
@@ -333,25 +426,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 10,
     marginTop: 30,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
+  searchContainer: {
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+    marginTop: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  subtitle: {
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 50,
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
     fontSize: 16,
+    fontWeight: "400",
+    flex: 1,
+  },
+  filterProfile: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 5,
   },
   addProfile: {
     flexDirection: 'row',
-    borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 5,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
   filtersSection: {
     paddingTop: 16,

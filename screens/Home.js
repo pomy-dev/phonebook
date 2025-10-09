@@ -9,7 +9,6 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
-  FlatList,
   StyleSheet,
   Alert,
   RefreshControl,

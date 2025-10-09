@@ -12,9 +12,11 @@ export const addUser = async (userData) => {
       body: JSON.stringify(userData),
     });
     if (!response.ok) {
-      throw new Error("Network response was not ok " + response.statusText);
+      console.error(response.arrayBuffer);
+      throw new Error(response.status);
     }
     const data = await response.json();
+    console.log(data.message);
     return data;
   } catch (error) {
     console.error("Error adding user:", error);

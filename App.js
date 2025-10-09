@@ -241,7 +241,7 @@ function AppContent() {
                         options={{ headerShown: false }}
                       />
                       <Drawer.Screen
-                        name="LocalMarket"
+                        name="LocalVendor"
                         component={LocalMarketStackNavigator}
                         options={{ headerShown: false }}
                       />

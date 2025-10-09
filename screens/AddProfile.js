@@ -96,17 +96,16 @@ export default function ProfileScreen({ navigation, route }) {
     'Energy', 'Agriculture', 'Construction', 'Transportation', 'Retail', 'Hospitality',
     'Real Estate', 'Legal', 'Consulting', 'Media', 'Telecommunications', 'Automotive',
     'Aerospace', 'Biotechnology', 'Pharmaceuticals', 'Food & Beverage', 'Fashion',
-    'Sports', 'Non-profit', 'Government', 'Insurance', 'Banking', 'Entertainment',
-    'Gaming', 'Other'
+    'Sports', 'Non-Profit', 'Government', 'Insurance', 'Entertainment', 'Other'
   ];
 
   // Function to request permissions on Android
   const requestPermissions = async () => {
-    console.log('Three Four')
-    if (Platform.OS !== 'web')
-      console.log('It is device')
-    else
-      console.log('It is web')
+    // console.log('Three Four')
+    // if (Platform.OS !== 'web')
+    //   console.log('It is device')
+    // else
+    //   console.log('It is web')
 
     if (Platform.OS !== 'web') {
       const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
@@ -196,8 +195,8 @@ export default function ProfileScreen({ navigation, route }) {
   // Submit form OR Edits 
   const handleSave = async () => {
     setIsEditing(false);
+    setIsLoading(true)
     try {
-      setIsLoading(true);
       const payload = { ...profile };
 
       if (register) {
@@ -215,7 +214,7 @@ export default function ProfileScreen({ navigation, route }) {
           }
         }
         const newUser = await addUser(payload);
-        console.log('\n\t\tNew User:', newUser);
+        // console.log('\n\t\tNew User:', newUser);
         //   // set the new user in context
         // } else {
         //   setIsLoading(true)
@@ -226,8 +225,33 @@ export default function ProfileScreen({ navigation, route }) {
       console.error('Error saving profile:', error);
       CustomToast('Error', error.message || 'Failed to your info. Please try again.');
     } finally {
-      if (register)
-        register = false;
+      // reset fields and states
+      setProfile({
+        name: '',
+        email: '',
+        phone: '',
+        whatsApp: '',
+        title: '',
+        company: '',
+        location: '',
+        industry: '',
+        experience: '',
+        acquiredSkills: [],
+        innateSkills: [],
+        domesticSkills: [],
+        achievements: [],
+        education: '',
+        socialLinks: {
+          linkedin: '',
+          twitter: '',
+          github: '',
+          website: '',
+          instagram: '',
+          facebook: ''
+        },
+        avatar: null,
+        isAvailableForWork: true,
+      });
       setIsLoading(false);
     }
   };
@@ -394,7 +418,7 @@ export default function ProfileScreen({ navigation, route }) {
                     value={profile.email}
                     onChangeText={(text) => setProfile(prev => ({ ...prev, email: text }))}
                     placeholder="Enter your email address"
-                    editable={false}
+                  // editable={false}
                   />
                 ) : (
                   <Text style={[styles.fieldValue, { color: theme.colors.sub_text }]}>{profile.email}</Text>
