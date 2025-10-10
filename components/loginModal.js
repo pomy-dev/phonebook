@@ -18,8 +18,6 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
   const [isConnecting, setIsConnecting] = useState(false);
   const { theme } = useContext(AppContext);
 
-  // console.log('User Info:', user);
-
   const handleSocialLogin = (connection) => {
     console.log(`Initiating ${connection} login...`);
     try {
@@ -53,11 +51,11 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
           </View>
 
           {/* Loading State */}
-          {loading || isConnecting && (
+          {isConnecting && (
             <View style={styles.loadingContainer}>
               <CustomLoader />
               <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                waiting...
+                connecting...
               </Text>
             </View>
           )}
@@ -83,6 +81,7 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
                   <Text style={[styles.subtitle, { color: theme.colors.text }]}>
                     Sign in with your preferred account
                   </Text>
+
                   <TouchableOpacity
                     style={[styles.socialButton, { borderColor: theme.colors.border }]}
                     onPress={() => handleSocialLogin('google-oauth2')}
@@ -92,6 +91,7 @@ export default function LoginScreen({ isLoginVisible, onClose }) {
                       Sign in with Google
                     </Text>
                   </TouchableOpacity>
+
                   <TouchableOpacity
                     style={[styles.socialButton, { borderColor: theme.colors.border }]}
                     onPress={() => handleSocialLogin('facebook')}

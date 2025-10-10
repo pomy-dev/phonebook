@@ -12,10 +12,11 @@ import {
   Platform,
   KeyboardAvoidingView
 } from 'react-native';
+import { Appbar, Button, Menu, Divider, } from 'react-native-paper';
 import { Icons } from '../constants/Icons';
 import { Images } from '../constants/Images';
 import * as ImagePicker from 'expo-image-picker';
-import { File, Directory, Paths } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 import { AppContext } from '../context/appContext';
 import { AuthContext } from '../context/authProvider';
@@ -24,13 +25,15 @@ import CustomLoader from '../components/customLoader';
 import { addUser, getUserProfile, updateUserProfile } from '../service/getApi';
 
 const generateId = () => `id-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+const MORE_ICON = Platform.OS === 'ios' ? 'dots-horizontal' : 'dots-vertical';
 
 export default function ProfileScreen({ navigation, route }) {
   const register = route?.params?.register;
   const { theme, isDarkMode } = React.useContext(AppContext);
-  const { user } = React.useContext(AuthContext);
+  const { user, logout } = React.useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [image, setImage] = useState('');
+  const [menu, setMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = register
     ? useState({
@@ -324,6 +327,11 @@ export default function ProfileScreen({ navigation, route }) {
     }));
   };
 
+  const hanldeLogout = () => {
+    logout()
+    navigation.goBack()
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -341,10 +349,29 @@ export default function ProfileScreen({ navigation, route }) {
             <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.text} />
           </TouchableOpacity>
 
-          <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.title, { color: theme.colors.text }]}>{register ? 'Add My Profile' : 'My Profile'}</Text>
+          {!register &&
+            <View style={styles.headerAvatarContainer}>
+              <Image source={profile.avatar ? { uri: profile.avatar } : Images.default_user} style={styles.headerAvater} />
+              <View style={[
+                styles.availabilityBadge,
+                // { backgroundColor: profile.isAvailableForWork ? '#dcfce7' : '#fef3c7' }
+              ]}>
+                <Text style={[
+                  styles.availabilityText,
+                  { color: profile.isAvailableForWork ? '#16a34a' : '#d97706' }
+                ]}>
+                  {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
+                </Text>
+              </View>
+            </View>
+          }
+
+          {register &&
+            <Text numberOfLines={1} ellipsizeMode='tail' style={[styles.title, { color: theme.colors.text }]}>Create Profile</Text>
+          }
 
           <TouchableOpacity
-            style={[styles.editButton, (isEditing || register) && styles.saveButton]}
+            style={[styles.editButton, (isEditing || register) && styles.saveButton, { borderColor: theme.colors.border }]}
             onPress={isEditing ? handleSave : () => setIsEditing(true)}
           >
             {isEditing || register ? (
@@ -353,40 +380,33 @@ export default function ProfileScreen({ navigation, route }) {
                 <Text style={styles.buttonText}>Save</Text>
               </>
             ) : (
-              <Text style={[styles.editButtonText, { color: '#ffff' }]}>Edit Profile</Text>
+              <Text style={[styles.editButtonText, { color: theme.colors.text }]}>Edit Profile</Text>
             )}
           </TouchableOpacity>
+
+          <Icons.AntDesign name='logout' onPress={hanldeLogout} size={20} color={theme.colors.text} />
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <>
             <View style={styles.avatarSection}>
-              <Image source={profile.avatar ? { uri: profile.avatar } : Images.default_user} style={styles.avatar} />
-              {register
-                ?
-                <View style={styles.imageOptionsContainer}>
-                  <TouchableOpacity style={styles.imageOption} onPress={takePhoto}>
-                    <Icons.AntDesign name='camerao' size={24} color="#4F46E5" />
-                    <Text style={styles.imageOptionText}>Take Photo</Text>
-                  </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.imageOption} onPress={pickImage}>
-                    <Icons.Ionicons name='images-outline' size={24} color="#4F46E5" />
-                    <Text style={styles.imageOptionText}>Gallery</Text>
-                  </TouchableOpacity>
-                </View>
-                :
-                <View style={[
-                  styles.availabilityBadge,
-                  { backgroundColor: profile.isAvailableForWork ? '#dcfce7' : '#fef3c7' }
-                ]}>
-                  <Text style={[
-                    styles.availabilityText,
-                    { color: profile.isAvailableForWork ? '#16a34a' : '#d97706' }
-                  ]}>
-                    {profile.isAvailableForWork ? 'Open to Work' : 'Employed'}
-                  </Text>
-                </View>
+              {register &&
+                <>
+                  <Image source={profile.avatar ? { uri: profile.avatar } : Images.default_user} style={styles.avatar} />
+
+                  <View style={styles.imageOptionsContainer}>
+                    <TouchableOpacity style={styles.imageOption} onPress={takePhoto}>
+                      <Icons.AntDesign name='camerao' size={24} color="#4F46E5" />
+                      <Text style={styles.imageOptionText}>Take Photo</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.imageOption} onPress={pickImage}>
+                      <Icons.Ionicons name='images-outline' size={24} color="#4F46E5" />
+                      <Text style={styles.imageOptionText}>Gallery</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
               }
             </View>
 
@@ -879,10 +899,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     marginTop: 15,
     borderBottomColor: '#e5e7eb',
+  },
+  headerAvatarContainer: {
+    gap: 5,
+    flex: 1,
+    flexDirection: 'row',
+    marginLeft: 10
   },
   photo: {
     flexDirection: 'row',
@@ -896,10 +923,13 @@ const styles = StyleSheet.create({
     fontWeight: '700'
   },
   editButton: {
-    backgroundColor: '#FF4500',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 1
   },
   saveButton: {
     backgroundColor: '#003366',
@@ -974,7 +1004,12 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 26,
+  },
+  headerAvater: {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
   },
   avatar: {
     width: 100,
@@ -983,9 +1018,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   availabilityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    // paddingHorizontal: 12,
+    // paddingVertical: 6,
+    // borderRadius: 16,
   },
   availabilityText: {
     fontSize: 12,
