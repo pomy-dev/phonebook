@@ -4,7 +4,8 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  View
+  View,
+  TextInput,
 } from 'react-native';
 import {
   Button,
@@ -13,16 +14,20 @@ import {
   Chip,
   RadioButton,
   Text,
-  TextInput,
 } from 'react-native-paper';
 import { mockAreas, mockCategories } from '../../utils/mockData';
-import { theme } from '../../constants/vendorTheme';
+import { Icons } from '../../constants/Icons';
+import { AppContext } from '../../context/appContext';
+import { AuthContext } from '../../context/authProvider';
+import { addVendor } from '../../service/getApi';
 
 export default function VendorRegistrationScreen({ navigation }) {
+  const { theme, isDarkMode } = React.useContext(AppContext);
+  const { user, loading } = React.useContext(AuthContext);
   const [formData, setFormData] = useState({
     businessName: '',
     ownerName: '',
-    email: '',
+    email: user?.email || '',
     phone: '',
     businessType: 'street_vendor',
     category: '',
@@ -42,7 +47,7 @@ export default function VendorRegistrationScreen({ navigation }) {
     acceptsBulkOrders: false,
     hasLicense: false,
   });
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
 
   const handleInputChange = (field, value) => {
@@ -80,65 +85,94 @@ export default function VendorRegistrationScreen({ navigation }) {
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      Alert.alert(
-        'Success!',
-        'Your vendor registration has been submitted. You will receive a confirmation within 24 hours.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Login')
-          }
-        ]
-      );
-    }, 2000);
+    setIsLoading(true);
+    try {
+      console.log('Submitting vendor registration:\n\t', formData);
+      const response = await addVendor(formData);
+      if (response)
+        Alert.alert('Success', 'Vendor registration submitted successfully');
+      else
+        Alert.alert('Error', response.message || 'Failed to submit registration');
+
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while submitting your registration');
+    } finally {
+      // setFormData({
+      //   businessName: '',
+      //   ownerName: '',
+      //   email: user?.email || '',
+      //   phone: '',
+      //   businessType: 'street_vendor',
+      //   category: '',
+      //   area: '',
+      //   address: '',
+      //   description: '',
+      //   workingHours: {
+      //     monday: '',
+      //     tuesday: '',
+      //     wednesday: '',
+      //     thursday: '',
+      //     friday: '',
+      //     saturday: '',
+      //     sunday: '',
+      //   },
+      //   deliveryRadius: 5,
+      //   acceptsBulkOrders: false,
+      //   hasLicense: false,
+      // });
+      setStep(1);
+      setIsLoading(false);
+    }
   };
 
   const renderStep1 = () => (
     <View>
-      <Text style={styles.stepTitle}>Business Information</Text>
-      <Text style={styles.stepSubtitle}>
+      <Text style={[styles.stepTitle, { color: theme.colors.text }]}>Business Information</Text>
+      <Text style={[styles.stepSubtitle, { color: theme.colors.placeholder }]}>
         Tell us about your business
       </Text>
 
-      <TextInput
-        label="Business Name *"
-        value={formData.businessName}
-        onChangeText={(value) => handleInputChange('businessName', value)}
-        mode="outlined"
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <TextInput
+          placeholder="Business Name *"
+          value={formData.businessName}
+          onChangeText={(value) => handleInputChange('businessName', value)}
+          style={styles.textInput}
+        />
+      </View>
 
-      <TextInput
-        label="Owner/Manager Name *"
-        value={formData.ownerName}
-        onChangeText={(value) => handleInputChange('ownerName', value)}
-        mode="outlined"
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <TextInput
+          placeholder="Owner/Manager Name *"
+          value={formData.ownerName}
+          onChangeText={(value) => handleInputChange('ownerName', value)}
+          style={styles.textInput}
+        />
+      </View>
 
-      <TextInput
-        label="Email Address *"
-        value={formData.email}
-        onChangeText={(value) => handleInputChange('email', value)}
-        mode="outlined"
-        keyboardType="email-address"
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <TextInput
+          placeholder="Email Address *"
+          value={formData.email}
+          onChangeText={(value) => handleInputChange('email', value)}
+          editable={!!user?.email ? false : true}
+          keyboardType="email-address"
+          style={styles.textInput}
+        />
+      </View>
 
-      <TextInput
-        label="Phone Number *"
-        value={formData.phone}
-        onChangeText={(value) => handleInputChange('phone', value)}
-        mode="outlined"
-        keyboardType="phone-pad"
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <TextInput
+          placeholder="Phone Number *"
+          value={formData.phone}
+          onChangeText={(value) => handleInputChange('phone', value)}
+          mode="outlined"
+          keyboardType="phone-pad"
+          style={styles.textInput}
+        />
+      </View>
 
-      <Text style={styles.sectionTitle}>Business Type *</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Business Type *</Text>
       <RadioButton.Group
         onValueChange={(value) => handleInputChange('businessType', value)}
         value={formData.businessType}
@@ -157,7 +191,7 @@ export default function VendorRegistrationScreen({ navigation }) {
         </View>
       </RadioButton.Group>
 
-      <Text style={styles.sectionTitle}>Category *</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Category *</Text>
       <View style={styles.chipContainer}>
         {mockCategories?.map((category) => (
           <Chip
@@ -175,7 +209,7 @@ export default function VendorRegistrationScreen({ navigation }) {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>Service Area *</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Service Area *</Text>
       <View style={styles.chipContainer}>
         {mockAreas?.map((area) => (
           <Chip
@@ -197,52 +231,56 @@ export default function VendorRegistrationScreen({ navigation }) {
 
   const renderStep2 = () => (
     <View>
-      <Text style={styles.stepTitle}>Business Details</Text>
-      <Text style={styles.stepSubtitle}>
+      <Text style={[styles.stepTitle, { color: theme.colors.primary }]}>Business Details</Text>
+      <Text style={[styles.stepSubtitle, { color: theme.colors.placeholder }]}>
         Additional information about your business
       </Text>
 
-      <TextInput
-        label="Business Address"
-        value={formData.address}
-        onChangeText={(value) => handleInputChange('address', value)}
-        mode="outlined"
-        multiline
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <TextInput
+          placeholder="Business Address"
+          value={formData.address}
+          onChangeText={(value) => handleInputChange('address', value)}
+          multiline
+          style={styles.textInput}
+        />
+      </View>
 
-      <TextInput
-        label="Business Description"
-        value={formData.description}
-        onChangeText={(value) => handleInputChange('description', value)}
-        mode="outlined"
-        multiline
-        style={styles.input}
-      />
+      <View style={styles.field}>
+        <TextInput
+          placeholder="Business Description"
+          value={formData.description}
+          onChangeText={(value) => handleInputChange('description', value)}
+          numberOfLines={3}
+          style={styles.textArea}
+        />
+      </View>
 
       <Text style={styles.sectionTitle}>Working Hours</Text>
       {Object.keys(formData.workingHours)?.map((day) => (
         <View key={day} style={styles.workingHoursRow}>
           <Text style={styles.dayLabel}>{day.charAt(0).toUpperCase() + day.slice(1)}</Text>
-          <TextInput
-            label="Hours (e.g., 08:00-17:00)"
-            value={formData.workingHours[day]}
-            onChangeText={(value) => handleWorkingHoursChange(day, value)}
-            mode="outlined"
-            style={styles.hoursInput}
-            placeholder="Closed or 08:00-17:00"
-          />
+          <View style={styles.field}>
+            <TextInput
+              value={formData.workingHours[day]}
+              onChangeText={(value) => handleWorkingHoursChange(day, value)}
+              mode="outlined"
+              style={styles.hoursInput}
+              placeholder="Closed or 08:00-17:00"
+            />
+          </View>
         </View>
       ))}
 
-      <TextInput
-        label="Delivery Radius (km)"
-        value={formData.deliveryRadius.toString()}
-        onChangeText={(value) => handleInputChange('deliveryRadius', parseInt(value) || 0)}
-        mode="outlined"
-        keyboardType="numeric"
-        style={styles.input}
-      />
+      <Text style={styles.sectionTitle}>Delivery Radius (km)</Text>
+      <View style={styles.field}>
+        <TextInput
+          value={formData.deliveryRadius.toString()}
+          onChangeText={(value) => handleInputChange('deliveryRadius', parseInt(value) || 0)}
+          keyboardType="numeric"
+          style={styles.textInput}
+        />
+      </View>
 
       <View style={styles.checkboxContainer}>
         <Checkbox
@@ -267,84 +305,98 @@ export default function VendorRegistrationScreen({ navigation }) {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* header */}
+      <View style={[styles.header, { borderColor: theme.colors.border }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backButton, { color: theme.colors.text }]}>
+          <Icons.Ionicons name='arrow-back' style={{ color: theme.colors.text, fontSize: 24 }} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Vendor Registration</Text>
-        <Text style={styles.stepIndicator}>Step {step} of 2</Text>
+
+        <View style={styles.headerContent}>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Vendor Registration</Text>
+          <Text style={[styles.stepIndicator, { color: theme.colors.sub_text }]}>Step {step} of 2</Text>
+        </View>
       </View>
 
-      <Card style={styles.card}>
-        <Card.Content>
-          {step === 1 ? renderStep1() : renderStep2()}
+      <ScrollView>
+        {/* business info */}
+        <Card style={styles.card}>
+          <Card.Content>
+            {step === 1 ? renderStep1() : renderStep2()}
 
-          <View style={styles.buttonContainer}>
-            {step === 2 && (
+            <View style={styles.buttonContainer}>
               <Button
                 mode="outlined"
                 onPress={() => setStep(1)}
+                disabled={step === 1}
                 style={styles.backButton}
               >
                 Back
               </Button>
-            )}
-            <Button
-              mode="contained"
-              onPress={handleNext}
-              loading={loading}
-              style={styles.nextButton}
-              contentStyle={styles.buttonContent}
-            >
-              {step === 1 ? 'Next' : 'Submit Registration'}
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
+              <Button
+                mode="contained"
+                onPress={handleNext}
+                loading={isLoading}
+                style={{ backgroundColor: theme.colors.indicator }}
+                contentStyle={styles.buttonContent}
+              >
+                {step === 1 ? 'Next' : 'Submit'}
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
 
-      <Card style={styles.benefitsCard}>
-        <Card.Content>
-          <Text style={styles.benefitsTitle}>Benefits of Joining</Text>
+        {/* Benefits outline */}
+        <Card style={[styles.benefitsCard, { backgroundColor: theme.colors.card }]}>
+          <Card.Content>
+            <Text style={[styles.benefitsTitle, { color: theme.colors.primary }]}>Benefits of Joining</Text>
 
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>📈</Text>
-            <Text style={styles.benefitText}>Increase your customer reach</Text>
-          </View>
+            <View style={styles.benefitItem}>
+              <Text style={styles.benefitIcon}>📈</Text>
+              <Text style={[styles.benefitText, { color: theme.colors.text }]}>Increase your customer reach</Text>
+            </View>
 
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>💰</Text>
-            <Text style={styles.benefitText}>Join bulk buying groups for better prices</Text>
-          </View>
+            <View style={styles.benefitItem}>
+              <Text style={styles.benefitIcon}>💰</Text>
+              <Text style={[styles.benefitText, { color: theme.colors.text }]}>Join bulk buying groups for better prices</Text>
+            </View>
 
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>🚚</Text>
-            <Text style={styles.benefitText}>Manage deliveries efficiently</Text>
-          </View>
+            <View style={styles.benefitItem}>
+              <Text style={styles.benefitIcon}>🚚</Text>
+              <Text style={[styles.benefitText, { color: theme.colors.text }]}>Manage deliveries efficiently</Text>
+            </View>
 
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>📱</Text>
-            <Text style={styles.benefitText}>Update stock in real-time</Text>
-          </View>
-        </Card.Content>
-      </Card>
-    </ScrollView>
+            <View style={styles.benefitItem}>
+              <Text style={styles.benefitIcon}>📱</Text>
+              <Text style={[styles.benefitText, { color: theme.colors.text }]}>Update stock in real-time</Text>
+            </View>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
+    flex: 1
   },
   header: {
-    backgroundColor: theme.colors.primary,
-    paddingTop: 60,
-    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 30,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
     paddingHorizontal: 20,
   },
+  headerContent: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginLeft: '15%',
+  },
   backButton: {
-    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   backButtonText: {
     color: 'white',
@@ -365,20 +417,39 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   stepTitle: {
-    color: theme.colors.primary,
     marginBottom: 8,
   },
   stepSubtitle: {
-    color: theme.colors.placeholder,
     marginBottom: 20,
   },
-  input: {
+  textInput: {
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    color: '#6b7280',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    color: '#6b7280',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  field: {
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: theme.colors.text,
     marginBottom: 12,
     marginTop: 16,
   },
@@ -401,7 +472,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   selectedChip: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: '#003366'
   },
   chipText: {
     fontSize: 12,
@@ -419,6 +490,14 @@ const styles = StyleSheet.create({
   hoursInput: {
     flex: 1,
     marginLeft: 12,
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    color: '#6b7280',
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -433,24 +512,18 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     marginTop: 20,
-  },
-  nextButton: {
-    flex: 1,
-    marginLeft: 12,
   },
   buttonContent: {
     paddingVertical: 8,
   },
   benefitsCard: {
-    margin: 20,
-    marginTop: 0,
+    marginHorizontal: 20,
+    marginBottom: 60,
     elevation: 2,
-    backgroundColor: theme.colors.surface,
   },
   benefitsTitle: {
-    color: theme.colors.primary,
     marginBottom: 16,
   },
   benefitItem: {
@@ -466,6 +539,5 @@ const styles = StyleSheet.create({
   benefitText: {
     flex: 1,
     fontSize: 14,
-    color: theme.colors.text,
   },
 });

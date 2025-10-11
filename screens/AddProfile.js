@@ -33,7 +33,6 @@ export default function ProfileScreen({ navigation, route }) {
   const { user, logout } = React.useContext(AuthContext);
   const [isEditing, setIsEditing] = useState(false);
   const [image, setImage] = useState('');
-  const [menu, setMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = register
     ? useState({
@@ -384,7 +383,7 @@ export default function ProfileScreen({ navigation, route }) {
             )}
           </TouchableOpacity>
 
-          <Icons.AntDesign name='logout' onPress={hanldeLogout} size={20} color={theme.colors.text} />
+          {!register && <Icons.AntDesign name='logout' onPress={hanldeLogout} size={20} color={theme.colors.text} />}
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>

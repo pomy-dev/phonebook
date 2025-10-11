@@ -85,6 +85,49 @@ export const deleteUserProfile = async (id) => {
   }
 };
 
+export const addVendor = async (vendorData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/add-vendor`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(vendorData),
+    });
+    if (!response.ok) {
+      console.error(response.arrayBuffer);
+      throw new Error(response.status);
+    }
+    const data = await response.json();
+    console.log(data.message);
+    return data;
+  } catch (error) {
+    console.error("Error adding vendor:", error);
+    throw error;
+  }
+};
+
+export const getVendorProfile = async (email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/vendor-profile?email=${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching vendor profile:", error);
+    throw error;
+  }
+};
+
 export const fetchAllCompanies = async (realm) => {
   try {
     let allCompanies = [];

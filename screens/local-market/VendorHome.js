@@ -116,35 +116,36 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ justifyContent: 'center' }}>
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 30 }}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
-                <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.primary} />
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>Local Market</Text>
-            </View>
-            <>
-              <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')} style={styles.notificationButton}>
-                <Icons.Ionicons name="person-outline" size={24} color={theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.notificationButton}>
-                <Icons.Ionicons name="notifications-outline" size={24} color={theme.colors.primary} />
-                <Badge style={styles.notificationBadge}>3</Badge>
-              </TouchableOpacity>
-            </>
+      {/* header */}
+      <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 30 }}>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>Local Market</Text>
           </View>
-
-          <Searchbar
-            placeholder="Search vendors, products, or areas..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            onSubmitEditing={handleSearch}
-            style={styles.searchBar}
-            iconColor={theme.colors.primary}
-          />
+          <>
+            <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')} style={styles.notificationButton}>
+              <Icons.Ionicons name="person-outline" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.notificationButton}>
+              <Icons.Ionicons name="notifications-outline" size={24} color={theme.colors.primary} />
+              <Badge style={styles.notificationBadge}>3</Badge>
+            </TouchableOpacity>
+          </>
         </View>
+
+        <Searchbar
+          placeholder="Search vendors, products, or areas..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          onSubmitEditing={handleSearch}
+          style={styles.searchBar}
+          iconColor={theme.colors.primary}
+        />
+      </View>
+      <ScrollView contentContainerStyle={{ justifyContent: 'center' }}>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Categories</Text>

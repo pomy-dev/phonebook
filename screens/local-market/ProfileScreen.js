@@ -1,10 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import { Icons } from '../../constants/Icons';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   Alert,
   ScrollView,
+  SafeAreaView,
   StyleSheet,
-  View
+  View,
+  TouchableOpacity
 } from 'react-native';
 import {
   Avatar,
@@ -20,7 +22,7 @@ import {
   TextInput
 } from 'react-native-paper';
 import { mockVendors } from '../../utils/mockData';
-import { theme } from '../../constants/vendorTheme';
+import { AppContext } from '../../context/appContext';
 
 export default function ProfileScreen({ navigation }) {
   const [userProfile, setUserProfile] = useState({
@@ -34,6 +36,7 @@ export default function ProfileScreen({ navigation }) {
   });
   const [isOnline, setIsOnline] = useState(true);
   const [stockModalVisible, setStockModalVisible] = useState(false);
+  const { theme, isDarkMode } = useContext(AppContext);
   const [newStockItem, setNewStockItem] = useState({ item: '', price: '', unit: '', available: true });
 
   useEffect(() => {
@@ -97,7 +100,7 @@ export default function ProfileScreen({ navigation }) {
     <View>
       <Card style={styles.card}>
         <Card.Content>
-          <Text style={styles.cardTitle}>Account Information</Text>
+          <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>Account Information</Text>
           <List.Item
             title="Full Name"
             description={userProfile.name}
@@ -123,7 +126,7 @@ export default function ProfileScreen({ navigation }) {
 
       <Card style={styles.card}>
         <Card.Content>
-          <Text style={styles.cardTitle}>Quick Actions</Text>
+          <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>Quick Actions</Text>
           <Button
             mode="outlined"
             onPress={handleSwitchToVendor}
@@ -165,13 +168,13 @@ export default function ProfileScreen({ navigation }) {
             />
             <View style={styles.businessInfo}>
               <Text style={styles.businessName}>{userProfile.businessProfile.name}</Text>
-              <Text style={styles.businessType}>{userProfile.businessProfile.type}</Text>
+              <Text style={[styles.businessType, { color: theme.colors.placeholder }]}>{userProfile.businessProfile.type}</Text>
               <View style={styles.businessStats}>
                 <View style={styles.statItem}>
                   <Ionicons name="star" size={16} color="#FFD700" />
-                  <Text style={styles.statText}>{userProfile.businessProfile.rating}</Text>
+                  <Text style={[styles.statText, { color: theme.colors.placeholder }]}>{userProfile.businessProfile.rating}</Text>
                 </View>
-                <View style={styles.statItem}>
+                <View style={[styles.statItem, { color: theme.colors.placeholder }]}>
                   <Ionicons name="people" size={16} color={theme.colors.primary} />
                   <Text style={styles.statText}>{userProfile.businessProfile.reviewCount} reviews</Text>
                 </View>
@@ -179,7 +182,7 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </View>
 
-          <View style={styles.onlineStatus}>
+          <View style={[styles.onlineStatus, { backgroundColor: theme.colors.surface }]}>
             <Switch
               value={isOnline}
               onValueChange={setIsOnline}
@@ -194,7 +197,7 @@ export default function ProfileScreen({ navigation }) {
 
       <Card style={styles.card}>
         <Card.Content>
-          <Text style={styles.cardTitle}>Business Information</Text>
+          <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>Business Information</Text>
           <List.Item
             title="Business Name"
             description={userProfile.businessProfile.name}
@@ -221,7 +224,7 @@ export default function ProfileScreen({ navigation }) {
       <Card style={styles.card}>
         <Card.Content>
           <View style={styles.stockHeader}>
-            <Text style={styles.cardTitle}>Current Stock</Text>
+            <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>Current Stock</Text>
             <Button
               mode="contained"
               onPress={() => setStockModalVisible(true)}
@@ -233,10 +236,10 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           {userProfile.businessProfile.stock.map((item, index) => (
-            <View key={index} style={styles.stockItem}>
+            <View key={index} style={[styles.stockItem, { borderBottomColor: theme.colors.surface }]}>
               <View style={styles.stockInfo}>
                 <Text style={styles.stockName}>{item.item}</Text>
-                <Text style={styles.stockPrice}>E{item.price} / {item.unit}</Text>
+                <Text style={[styles.stockPrice, { color: theme.colors.placeholder }]}>E{item.price} / {item.unit}</Text>
               </View>
               <Chip
                 style={[
@@ -255,7 +258,7 @@ export default function ProfileScreen({ navigation }) {
 
       <Card style={styles.card}>
         <Card.Content>
-          <Text style={styles.cardTitle}>Business Actions</Text>
+          <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>Business Actions</Text>
           <Button
             mode="outlined"
             onPress={() => navigation.navigate('BulkGroups')}
@@ -286,39 +289,43 @@ export default function ProfileScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <Text style={styles.headerSubtitle}>
-          Manage your account and business profile
-        </Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+
+      {/* header */}
+      <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+        <View style={styles.profileHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icons.Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+
+          <Avatar.Text
+            size={40}
+            label={userProfile.name.split(' ').map(n => n[0]).join('')}
+            style={[styles.profileAvatar, { backgroundColor: theme.colors.primary }]}
+          />
+
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>{userProfile.name}</Text>
+            <Text style={[styles.profileType, { color: theme.colors.placeholder }]}>
+              {userProfile.isVendor ? 'Vendor' : 'Customer'}
+            </Text>
+          </View>
+
+          {/* logout */}
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <Icons.AntDesign name="logout" size={24} color={theme.colors.error} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content}>
-        <Card style={styles.profileCard}>
-          <Card.Content>
-            <View style={styles.profileHeader}>
-              <Avatar.Text
-                size={80}
-                label={userProfile.name.split(' ').map(n => n[0]).join('')}
-                style={styles.profileAvatar}
-              />
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{userProfile.name}</Text>
-                <Text style={styles.profileType}>
-                  {userProfile.isVendor ? 'Vendor' : 'Customer'}
-                </Text>
-                <Text style={styles.profileLocation}>{userProfile.location}</Text>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-
+        {/* Vendor or Customer */}
         {userProfile.isVendor ? renderVendorProfile() : renderCustomerProfile()}
 
-        <Card style={styles.card}>
+        {/* settings */}
+        <Card style={[styles.card, { marginBottom: 80 }]}>
           <Card.Content>
-            <Text style={styles.cardTitle}>Settings</Text>
+            <Text style={[styles.cardTitle, { color: theme.colors.primary }]}>Settings</Text>
             <List.Item
               title="Notifications"
               description="Manage your notification preferences"
@@ -342,29 +349,16 @@ export default function ProfileScreen({ navigation }) {
             />
           </Card.Content>
         </Card>
-
-        <Card style={styles.card}>
-          <Card.Content>
-            <Button
-              mode="contained"
-              onPress={handleLogout}
-              style={styles.logoutButton}
-              buttonColor={theme.colors.error}
-              icon="logout"
-            >
-              Logout
-            </Button>
-          </Card.Content>
-        </Card>
       </ScrollView>
 
+      {/*  Add stock if Vendor */}
       <Portal>
         <Modal
           visible={stockModalVisible}
           onDismiss={() => setStockModalVisible(false)}
           contentContainerStyle={styles.modalContainer}
         >
-          <Text style={styles.modalTitle}>Add Stock Item</Text>
+          <Text style={[styles.modalTitle, { color: theme.colors.primary }]}>Add Stock Item</Text>
 
           <TextInput
             label="Item Name"
@@ -399,6 +393,7 @@ export default function ProfileScreen({ navigation }) {
             >
               Cancel
             </Button>
+
             <Button
               mode="contained"
               onPress={handleUpdateStock}
@@ -413,25 +408,24 @@ export default function ProfileScreen({ navigation }) {
       {userProfile.isVendor && (
         <FAB
           icon="plus"
-          style={styles.fab}
+          style={[styles.fab, { backgroundColor: theme.colors.accent }]}
           onPress={() => setStockModalVisible(true)}
           label="Add Stock"
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
+    flex: 1
   },
   header: {
-    backgroundColor: theme.colors.primary,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingTop: 30,
+    paddingBottom: 10,
     paddingHorizontal: 20,
+    borderBottomWidth: 1,
   },
   headerTitle: {
     color: 'white',
@@ -457,32 +451,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profileAvatar: {
-    backgroundColor: theme.colors.primary,
-    marginRight: 16,
+    marginHorizontal: 16,
   },
   profileInfo: {
     flex: 1,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 15,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   profileType: {
     fontSize: 14,
-    color: theme.colors.placeholder,
     marginBottom: 4,
   },
   profileLocation: {
     fontSize: 14,
-    color: theme.colors.placeholder,
   },
   card: {
     marginBottom: 16,
     elevation: 2,
   },
   cardTitle: {
-    color: theme.colors.primary,
     marginBottom: 16,
   },
   actionButton: {
@@ -506,7 +496,6 @@ const styles = StyleSheet.create({
   },
   businessType: {
     fontSize: 14,
-    color: theme.colors.placeholder,
     marginBottom: 8,
   },
   businessStats: {
@@ -519,13 +508,11 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: theme.colors.placeholder,
     marginLeft: 4,
   },
   onlineStatus: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
     padding: 12,
     borderRadius: 8,
   },
@@ -546,7 +533,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surface,
   },
   stockInfo: {
     flex: 1,
@@ -558,7 +544,6 @@ const styles = StyleSheet.create({
   },
   stockPrice: {
     fontSize: 12,
-    color: theme.colors.placeholder,
   },
   availabilityChip: {
     height: 28,
@@ -566,10 +551,6 @@ const styles = StyleSheet.create({
   availabilityText: {
     color: 'white',
     fontSize: 10,
-  },
-  logoutButton: {
-    marginTop: 8,
-    marginBottom: 60,
   },
   modalContainer: {
     backgroundColor: 'white',
@@ -580,7 +561,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     marginBottom: 20,
     textAlign: 'center',
-    color: theme.colors.primary,
   },
   modalInput: {
     marginBottom: 16,
@@ -599,6 +579,5 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
-    backgroundColor: theme.colors.accent,
   },
 });

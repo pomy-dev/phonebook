@@ -48,18 +48,15 @@ export default function LoginScreen({ navigation }) {
           </Card.Content>
         </Card>
 
-        <Card style={styles.card}>
-          <Card.Content>
-            <Button
-              mode="contained"
-              onPress={() => navigation.navigate('VendorHome')}
-              style={styles.loginButton}
-              contentStyle={styles.buttonContent}
-            >
-              Continue as Guest
-            </Button>
-          </Card.Content>
-        </Card>
+        {/* Continue Button */}
+        <Button
+          mode="contained"
+          onPress={() => navigation.navigate('VendorHome')}
+          style={styles.loginButton}
+          contentStyle={styles.buttonContent}
+        >
+          Continue as Guest
+        </Button>
 
         <View style={styles.features}>
           <Text style={styles.featuresTitle}>Why Choose Our Platform?</Text>
@@ -130,8 +127,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   loginButton: {
-    marginTop: 8,
-    marginBottom: 16,
+    marginHorizontal: 8,
+    marginVertical: 20,
   },
   buttonContent: {
     paddingVertical: 8,
