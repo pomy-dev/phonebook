@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,19 +8,29 @@ import {
   TouchableOpacity,
   Image,
   Linking,
+  TextInput
 } from 'react-native';
 import { Modal } from 'react-native';
 import { Icons } from "../constants/Icons";
 import { AppContext } from '../context/appContext';
+import { AuthContext } from '../context/authProvider';
+import LoginScreen from '../components/loginModal';
 import { mockProfiles, allIndustries } from '../utils/mockData';
 
 export default function PeopleScreen({ navigation }) {
   const { theme, isDarkMode } = React.useContext(AppContext);
+  const { user } = React.useContext(AuthContext);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustry, setSelectedIndustry] = useState('all');
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [filteredProfiles, setFilteredProfiles] = useState(mockProfiles);
   const [showContactSheet, setShowContactSheet] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
+  const [isLoginVisible, setIsLoginVisible] = useState(false);
+  const [selectedSkillTabs, setSelectedSkillTabs] = useState({});
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const searchInputRef = useRef(null);
 
   const industries = ['all', ...allIndustries];
 
@@ -50,76 +60,202 @@ export default function PeopleScreen({ navigation }) {
     setFilteredProfiles(filtered);
   };
 
-  const openLinkedIn = (url) => {
-    Linking.openURL(url);
-  };
-
   const handleContactPress = (profile) => {
     setSelectedContact(profile);
     setShowContactSheet(true);
   };
 
+  const handleAddProfile = () => {
+    if (!user) {
+      setIsLoginVisible(true);
+      return;
+    }
+    navigation.navigate('AddProfile', { register: true });
+  };
+
+  const getSocialIcon = (platform) => {
+    switch (platform) {
+      case 'linkedin': return <Icons.Ionicons name='logo-linkedin' size={14} color="#0077b5" />;
+      case 'twitter': return <Icons.Ionicons name='logo-twitter' size={14} color="#1da1f2" />;
+      case 'github': return <Icons.Ionicons name='logo-github' size={14} color="#333" />;
+      case 'website': return <Icons.Ionicons name='globe-outline' size={14} color="#10b981" />;
+      case 'instagram': return <Icons.Ionicons name='logo-instagram' size={14} color="#e4405f" />;
+      case 'facebook': return <Icons.Ionicons name='logo-facebook' size={14} color="#1877f2" />;
+      default: return <Icons.EvilIcons name='external-link' size={14} color="#6b7280" />;
+    }
+  };
+
+  const handleSkillTabChange = (profileId, tab) => {
+    setSelectedSkillTabs(prev => ({
+      ...prev,
+      [profileId]: tab
+    }));
+  };
+
+  const getSkillsForTab = (profile, tab) => {
+    switch (tab) {
+      case 'acquired': return profile.acquiredSkills;
+      case 'innate': return profile.innateSkills;
+      case 'domestic': return profile.domesticSkills;
+      default: return profile.acquiredSkills;
+    }
+  };
+
+  // const handleSearch = (query) => {
+  //   setIsSearching(true);
+  //   if (searchQuery.length > 0) {
+  //     const filtered = mockProfiles.filter(profile =>
+  //       profile.name.toLowerCase().includes(query.toLowerCase()) || profile.title.toLowerCase().includes(query.toLowerCase())
+  //     );
+  //     setFilteredProfiles(filtered);
+  //     setSearchQuery(query);
+  //   }
+  // }
+  // open search input and focus it
+  const startSearch = () => {
+    setIsSearching(true);
+    // small delay to ensure input mounted
+    setTimeout(() => searchInputRef.current && searchInputRef.current.focus(), 50);
+  };
+  // close search and reset results
+  const stopSearch = () => {
+    setIsSearching(false);
+    setSearchQuery('');
+    setFilteredProfiles(mockProfiles);
+    // blur input if available
+    searchInputRef.current && searchInputRef.current.blur && searchInputRef.current.blur();
+  };
+  // live filter as user types
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    const q = query.trim().toLowerCase();
+    if (q.length === 0) {
+      setFilteredProfiles(mockProfiles);
+      return;
+    }
+    const filtered = mockProfiles.filter(profile =>
+      (profile.name || '').toLowerCase().includes(q) ||
+      (profile.title || '').toLowerCase().includes(q)
+    );
+    setFilteredProfiles(filtered);
+  };
+
+  const handleFilter = () => {
+    setIsFiltering(!isFiltering);
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.background} />
 
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Professionals' Network</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={[styles.subtitle, { color: theme.colors.sub_text }]}>Profiles</Text>
+
+      <LoginScreen
+        isLoginVisible={isLoginVisible}
+        onClose={() => setIsLoginVisible(false)}
+      />
+
+
+      {!isSearching ?
+        <View style={styles.header}>
+          <TouchableOpacity onPress={startSearch}>
+            <View>
+              <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border, paddingVertical: 10 }]}>
+                <Icons.Ionicons
+                  name="search-outline"
+                  size={20}
+                  color={theme.colors.text}
+                  style={styles.searchIcon}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('AddProfile', { register: true })}
+            onPress={handleFilter}
+            style={[styles.filterProfile, { backgroundColor: isFiltering ? theme.colors.highlight : 'transparent', borderColor: theme.colors.highlight }]}>
+            <Icons.MaterialCommunityIcons name="account-filter-outline" size={24} color={theme.colors.indicator} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => handleAddProfile()}
             style={[styles.addProfile, { backgroundColor: theme.colors.indicator, borderColor: theme.colors.indicator }]}>
             <Icons.Feather name="user-plus" size={18} color='#ffff' />
-            <Text style={{ color: '#ffff' }}>Add Profile</Text>
+            <Text style={{ color: '#ffff' }}>Create Profile</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      <View style={[styles.filtersSection, { backgroundColor: theme.colors.card }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-          {industries.map((industry) => (
-            <TouchableOpacity
-              key={industry}
-              style={[
-                styles.filterChip,
-                selectedIndustry === industry && styles.filterChipActive
-              ]}
-              onPress={() => handleIndustryFilter(industry)}
-            >
-              <Text style={[
-                styles.filterText,
-                selectedIndustry === industry && styles.filterTextActive
-              ]}>
-                {industry === 'all' ? 'All' : industry}
-              </Text>
+        :
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchWrapper, { backgroundColor: theme.colors.sub_card, borderColor: theme.colors.border }]}>
+            <Icons.Ionicons
+              name="search-outline"
+              size={20}
+              color={theme.colors.text}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              ref={searchInputRef}
+              placeholder="Search name or title..."
+              style={[styles.searchInput, { color: theme.colors.text }]}
+              placeholderTextColor={theme.colors.sub_text}
+              value={searchQuery}
+              onChangeText={handleSearchChange}
+              autoFocus={true}
+              returnKeyType="search"
+              keyboardType="default"
+              clearButtonMode="while-editing"
+            />
+            <TouchableOpacity onPress={stopSearch} style={{ marginLeft: 8 }}>
+              <Icons.Ionicons name="close" size={20} color={theme.colors.text} />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </View>
+        </View>
+      }
 
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Availability</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
-          {['all', 'available', 'unavailable'].map((availability) => (
-            <TouchableOpacity
-              key={availability}
-              style={[
-                styles.filterChip,
-                selectedAvailability === availability && styles.filterChipActive
-              ]}
-              onPress={() => handleAvailabilityFilter(availability)}
-            >
-              <Text style={[
-                styles.filterText,
-                selectedAvailability === availability && styles.filterTextActive
-              ]}>
-                {availability === 'all' ? 'Miscellaneous' :
-                  availability === 'available' ? 'Open to Work' : 'Not Available'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      {isFiltering &&
+        <View style={[styles.filtersSection, { backgroundColor: theme.colors.card }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+            {industries.map((industry) => (
+              <TouchableOpacity
+                key={industry}
+                style={[
+                  styles.filterChip,
+                  selectedIndustry === industry && styles.filterChipActive
+                ]}
+                onPress={() => handleIndustryFilter(industry)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  selectedIndustry === industry && styles.filterTextActive
+                ]}>
+                  {industry === 'all' ? 'All' : industry}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <Text style={[styles.filterSectionTitle, { color: theme.colors.text }]}>Availability</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
+            {['all', 'available', 'unavailable'].map((availability) => (
+              <TouchableOpacity
+                key={availability}
+                style={[
+                  styles.filterChip,
+                  selectedAvailability === availability && styles.filterChipActive
+                ]}
+                onPress={() => handleAvailabilityFilter(availability)}
+              >
+                <Text style={[
+                  styles.filterText,
+                  selectedAvailability === availability && styles.filterTextActive
+                ]}>
+                  {availability === 'all' ? 'Miscellaneous' :
+                    availability === 'available' ? 'Open to Work' : 'Not Available'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      }
 
       <ScrollView style={styles.profilesList} showsVerticalScrollIndicator={false}>
         {filteredProfiles.map((profile) => (
@@ -169,8 +305,27 @@ export default function PeopleScreen({ navigation }) {
 
             <View style={styles.skillsSection}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Skills</Text>
+              <View style={styles.skillTabsContainer}>
+                {['acquired', 'innate', 'domestic'].map((tab) => (
+                  <TouchableOpacity
+                    key={tab}
+                    style={[
+                      styles.skillTab,
+                      (selectedSkillTabs[profile.id] || 'acquired') === tab && styles.skillTabActive
+                    ]}
+                    onPress={() => handleSkillTabChange(profile.id, tab)}
+                  >
+                    <Text style={[
+                      styles.skillTabText,
+                      (selectedSkillTabs[profile.id] || 'acquired') === tab && styles.skillTabTextActive
+                    ]}>
+                      {tab === 'acquired' ? 'Acquired' : tab === 'innate' ? 'Innate' : 'Domestic'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <View style={styles.skillsContainer}>
-                {profile.skills.slice(0, 6).map((skill, index) => (
+                {getSkillsForTab(profile, selectedSkillTabs[profile.id] || 'acquired').slice(0, 4).map((skill, index) => (
                   <View key={index} style={styles.skillChip}>
                     <Text style={styles.skillText}>{skill}</Text>
                   </View>
@@ -188,15 +343,28 @@ export default function PeopleScreen({ navigation }) {
               ))}
             </View>
 
-            <View style={styles.profileFooter}>
-              <TouchableOpacity
-                style={styles.linkedinButton}
-                onPress={() => openLinkedIn(profile.linkedinUrl)}
-              >
-                <Icons.Feather name='external-link' size={16} color={"#0077b5"} />
-                <Text style={styles.linkedinText}>LinkedIn</Text>
-              </TouchableOpacity>
+            <View style={styles.socialSection}>
+              <Text style={styles.sectionTitle}>Social Links</Text>
+              <View style={styles.socialLinksContainer}>
+                {Object.entries(profile.socialLinks).map(([platform, url]) => {
+                  if (!url) return null;
+                  return (
+                    <TouchableOpacity
+                      key={platform}
+                      style={styles.socialLink}
+                      onPress={() => Linking.openURL(url)}
+                    >
+                      {getSocialIcon(platform)}
+                      <Text style={styles.socialLinkText}>
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
 
+            <View style={styles.profileFooter}>
               <TouchableOpacity onPress={() => handleContactPress(profile)}
                 style={[styles.connectButton, { backgroundColor: theme.colors.indicator }]}>
                 <Text style={styles.connectButtonText}>Contact</Text>
@@ -258,25 +426,48 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 10,
     marginTop: 30,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
+  searchContainer: {
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+    marginTop: 40,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  subtitle: {
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 50,
+    paddingHorizontal: 16,
+    paddingVertical: 5,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
     fontSize: 16,
+    fontWeight: "400",
+    flex: 1,
+  },
+  filterProfile: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 5,
   },
   addProfile: {
     flexDirection: 'row',
-    borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 5,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
   filtersSection: {
     paddingTop: 16,
@@ -387,13 +578,38 @@ const styles = StyleSheet.create({
   },
   education: {
     fontSize: 13,
-  },
-  skillsSection: {
+  }, skillsSection: {
     marginBottom: 16,
+  },
+  skillTabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  skillTab: {
+    backgroundColor: '#f9fafb',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  skillTabActive: {
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+  },
+  skillTabText: {
+    fontSize: 11,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  skillTabTextActive: {
+    color: '#ffffff',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#374151',
     marginBottom: 8,
   },
   skillsContainer: {
@@ -409,8 +625,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   skillText: {
-    color: '#6b7280',
     fontSize: 11,
+    color: '#374151',
     fontWeight: '500',
   },
   achievementsSection: {
@@ -426,26 +642,36 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     flex: 1,
   },
-  profileFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  socialSection: {
+    marginBottom: 16,
   },
-  linkedinButton: {
+  socialLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  socialLink: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f8ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 4,
   },
-  linkedinText: {
-    fontSize: 12,
-    color: '#0077b5',
-    fontWeight: '600',
+  socialLinkText: {
+    fontSize: 11,
+    color: '#374151',
+    fontWeight: '500',
     marginLeft: 4,
   },
+  profileFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   connectButton: {
+    width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
@@ -453,6 +679,7 @@ const styles = StyleSheet.create({
   connectButtonText: {
     fontSize: 14,
     color: '#ccc',
+    textAlign: 'center',
     fontWeight: '600',
   },
   sheetOverlay: {

@@ -10,6 +10,8 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
+import { useRealm, } from '@realm/react';
+import { useEntities } from '../service/getApi';
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "../config/env";
@@ -20,6 +22,7 @@ const { width } = Dimensions.get("window");
 
 const SplashScreen = ({ onConnectionSuccess }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const entities = useEntities();
   const [error, setError] = useState(null);
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
@@ -30,7 +33,7 @@ const SplashScreen = ({ onConnectionSuccess }) => {
 
   const theme = {
     background: isDark ? "#121212" : "#FFFFFF",
-    primary: isDark ? "#003366" : "#5D5FEF",
+    primary: isDark ? "#5D5FEF" : "#003366",
     secondary: isDark ? "#2D2D3A" : "#F3F4F8",
     text: isDark ? "#FFFFFF" : "#2D2D3A",
     subtext: isDark ? "#AAAAAA" : "#71727A",
@@ -207,7 +210,7 @@ const SplashScreen = ({ onConnectionSuccess }) => {
   };
 
   const proceedOffline = async () => {
-    const cachedCompanies = await fetchAllCompaniesOffline();
+    const cachedCompanies = entities;
     if (cachedCompanies && cachedCompanies.length > 0) {
       await addEmergencyToFavorites(cachedCompanies);
       Alert.alert("Offline Mode", "Proceeding with offline data.", [

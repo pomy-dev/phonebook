@@ -11,11 +11,35 @@ export const CustomLightTheme = {
     sub_card: '#f0f0f0ff',
     text: '#333333',
     sub_text: '#7d7d7dff',
+    placeholder: '#757575',
+    disabled: '#BDBDBD',
+    error: '#D32F2F',
+    success: '#388E3C',
+    warning: '#F57C00',
     light: '#3a3a3aff',
     indicator: "#003366",
     border: '#e9e8e8ff',
     notification: '#FF4500',
     highlight: 'rgba(0, 0, 0, 0.5)'
+  },
+  fonts: {
+    ...DefaultTheme.fonts,
+    regular: {
+      fontFamily: 'System',
+      fontWeight: '400',
+    },
+    medium: {
+      fontFamily: 'System',
+      fontWeight: '500',
+    },
+    light: {
+      fontFamily: 'System',
+      fontWeight: '300',
+    },
+    thin: {
+      fontFamily: 'System',
+      fontWeight: '100',
+    },
   },
 };
 

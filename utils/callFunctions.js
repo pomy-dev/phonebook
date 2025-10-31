@@ -94,34 +94,19 @@ export async function handleShareVia(method, business, selectedItem) {
   }
 };
 
-export async function handleCall(phoneNumbers, e) {
+export async function handleCall(phoneNumber, e) {
   if (e) {
     e.stopPropagation();
   }
 
-  if (!phoneNumbers || phoneNumbers.length === 0) {
+  if (!phoneNumber) {
     Alert.alert(
       "No Phone Number",
       "This business has no phone number listed."
     );
     return;
   }
-
-  if (phoneNumbers.length === 1) {
-    Linking.openURL(`tel:${phoneNumbers[0].number} `)
-  } else if (phoneNumbers.length > 1) {
-    // If there are multiple phone numbers, show a selection dialog with cancel option
-    const options = phoneNumbers?.map((phone) => ({
-      text: `${phone.phone_type.charAt(0).toUpperCase() + phone.phone_type.slice(1)
-        }: ${phone.number} `,
-      onPress: () => Linking.openURL(`tel:${phone.number} `)
-    }));
-
-    // Add cancel option
-    // options.push({ text: "Cancel", style: "cancel" });
-    // Alert.alert("Select Phone Number", "Choose a number to call", options);
-    return options
-  }
+  Linking.openURL(`tel:${phoneNumber.number} `)
 }
 
 export async function handleWhatsapp(phones, e) {
@@ -248,9 +233,9 @@ export const getSynonyms = (term) => {
   }, [lowerTerm]);
 };
 
-export async function filterAllBusinesses(query = "", companyDirectory = "") {
+export async function filterAllBusinesses(query = "", companies) {
   try {
-    const data = await fetchAllCompaniesOffline();
+    const data = companies;
     if (!data || data.length === 0) {
       return [];
     }
@@ -259,12 +244,7 @@ export async function filterAllBusinesses(query = "", companyDirectory = "") {
     const queryTerms = query.toLowerCase().trim().split(/\s+/);
     const allSearchTerms = queryTerms.flatMap((term) => getSynonyms(term));
 
-    // Filter businesses based on query terms and selected directory
-    directoryCompanies = companyDirectory
-      ? data.filter((company) => company.directory === companyDirectory.trim())
-      : data;
-
-    const filtered = directoryCompanies.filter((business) => {
+    const filtered = data.filter((business) => {
       // Combine all searchable fields into a single string
       const searchableText = [
         business.company_name || "",

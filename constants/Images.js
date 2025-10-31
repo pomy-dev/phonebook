@@ -56,6 +56,9 @@ import event3 from '../assets/events/3.jpeg'
 import event4 from '../assets/events/4.jpeg'
 import event5 from '../assets/events/5.jpeg'
 
+// Social login icons
+import google from '../assets/pics/google.png'
+import facebook from '../assets/pics/facebook.png'
 
 // no image placeholder
 import noImage from '../assets/no-image.jpg';
@@ -122,6 +125,10 @@ export const Images = {
   event3,
   event4,
   event5,
+
+  // Socials
+  google,
+  facebook,
 
   // no image placeholder
   noImage,

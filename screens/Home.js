@@ -9,31 +9,33 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
-  FlatList,
   StyleSheet,
   Alert,
   RefreshControl,
 } from 'react-native';
+import { Badge } from 'react-native-paper';
+import { useRealm, } from '@realm/react';
 import { Icons } from '../constants/Icons';
-import {
-  fetchAllCompanies,
-  fetchAllCompaniesOffline,
-  fetchCompaniesWithAge,
-} from '../service/getApi';
+import { fetchAllCompanies, fetchCompaniesWithAge, useEntities } from '../service/getApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { checkNetworkConnectivity } from '../service/checkNetwork';
 import CustomLoader from '../components/customLoader';
 import { Images } from '../constants/Images';
 import { CustomToast } from '../components/customToast';
 import { CustomModal } from '../components/customModal';
+import LoginScreen from '../components/loginModal';
 import { useCallFunction } from '../components/customCallAlert';
 import { AppContext } from '../context/appContext';
 import * as Notifications from 'expo-notifications';
 import { handleLocation, handleBusinessPress, handleEmail, handleWhatsapp, filterAllBusinesses } from '../utils/callFunctions';
 import CustomCard from '../components/customCard';
+import { AuthContext } from '../context/authProvider';
 
 const HomeScreen = ({ navigation }) => {
   const { isDarkMode, theme, selectedState, isOnline, notificationsEnabled, notifications } = useContext(AppContext);
+  const { user, loading } = useContext(AuthContext);
+  const realm = useRealm();
+  const entities = useEntities();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [upgradeModalVisible, setUpgradeModalVisible] = useState(false);
@@ -48,9 +50,10 @@ const HomeScreen = ({ navigation }) => {
   const [businesses, setBusinesses] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { handleCall, AlertUI } = useCallFunction();
+  const [showLogin, setShowLogin] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const categories = ['All', 'Government', 'Emergency', 'More...'];
-
   // Function to schedule and store a notification
   const scheduleNotification = async (title, body, data = {}) => {
     if (!notificationsEnabled) return;
@@ -69,7 +72,6 @@ const HomeScreen = ({ navigation }) => {
 
   // Function to simulate mock notifications one by one
   const syncNotifications = () => {
-    console.log('is notifications enabled?', notificationsEnabled);
     console.log('Notifications #', notifications.length)
     if (!notificationsEnabled && notifications.length === 0) return;
 
@@ -174,8 +176,8 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    loadBusinesses(selectedState, isRefreshing);
-  }, [selectedState, isOnline]); // Add selectedState as a dependency to reload businesses when state changes
+    loadBusinesses(isRefreshing);
+  }, [isOnline]); // Add selectedState as a dependency to reload businesses when state changes
 
   useEffect(() => {
     filterBusinesses(allBusinesses, activeCategory);
@@ -188,7 +190,7 @@ const HomeScreen = ({ navigation }) => {
   const filterALLBs = async (query = searchQuery) => {
     setSearchedBusinesses([]);
     try {
-      const filtered = await filterAllBusinesses(query, selectedState);
+      const filtered = await filterAllBusinesses(query, entities);
       setSearchedBusinesses(filtered);
     } catch (error) {
       console.log('Error in filterALLBs:', error);
@@ -212,29 +214,22 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const loadBusinesses = async (companyDirectory, isRefresh) => {
-    console.log('Loading businesses for directory:', companyDirectory);
+  const loadBusinesses = async (isRefresh) => {
     try {
       isRefresh ? setIsRefreshing(true) : setIsLoading(true);
       let companyData;
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
-        companyData = isConnected ? await fetchAllCompanies() : await fetchAllCompaniesOffline();
+        companyData = isConnected ? await fetchAllCompanies(realm) : entities;
       } else {
-        companyData = await fetchAllCompaniesOffline();
+        companyData = entities;
         notificationsEnabled &&
           CustomToast('Offline Mode', 'Using cached data as app is in offline mode.')
       }
 
       console.log(`Fetched ${companyData.length} companies from API or cache.`);
 
-      const companies = companyData.filter(
-        (company) => company.directory === companyDirectory?.trim()
-      ) || [];
-
-      console.log(`Filtered to ${companies.length} companies in directory: ${companyDirectory}`);
-
-      const featuredBusinesses = companies.filter(
+      const featuredBusinesses = companyData.filter(
         (company) => company.subscription_type === 'Gold'
       );
 
@@ -242,7 +237,7 @@ const HomeScreen = ({ navigation }) => {
 
       const shuffledFeatured = featuredBusinesses.sort(() => Math.random() - 0.5);
 
-      const nonGoldCompanies = companies.filter(
+      const nonGoldCompanies = companyData.filter(
         (company) => company.subscription_type !== 'Gold'
       );
 
@@ -283,12 +278,8 @@ const HomeScreen = ({ navigation }) => {
       if (isOnline) {
         const isConnected = await checkNetworkConnectivity();
         if (isConnected) {
-          console.log('Selected State on Refresh:', selectedState);
           try {
-            const companyData = await fetchAllCompanies();
-            const companies = companyData.filter(
-              (company) => company.directory === selectedState?.trim()
-            ) || [];
+            const companies = await fetchAllCompanies(realm);
 
             const featuredBusinesses = companies.filter(
               (company) => company.subscription_type === 'Gold'
@@ -306,26 +297,26 @@ const HomeScreen = ({ navigation }) => {
             setLastRefresh('Last refresh was just now');
           } catch (err) {
             console.log('API Error:', err.message);
-            await loadBusinesses(selectedState, isRefreshing);
+            await loadBusinesses(isRefreshing);
             setLastRefresh('Using cached data (network unavailable)');
             notificationsEnabled &&
               CustomToast('Network Error', 'Failed to fetch new data. Using cached data.');
           }
         } else {
-          await loadBusinesses(selectedState, isRefreshing);
+          await loadBusinesses(isRefreshing);
           setLastRefresh('Using cached data (offline mode)');
           notificationsEnabled &&
             CustomToast('Offline Mode', 'No network connection. Using cached data.');
         }
       } else {
-        await loadBusinesses(selectedState, isRefreshing);
+        await loadBusinesses(isRefreshing);
         setLastRefresh('Using cached data (offline mode)');
         notificationsEnabled &&
           CustomToast('Offline Mode', 'App is in offline mode. Using cached data.');
       }
     } catch (err) {
       console.log('General Error:', err.message);
-      await loadBusinesses(selectedState, isRefreshing);
+      await loadBusinesses(isRefreshing);
       setLastRefresh('Using cached data');
       notificationsEnabled &&
         CustomToast('Error', 'An error occurred. Using cached data.');
@@ -337,6 +328,15 @@ const HomeScreen = ({ navigation }) => {
   const onRefresh = useCallback(() => {
     handleRefresh();
   }, [isOnline, notificationsEnabled]);
+
+  const handleLogin = () => {
+    if (loading) return;
+    if (user) {
+      navigation.navigate('Profile');
+    } else {
+      setShowLogin(true);
+    }
+  };
 
   const hide = searchQuery.length > 0;
 
@@ -354,6 +354,17 @@ const HomeScreen = ({ navigation }) => {
         onClose={() => setUpgradeModalVisible(false)}
       />
 
+      {/* Login Modal */}
+      <LoginScreen isLoginVisible={showLogin} onClose={() => setShowLogin(false)} />
+
+      {/* Show ProfileScreen Modal */}
+      {showProfile && (
+        <ProfileScreen
+          isVisible={showProfile}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
+
       {/* Custom Alert */}
       <AlertUI />
 
@@ -364,30 +375,26 @@ const HomeScreen = ({ navigation }) => {
           <Icons.Ionicons name="menu-outline" size={24} color={theme.colors.text} />
         </TouchableOpacity>
 
-        {/* profile button */}
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center' }}
-          onPress={() => navigation.navigate('Profile')}>
-
-          <Icons.Ionicons name="person-circle-outline" size={24} color={theme.colors.text} />
-          {/* my profile text */}
-          <Text style={{
-            color: theme.colors.text, marginLeft: 8,
-            fontSize: 14, fontWeight: "200",
-            letterSpacing: -0.5
-          }}>
-            My Profile
-          </Text>
-        </TouchableOpacity>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image
-            source={selectedState === 'Business eSwatini' ? Images.bs_eswatini : Images.eptc}
-            style={styles.image}
-          />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={[styles.appTitle, { color: theme.colors.text }]}>{selectedState}</Text>
-            <Text style={[styles.appSubTitle, { color: theme.colors.text }]}>Directory</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image
+              source={selectedState === 'BE' ? Images.bs_eswatini : Images.eptc}
+              style={styles.image}
+            />
+            <View style={{ marginLeft: 5 }}>
+              <Text style={[styles.appTitle, { color: theme.colors.text }]}>{selectedState}</Text>
+            </View>
           </View>
+          {/* profile button */}
+          <TouchableOpacity onPress={handleLogin}>
+            <Icons.Ionicons name="person-circle-outline" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+
+          {/* Notifications */}
+          <TouchableOpacity style={styles.notificationButton} onPress={() => { navigation.navigate('Notifications') }}>
+            <Icons.Ionicons name="notifications-outline" size={24} color={theme.colors.primary} />
+            {notifications.length > 0 && <Badge style={[styles.notificationBadge, { backgroundColor: theme.colors.error }]}>{notifications.length}</Badge>}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -617,6 +624,15 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "400",
     letterSpacing: -0.5,
+  },
+  notificationButton: {
+    position: 'relative',
+    padding: 8,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
   },
   appSubTitle: {
     fontSize: 17,

@@ -27,10 +27,10 @@ export const AppProvider = ({ children }) => {
           console.log('State from storage:', JSON.parse(state))
           setSelectedState(JSON.parse(state))
         } else {
-          console.log('No state found in storage, setting to E.P.T.C')
-          setSelectedState('E.P.T.C');
+          console.log('No state found in storage, setting to Business eSwatini')
+          setSelectedState('BE');
         }
-        
+
         if (theme !== null) setIsDarkMode(JSON.parse(theme));
         if (online !== null) setIsOnline(JSON.parse(online));
         if (notifEnabled !== null) setNotificationsEnabled(JSON.parse(notifEnabled));

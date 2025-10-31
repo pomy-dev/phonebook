@@ -1,7 +1,166 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from '@realm/react';
 import { API_BASE_URL } from "../config/env";
 
-export const fetchAllCompanies = async () => {
+export const addUser = async (userData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/add-profile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(userData),
+    });
+    if (!response.ok) {
+      console.error(response.arrayBuffer);
+      throw new Error(response.status);
+    }
+    const data = await response.json();
+    console.log(data.message);
+    return data;
+  } catch (error) {
+    console.error("Error adding user:", error);
+    throw error;
+  }
+};
+
+export const getUserProfile = async (email) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/user-profile?email=${encodeURIComponent(email)}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    throw error;
+  }
+};
+
+export const updateUserProfile = async (id, updatedData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/update-profile?id=${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData),
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+};
+
+export const deleteUserProfile = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/delete-profile?id=${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      throw new Error("Network response was not ok " + response.statusText);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error deleting user profile:", error);
+    throw error;
+  }
+};
+
+export const addVendor = async (vendorData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/add-vendor`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(vendorData),
+    });
+    if (!response.ok) {
+      console.error(response.arrayBuffer);
+      throw new Error(response.status);
+    }
+    const data = await response.json();
+    console.log(data.message);
+    return data;
+  } catch (error) {
+    console.error("Error adding vendor:", error);
+    throw error;
+  }
+};
+
+export const addVendorStock = async (stockData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/add-stock`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(stockData),
+    });
+    if (!response.ok) {
+      console.error('==============\n');
+      console.error(response.arrayBuffer);
+      throw new Error(response.status);
+    }
+    const data = await response.json();
+    console.log(data.message);
+    return data;
+  } catch (error) {
+    console.error("Error adding stock:", error);
+    throw error;
+  }
+}
+
+export const getVendorsAndStock = async (page = 1, limit = 10) => {
+  try {
+    const vendors = await fetch(
+      `${API_BASE_URL}/api/vendors?page=${page}&limit=${limit}&stock=count`,
+      { method: "GET" }
+    );
+
+    if (!vendors.ok) throw new Error(vendors.status);
+    return await vendors.json();
+  } catch (error) {
+    console.error("Error fetching vendors:", error);
+    throw error;
+  }
+}
+
+export const getVendorProfile = async (vendorId) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/api/vendors/${vendorId}/stock`,
+      { method: "GET" }
+    );
+
+    if (!response.ok) throw new Error(response.status);
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching stock:", error);
+    throw error;
+  }
+};
+
+export const fetchAllCompanies = async (realm) => {
   try {
     let allCompanies = [];
 
@@ -25,8 +184,41 @@ export const fetchAllCompanies = async () => {
     const paidCompanies = data.companies.filter((c) => c.paid === true);
     allCompanies = [...allCompanies, ...paidCompanies];
 
-    // Save all companies to AsyncStorage
-    await AsyncStorage.setItem("companiesList", JSON.stringify(allCompanies));
+    realm.write(() => {
+      // Clear existing data (optional; use delta updates if preferred)
+      realm.delete(realm.objects('Entity'));
+
+      // Write new entities
+      allCompanies.forEach((entity) => {
+        realm.create('Entity', {
+          company_name: entity.company_name,
+          view: entity.view || 0,
+          company_type: entity.company_type || 'Government',
+          company_tags: entity.company_tags || [],
+          subscription_type: entity.subscription_type || 'Bronze',
+          description: entity.description,
+          phone: entity.phone || [],
+          address: entity.address,
+          address_coordinates: entity.address_coordinates || { type: 'Point', coordinates: [0, 0] },
+          email: entity.email,
+          logo: entity.logo || null,
+          banner: entity.banner || null,
+          large_description: entity.large_description || null,
+          social_media: entity.social_media || [],
+          working_hours: entity.working_hours || [],
+          team: entity.team || [],
+          gallery: entity.gallery || [],
+          publications: entity.publications || [], // Assumes API returns ObjectId strings
+          promotions: entity.promotions || [],
+          services: entity.services || [],
+          reviews: entity.reviews || [],
+          created_at: new Date(entity.created_at),
+          paid: entity.paid || false,
+          paid_at: entity.paid_at ? new Date(entity.paid_at) : null,
+          updated_at: entity.updated_at ? new Date(entity.updated_at) : null,
+        });
+      });
+    });
 
     const timestamp = new Date().toISOString();
     await AsyncStorage.setItem("companies_timestamp", timestamp);
@@ -38,17 +230,17 @@ export const fetchAllCompanies = async () => {
   }
 };
 
-export const fetchAllCompaniesOffline = async () => {
+export const fetchAllCompaniesOffline = async (companies) => {
   try {
-    const storedCompanies = await AsyncStorage.getItem("companiesList");
-    const companyData = storedCompanies ? JSON.parse(storedCompanies) : [];
+    const companyData = companies;
     return companyData;
   } catch (error) {
-    console.error("Error retrieving companies from AsyncStorage:", error);
+    console.error("Error retrieving companies:", error);
     return [];
   }
 };
 
+// to check out
 export const fetchCompaniesWithAge = async () => {
   try {
     const storedCompanies = await AsyncStorage.getItem("companies");
@@ -357,13 +549,17 @@ export const fetchNotifications = async () => {
 };
 
 // Helper function to load offline data
-export const loadOfflineData = async () => {
+export const loadOfflineData = async (companies) => {
   try {
-    const data = await fetchAllCompaniesOffline();
+    const data = await fetchAllCompaniesOffline(companies);
     const companyData = data ? JSON.parse(data) : [];
 
     return companyData;
   } catch (err) {
     console.log("Offline Data Error:", err.message);
   }
+};
+
+export const useEntities = () => {
+  return useQuery('Entity');
 };
