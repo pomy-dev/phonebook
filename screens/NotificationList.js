@@ -223,7 +223,7 @@ const NotificationListScreen = ({ navigation }) => {
     >
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.primary} />
+          <Icons.Ionicons name='arrow-back' size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.header, { color: theme.colors.text }]}>
           Notifications

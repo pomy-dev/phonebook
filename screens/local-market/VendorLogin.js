@@ -27,17 +27,17 @@ export default function LoginScreen({ navigation }) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icons.Ionicons name='arrow-back' style={{ color: theme.colors.primary, fontSize: 24 }} />
+          <Icons.Ionicons name='arrow-back' style={{ color: theme.colors.text, fontSize: 24 }} />
         </TouchableOpacity>
-        <Text style={[styles.headerText, { color: theme.colors.primary }]}>Local Market</Text>
+        <Text style={[styles.headerText, { color: theme.colors.text }]}>Local Market</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
 
         <Card style={[styles.vendorCard, { borderColor: theme.colors.primary, backgroundColor: theme.colors.card }]}>
           <Card.Content>
-            <Text style={[styles.vendorTitle, { color: theme.colors.accent }]}>Are you a vendor?</Text>
-            <Text style={[styles.vendorSubtitle, { color: theme.colors.placeholder }]}>
+            <Text style={[styles.vendorTitle, { color: theme.colors.text }]}>Are you a vendor?</Text>
+            <Text style={[styles.vendorSubtitle, { color: theme.colors.sub_text }]}>
               Join our marketplace to reach more customers and connect with bulk buying groups
             </Text>
 

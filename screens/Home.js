@@ -392,7 +392,7 @@ const HomeScreen = ({ navigation }) => {
 
           {/* Notifications */}
           <TouchableOpacity style={styles.notificationButton} onPress={() => { navigation.navigate('Notifications') }}>
-            <Icons.Ionicons name="notifications-outline" size={24} color={theme.colors.primary} />
+            <Icons.Ionicons name="notifications-outline" size={24} color={theme.colors.notification} />
             {notifications.length > 0 && <Badge style={[styles.notificationBadge, { backgroundColor: theme.colors.error }]}>{notifications.length}</Badge>}
           </TouchableOpacity>
         </View>
