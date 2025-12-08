@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   Alert, FlatList, StyleSheet, TouchableOpacity, Platform, SafeAreaView,
   KeyboardAvoidingView, Animated, StatusBar, TextInput as RNTextInput, View,
-  Text, Switch, ActivityIndicator, ScrollView
+  Text, Switch, ActivityIndicator
 } from 'react-native';
 import BottomSheet, { useBottomSheetSpringConfigs, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import * as FileSystem from 'expo-file-system/legacy';

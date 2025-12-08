@@ -50,7 +50,6 @@ export default function BulkGroupsScreen({ navigation, route }) {
     setUserGroups([mockBulkGroups[0]]);
   }, []);
 
-
   const handleJoinGroup = (group) => {
     Alert.alert(
       'Join Bulk Group',
